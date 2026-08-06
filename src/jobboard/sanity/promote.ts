@@ -1,0 +1,349 @@
+/**
+ * The promotion job — spec §6.2, §6.5, §8.3.
+ *
+ * The promotion boundary is the LLM shortlist: thousands ingested → tens
+ * promoted to Sanity → a handful published. Each stage logs why things were
+ * dropped, so the thresholds can be tuned rather than guessed at.
+ *
+ * Nothing is auto-published in v1. The board's entire value rests on trust in
+ * the listings, and the curation capacity is there. Revisit auto-publish only
+ * once there are a few hundred human decisions to calibrate against — at which
+ * point the decision table gives real precision and recall numbers rather than
+ * vibes.
+ */
+
+import type { Db } from '../db/client'
+import { getDb } from '../db/client'
+import { recordDecision } from '../classify/run'
+import { slugify } from '../lib/text'
+import { meetsPromotionThreshold } from '../taxonomy'
+import { isSanityConfigured, writeClient } from './client'
+
+export type PromoteOptions = {
+  limit?: number
+  dryRun?: boolean
+  onLog?: (line: string) => void
+}
+
+export type PromoteReport = {
+  considered: number
+  promoted: number
+  skippedAlreadyPromoted: number
+  skippedBelowThreshold: number
+  employersCreated: number
+  errors: { listingId: number; message: string }[]
+  dryRun: boolean
+}
+
+type PromotableRow = {
+  id: number
+  title: string
+  employer_id: string | null
+  employer_name: string
+  apply_url: string
+  description: string | null
+  location_raw: string | null
+  posted_at: string | null
+  deadline_at: string | null
+  salary_min: string | null
+  salary_max: string | null
+  salary_currency: string | null
+  salary_period: string | null
+  mentions_30_percent_ruling: boolean
+  source_id: string
+  primary_cause: string | null
+  secondary_causes: string[]
+  leverage: string | null
+  cause_score: number
+  leverage_score: number
+  total_score: number
+  language_requirement: string | null
+  work_authorisation: string | null
+  security_screening: boolean | null
+  security_note: string | null
+  seniority: string | null
+  location_mode: string | null
+  draft_note: string | null
+  reasoning: string | null
+  employer_leverage_note: string | null
+  employer_website: string | null
+  employer_careers_url: string | null
+  employer_cause_areas: string[] | null
+  employer_ats: string | null
+  employer_giving_green: boolean | null
+  employer_e2g: boolean | null
+}
+
+const DEFAULT_EXPIRY_DAYS = 60
+
+export async function runPromotion(options: PromoteOptions = {}): Promise<PromoteReport> {
+  const db = await getDb()
+  const log = (l: string) => options.onLog?.(l)
+  const report: PromoteReport = {
+    considered: 0,
+    promoted: 0,
+    skippedAlreadyPromoted: 0,
+    skippedBelowThreshold: 0,
+    employersCreated: 0,
+    errors: [],
+    dryRun: options.dryRun ?? false,
+  }
+
+  if (!isSanityConfigured && !options.dryRun) {
+    throw new Error(
+      'NEXT_PUBLIC_SANITY_PROJECT_ID is not set. Create the job board’s own Sanity project (M0) ' +
+        'or run with --dry-run to see what would be promoted.',
+    )
+  }
+
+  const rows = await loadPromotable(db, options.limit ?? 50)
+  report.considered = rows.length
+  log(`${rows.length} listings above the promotion threshold and not yet promoted`)
+
+  const client = options.dryRun ? null : writeClient()
+  const employerCache = new Map<string, string>()
+
+  for (const row of rows) {
+    // Re-check the threshold here rather than trusting the query alone: the
+    // gate enforcement in classify may have nulled a label after scoring, and a
+    // listing with no cause or no leverage is not publishable.
+    if (
+      !row.primary_cause ||
+      !row.leverage ||
+      !meetsPromotionThreshold(row.cause_score, row.leverage_score)
+    ) {
+      report.skippedBelowThreshold++
+      continue
+    }
+
+    try {
+      if (options.dryRun) {
+        log(
+          `would promote #${row.id} — ${row.title} @ ${row.employer_name} ` +
+            `(${row.primary_cause}/${row.leverage}, score ${row.total_score})`,
+        )
+        report.promoted++
+        continue
+      }
+
+      const employerRef = await ensureEmployer(client!, row, employerCache, () => {
+        report.employersCreated++
+      })
+
+      const slugBase = slugify(`${row.title}-${row.employer_name}`)
+      // A deterministic document id keyed on the pipeline listing means a
+      // re-run updates the same draft instead of creating a second one.
+      const docId = `drafts.jobListing-${row.id}`
+
+      const expiresAt =
+        row.deadline_at ??
+        new Date(
+          (row.posted_at ? new Date(row.posted_at).getTime() : Date.now()) +
+            DEFAULT_EXPIRY_DAYS * 864e5,
+        ).toISOString()
+
+      await client!.createOrReplace({
+        _id: docId,
+        _type: 'jobListing',
+        title: row.title,
+        slug: { _type: 'slug', current: slugBase },
+        employer: { _type: 'reference', _ref: employerRef },
+        applyUrl: row.apply_url,
+
+        // Arriving pre-filled with the LLM's draft note is the single most
+        // valuable ergonomic feature (§6.5): the curator edits a sentence
+        // rather than writing one, which is roughly the difference between a
+        // four-minute and a twelve-minute review.
+        whyThisMattersNl: row.draft_note ?? '',
+
+        excerpt: buildExcerpt(row.description),
+        primaryCause: row.primary_cause,
+        secondaryCauses: row.secondary_causes ?? [],
+        leverage: row.leverage,
+        locationCity: cityFrom(row.location_raw),
+        locationMode: row.location_mode,
+        seniority: row.seniority,
+        languageRequirement: row.language_requirement,
+        workAuthorisation: row.work_authorisation,
+        securityScreening: row.security_screening ?? false,
+        securityNote: row.security_note,
+        salaryText: salaryText(row),
+        mentions30PercentRuling: row.mentions_30_percent_ruling,
+        postedAt: row.posted_at,
+        deadlineAt: row.deadline_at,
+        expiresAt,
+
+        pipelineListingId: row.id,
+        sourceId: row.source_id,
+        llmScore: row.total_score,
+        llmReasoning: row.reasoning,
+      })
+
+      await recordDecision(
+        db,
+        row.id,
+        'promoted',
+        'pipeline',
+        `score ${row.total_score} (cause ${row.cause_score} + leverage ${row.leverage_score})`,
+        docId,
+      )
+      report.promoted++
+      log(`promoted #${row.id} → ${docId}`)
+    } catch (err) {
+      const message = (err as Error).message
+      report.errors.push({ listingId: row.id, message })
+      log(`failed to promote #${row.id}: ${message}`)
+    }
+  }
+
+  return report
+}
+
+async function loadPromotable(db: Db, limit: number): Promise<PromotableRow[]> {
+  const { rows } = await db.query<PromotableRow>(
+    `select l.id, l.title, l.employer_id, l.employer_name, l.apply_url, l.description,
+            l.location_raw, l.posted_at, l.deadline_at, l.salary_min, l.salary_max,
+            l.salary_currency, l.salary_period, l.mentions_30_percent_ruling, l.source_id,
+            c.primary_cause, c.secondary_causes, c.leverage, c.cause_score,
+            c.leverage_score, c.total_score, c.language_requirement,
+            c.work_authorisation, c.security_screening, c.security_note,
+            c.seniority, c.location_mode, c.draft_note, c.reasoning,
+            e.leverage_note       as employer_leverage_note,
+            e.website             as employer_website,
+            e.careers_url         as employer_careers_url,
+            e.cause_areas         as employer_cause_areas,
+            e.ats                 as employer_ats,
+            e.giving_green_listed as employer_giving_green,
+            e.e2g_allowlisted     as employer_e2g
+       from listing l
+       join classification c on c.listing_id = l.id
+       left join employer e on e.id = l.employer_id
+       left join decision d
+              on d.listing_id = l.id
+             -- Never re-promote something a human already decided on, and never
+             -- promote the same listing twice.
+             and d.action in ('promoted', 'published', 'rejected', 'snoozed')
+      where l.closed_at is null
+        and d.id is null
+        and c.nl_eligible
+        and c.primary_cause is not null
+        and c.leverage is not null
+        and c.total_score >= 4
+        and c.cause_score >= 2
+      order by c.total_score desc, l.first_seen_at desc
+      limit $1`,
+    [limit],
+  )
+  return rows
+}
+
+/**
+ * Mirrors the employer into Sanity so editorial copy about an organisation
+ * lives in the CMS. Employers are created as published documents, not drafts —
+ * they are reference targets, and a draft-only employer would leave every
+ * listing pointing at nothing.
+ */
+async function ensureEmployer(
+  client: ReturnType<typeof writeClient>,
+  row: PromotableRow,
+  cache: Map<string, string>,
+  onCreate: () => void,
+): Promise<string> {
+  const pipelineId = row.employer_id ?? slugify(row.employer_name)
+  const cached = cache.get(pipelineId)
+  if (cached) return cached
+
+  const docId = `employer-${pipelineId}`
+  const existing = await client.fetch<{ _id: string } | null>(
+    '*[_type == "employer" && _id == $id][0]{_id}',
+    { id: docId },
+  )
+
+  if (!existing) {
+    await client.createIfNotExists({
+      _id: docId,
+      _type: 'employer',
+      name: row.employer_name,
+      slug: { _type: 'slug', current: slugify(row.employer_name) },
+      pipelineEmployerId: pipelineId,
+      website: row.employer_website ?? undefined,
+      careersUrl: row.employer_careers_url ?? undefined,
+      city: cityFrom(row.location_raw) ?? undefined,
+      // The durable employer-level note, if the watchlist already carries one.
+      leverageNoteNl: row.employer_leverage_note ?? undefined,
+      causeAreas: row.employer_cause_areas ?? [],
+      ats: row.employer_ats ?? undefined,
+      givingGreenListed: row.employer_giving_green ?? false,
+      e2gAllowlisted: row.employer_e2g ?? false,
+      notEndorsement: row.employer_e2g ?? false,
+    })
+    onCreate()
+  }
+
+  cache.set(pipelineId, docId)
+  return docId
+}
+
+/**
+ * A short, neutral excerpt. Deliberately NOT the full description: reproducing
+ * the expressive text of a job ad is where aggregators get into trouble, and
+ * there is no product reason to do it here (§10).
+ */
+function buildExcerpt(description: string | null): string {
+  if (!description) return ''
+  const paragraphs = description
+    .split(/\n{2,}/)
+    .map((p) => p.replace(/\s+/g, ' ').trim())
+    .filter((p) => p.length > 60)
+  const first = paragraphs[0] ?? description.slice(0, 400)
+  return first.length > 500 ? `${first.slice(0, 497).trimEnd()}…` : first
+}
+
+function cityFrom(locationRaw: string | null): string | null {
+  if (!locationRaw) return null
+  return locationRaw.split(/[,·|/]/)[0]?.trim() || null
+}
+
+function salaryText(row: PromotableRow): string | undefined {
+  const min = row.salary_min ? Number(row.salary_min) : null
+  const max = row.salary_max ? Number(row.salary_max) : null
+  if (!min && !max) return undefined
+  const currency = row.salary_currency ?? 'EUR'
+  const symbol = currency === 'EUR' ? '€' : `${currency} `
+  const fmt = (n: number) => n.toLocaleString('nl-NL', { maximumFractionDigits: 0 })
+  const period = row.salary_period === 'month' ? ' per maand' : row.salary_period === 'year' ? ' per jaar' : ''
+  if (min && max) return `${symbol}${fmt(min)}–${symbol}${fmt(max)}${period}`
+  return `${symbol}${fmt((min ?? max)!)}${period}`
+}
+
+/**
+ * Expiry automation (§7.8). Every published document gets an expiresAt and
+ * auto-unpublishes, so the board cannot fill up with dead links.
+ */
+export async function runExpiry(options: { dryRun?: boolean; onLog?: (l: string) => void } = {}) {
+  const log = (l: string) => options.onLog?.(l)
+  const client = writeClient()
+  const expired = await client.fetch<{ _id: string; title: string; expiresAt: string }[]>(
+    `*[_type == "jobListing" && !(_id in path("drafts.**")) && defined(expiresAt) && expiresAt < now()]{_id, title, expiresAt}`,
+  )
+  log(`${expired.length} published listings past their expiry date`)
+
+  if (options.dryRun) return { unpublished: 0, found: expired.length }
+
+  let unpublished = 0
+  for (const doc of expired) {
+    // Unpublish by moving the document back to a draft: the content survives
+    // for the archive view and the URL keeps redirecting rather than 404-ing
+    // (§9.8), but it leaves the live board.
+    const full = await client.getDocument(doc._id)
+    if (!full) continue
+    await client
+      .transaction()
+      .createOrReplace({ ...full, _id: `drafts.${doc._id}` })
+      .delete(doc._id)
+      .commit()
+    unpublished++
+    log(`unpublished ${doc._id} (${doc.title})`)
+  }
+  return { unpublished, found: expired.length }
+}

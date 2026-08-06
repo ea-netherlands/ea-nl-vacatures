@@ -1,0 +1,302 @@
+/* ============================================================
+   THE MERGE SWAP POINT — spec §6.2a
+   ------------------------------------------------------------
+   Every value the job board renders comes from a custom property
+   declared here. Nothing else in `src/jobboard/` hardcodes a
+   colour, font, radius, shadow or spacing step.
+
+   At merge time (M8) this one file is replaced with the main
+   site's tokens and the board inherits the site's look with a
+   single change rather than an audit.
+
+   Tokens are declared on `.jb-root`, NOT on `:root`, so they
+   cannot leak into or collide with the host app's own tokens.
+   Values are lifted verbatim from the EAN design system.
+   ============================================================ */
+
+/* --- Webfonts. Declared at document level because @font-face
+       cannot be scoped; names are namespaced to avoid clashes
+       if the host app already registers the same families. --- */
+@font-face {
+  font-family: 'Sentient';
+  src: url('/fonts/Sentient-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Sentient';
+  src: url('/fonts/Sentient-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Sentient';
+  src: url('/fonts/Sentient-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Atkinson Hyperlegible Next';
+  src: url('/fonts/AtkinsonHyperlegibleNext-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Atkinson Hyperlegible Next';
+  src: url('/fonts/AtkinsonHyperlegibleNext-RegularItalic.woff2') format('woff2');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Atkinson Hyperlegible Next';
+  src: url('/fonts/AtkinsonHyperlegibleNext-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Atkinson Hyperlegible Next';
+  src: url('/fonts/AtkinsonHyperlegibleNext-SemiBold.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Atkinson Hyperlegible Next';
+  src: url('/fonts/AtkinsonHyperlegibleNext-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+.jb-root {
+  color-scheme: light;
+
+  /* --- Primary: EA Teal. The only accent hue on the board. --- */
+  --ea-teal-50: #f6fdfe;
+  --ea-teal-100: #dbf5fa;
+  --ea-teal-200: #aae8f3;
+  --ea-teal-300: #74daeb;
+  --ea-teal-400: #43cce5;
+  --ea-teal-500: #1db3ce;
+  --ea-teal-600: #16879c;
+  --ea-teal-700: #106574;
+  --ea-teal-800: #0b424c;
+  --ea-teal-900: #062328;
+
+  /* --- Neutral: Slate --- */
+  --slate-50: #f8fafc;
+  --slate-100: #f1f5f9;
+  --slate-200: #e2e8f0;
+  --slate-300: #cbd5e1;
+  --slate-400: #64748b;
+  --slate-500: #94a3b8;
+  --slate-600: #475569;
+  --slate-700: #334155;
+  --slate-800: #1e293b;
+  --slate-900: #0f172a;
+
+  --black: #09090b;
+  --white: #ffffff;
+
+  /* --- Status. Feedback only, never decoration. --- */
+  --red-50: #fef2f2;
+  --red-500: #ef4444;
+  --orange-50: #fff7ed;
+  --orange-600: #ea580c;
+  --green-50: #f0fdf4;
+  --green-600: #16a34a;
+  --blue-50: #eff6ff;
+  --blue-600: #2563eb;
+
+  /* --- Surfaces --- */
+  --bg: var(--white);
+  --bg-subtle: var(--slate-50);
+  --bg-muted: var(--slate-100);
+  --bg-emphasized: var(--slate-200);
+  --bg-inverted: var(--black);
+
+  /* --- Foreground --- */
+  --fg: var(--black);
+  --fg-muted: var(--slate-600);
+  --fg-subtle: var(--slate-500);
+  --fg-inverted: var(--slate-50);
+
+  /* --- Borders --- */
+  --border: var(--slate-200);
+  --border-muted: var(--slate-100);
+  --border-emphasized: var(--slate-300);
+
+  /* --- Primary roles --- */
+  --primary-contrast: var(--white);
+  --primary-fg: var(--ea-teal-700);
+  --primary-subtle: var(--ea-teal-50);
+  --primary-muted: var(--ea-teal-100);
+  --primary-emphasized: var(--ea-teal-200);
+  --primary-solid: var(--ea-teal-600);
+
+  /* --- Status roles --- */
+  --fg-error: var(--red-500);
+  --bg-error: var(--red-50);
+  --fg-warning: var(--orange-600);
+  --bg-warning: var(--orange-50);
+  --fg-success: var(--green-600);
+  --bg-success: var(--green-50);
+  --fg-info: var(--blue-600);
+  --bg-info: var(--blue-50);
+
+  /* --- Links --- */
+  --link: var(--ea-teal-600);
+  --link-hover: var(--ea-teal-700);
+
+  /* --- Type --- */
+  --font-heading: 'Sentient', Georgia, 'Times New Roman', serif;
+  --font-body: 'Atkinson Hyperlegible Next', -apple-system, BlinkMacSystemFont,
+    'Segoe UI', Helvetica, Arial, sans-serif;
+  --font-mono: SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  --text-2xs: 0.625rem;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-md: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+  --text-4xl: 2.25rem;
+  --text-5xl: 3rem;
+
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+
+  --lh-none: 1;
+  --lh-tighter: 1.1;
+  --lh-tight: 1.25;
+  --lh-snug: 1.375;
+  --lh-normal: 1.5;
+  --lh-relaxed: 1.625;
+
+  --tracking-heading: 0;
+
+  /* --- Spacing --- */
+  --space-0-5: 0.125rem;
+  --space-1: 0.25rem;
+  --space-1-5: 0.375rem;
+  --space-2: 0.5rem;
+  --space-2-5: 0.625rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+  --space-24: 6rem;
+  --space-32: 8rem;
+
+  /* --- Radii --- */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-2xl: 1rem;
+  --radius-4xl: 2rem;
+  --radius-full: 9999px;
+
+  --radius-control: var(--radius-2xl);
+  --radius-card: var(--radius-xl);
+  --radius-input: var(--radius-lg);
+
+  /* --- Layout --- */
+  --container-max: 64rem;
+  --container-prose: 42rem;
+
+  /* --- Effects: the "pressable key" is a brand signature --- */
+  --shadow-xs: 0px 1px 2px rgba(15, 23, 42, 0.1), 0px 0px 1px rgba(15, 23, 42, 0.2);
+  --shadow-sm: 0px 2px 4px rgba(15, 23, 42, 0.1), 0px 0px 1px rgba(15, 23, 42, 0.3);
+  --shadow-md: 0px 4px 8px rgba(15, 23, 42, 0.1), 0px 0px 1px rgba(15, 23, 42, 0.3);
+
+  --btn-solid-shadow: 0 0 0 4px rgba(3, 16, 18, 0.05), inset 0 -3px rgba(3, 16, 18, 0.1),
+    inset 0 3px 0 0 rgba(255, 255, 255, 0.1);
+  --btn-solid-shadow-hover: 0 0 0 4px rgba(3, 16, 18, 0.1), inset 0 -3px rgba(3, 16, 18, 0.1),
+    inset 0 3px 0 0 rgba(255, 255, 255, 0.1);
+  --btn-subtle-shadow: inset 0 -3px rgba(3, 16, 18, 0.025),
+    inset 0 3px 0 0 rgba(3, 16, 18, 0.0125);
+
+  --card-elevated-shadow: inset 0 -4px rgba(3, 16, 18, 0.025),
+    inset 0 4px 0 0 rgba(3, 16, 18, 0.0125);
+  --card-elevated-shadow-hover: inset 0 -4px rgba(3, 16, 18, 0.05),
+    inset 0 4px 0 0 rgba(255, 255, 255, 0.3);
+
+  --badge-section-shadow: 0 0 0 4px rgba(3, 16, 18, 0.025);
+
+  --focus-ring: 0 0 0 3px var(--ea-teal-200);
+  --focus-ring-color: var(--ea-teal-500);
+
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --duration-fast: 0.12s;
+  --duration-moderate: 0.2s;
+  --transition-common: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+  --pattern-url: url('/img/pattern.png');
+  --pattern-size: 400px auto;
+  --pattern-opacity: 0.4;
+
+  --rule-dashed: 1px dashed var(--border-emphasized);
+
+  /* --- Board-local base styles, scoped so nothing escapes --- */
+  font-family: var(--font-body);
+  font-size: var(--text-md);
+  line-height: var(--lh-normal);
+  color: var(--fg);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.jb-root :where(h1, h2, h3, h4, h5, h6) {
+  font-family: var(--font-heading);
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--tracking-heading);
+  line-height: var(--lh-tight);
+  color: var(--fg);
+  margin: 0;
+}
+
+.jb-root :where(p, ul, ol) {
+  margin: 0;
+}
+
+.jb-root :where(a) {
+  color: var(--link);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+  text-decoration-color: color-mix(in srgb, var(--link) 50%, transparent);
+  transition: color var(--transition-common);
+}
+
+.jb-root :where(a):hover {
+  color: var(--link-hover);
+  text-decoration-color: color-mix(in srgb, var(--link-hover) 70%, transparent);
+}
+
+.jb-root :where(a):focus-visible,
+.jb-root :where(button, input, select, summary):focus-visible {
+  outline: 2px solid var(--focus-ring-color);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+.jb-root :where(*, *::before, *::after) {
+  box-sizing: border-box;
+}

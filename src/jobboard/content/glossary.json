@@ -1,0 +1,180 @@
+{
+  "_comment": [
+    "Mirror of EA Netherlands' human-translated glossary at",
+    "https://effectiefaltruisme.nl/begrippenlijst — spec §9.5.",
+    "",
+    "This is the single largest quality risk removed from the Dutch-generation",
+    "problem, because it is exactly the artefact that needed a native speaker",
+    "and now does not need generating. It is authoritative: do NOT generate a",
+    "glossary, and do not let a model invent an alternative rendering for any",
+    "term listed here.",
+    "",
+    "The `keepInEnglish` list is the part that would otherwise have required a",
+    "Dutch speaker. There is no rule an LLM could infer — it is a set of",
+    "house-style judgements someone already made. Left to itself a model will",
+    "produce something like 'verdienen om te geven', which is wrong and reads",
+    "as a machine translation on sight.",
+    "",
+    "Refresh with `npm run mirror-glossary`, which re-reads the published page.",
+    "Verified against the page contents as described in the spec, 5 Aug 2026."
+  ],
+  "sourceUrl": "https://effectiefaltruisme.nl/begrippenlijst",
+  "lastMirrored": null,
+  "mirroredFrom": "spec Appendix / §9.5 enumeration — re-run mirror-glossary to refresh from the live page",
+
+  "keepInEnglish": [
+    "earning to give",
+    "biosecurity",
+    "counterfactual impact",
+    "hits-based giving",
+    "impact assessment",
+    "impact evaluation",
+    "S-risk",
+    "Cause X"
+  ],
+
+  "terms": [
+    {
+      "en": "AI safety",
+      "nl": "AI-veiligheid",
+      "translate": true,
+      "note": "Translated in the glossary."
+    },
+    {
+      "en": "longtermism",
+      "nl": "langetermijndenken",
+      "translate": true
+    },
+    {
+      "en": "cause prioritisation",
+      "nl": "prioritering van problemen",
+      "translate": true,
+      "note": "Never use 'cause prioritisation' as a bare English noun phrase in public copy."
+    },
+    {
+      "en": "scout mindset",
+      "nl": "verkennende mindset",
+      "translate": true
+    },
+    {
+      "en": "moral circle expansion",
+      "nl": "uitbreiding van je morele cirkel",
+      "translate": true
+    },
+    {
+      "en": "existential risk (x-risk)",
+      "nl": "existentiële risico's (X-risk)",
+      "translate": true,
+      "note": "Dutch term first, English abbreviation in brackets on first use."
+    },
+    {
+      "en": "cost-effectiveness analysis",
+      "nl": "kosteneffectiviteitsanalyse",
+      "translate": true
+    },
+    {
+      "en": "expected value",
+      "nl": "verwachte waarde",
+      "translate": true
+    },
+    {
+      "en": "scope insensitivity",
+      "nl": "scope ongevoeligheid",
+      "translate": true
+    },
+    {
+      "en": "moral uncertainty",
+      "nl": "morele onzekerheid",
+      "translate": true
+    },
+    {
+      "en": "impartiality",
+      "nl": "onpartijdigheid",
+      "translate": true
+    },
+    {
+      "en": "earning to give",
+      "nl": "earning to give",
+      "translate": false,
+      "note": "Kept in English inside Dutch prose. 'verdienen om te geven' is wrong."
+    },
+    {
+      "en": "biosecurity",
+      "nl": "biosecurity",
+      "translate": false
+    },
+    {
+      "en": "counterfactual impact",
+      "nl": "counterfactual impact",
+      "translate": false
+    },
+    {
+      "en": "hits-based giving",
+      "nl": "hits-based giving",
+      "translate": false
+    },
+    {
+      "en": "impact assessment",
+      "nl": "impact assessment",
+      "translate": false
+    },
+    {
+      "en": "impact evaluation",
+      "nl": "impact evaluation",
+      "translate": false
+    },
+    {
+      "en": "S-risk",
+      "nl": "S-risk",
+      "translate": false
+    },
+    {
+      "en": "Cause X",
+      "nl": "Cause X",
+      "translate": false
+    }
+  ],
+
+  "framework": {
+    "name": "ITN-raamwerk",
+    "note": "The spine for /vacatures/waarom-deze-banen (§9.5). Established EA NL house vocabulary rather than something the board invents.",
+    "dimensions": [
+      {
+        "nl": "Belangrijkheid",
+        "en": "Importance",
+        "question": "Hoe groot is het probleem — hoeveel leed of verlies gaat ermee gepaard?"
+      },
+      {
+        "nl": "Oplosbaarheid",
+        "en": "Tractability",
+        "question": "Kun je er iets aan doen? Levert extra inzet meetbaar resultaat op?"
+      },
+      {
+        "nl": "Verwaarlozing",
+        "en": "Neglectedness",
+        "question": "Hoeveel mensen en geld gaan er al naartoe? Waar is de eerstvolgende euro het meest waard?"
+      }
+    ],
+    "fourth": {
+      "nl": "Hefboom",
+      "en": "Leverage",
+      "question": "Hoeveel verandert er door déze functie, meer dan door het werk van één persoon?",
+      "note": "The fourth thing this board looks at that ITN alone does not capture (§9.5)."
+    }
+  },
+
+  "organisations": [
+    { "name": "GiveWell", "note": "Onderzoekt welke goede doelen per euro het meeste goed doen." },
+    { "name": "Giving What We Can", "abbr": "GWWC" },
+    { "name": "Animal Charity Evaluators", "abbr": "ACE" },
+    { "name": "80,000 Hours", "note": "Loopbaanonderzoek. Let op de komma in de naam." },
+    {
+      "name": "Doneer Effectief",
+      "note": "Nederlandse doorgeefluik voor effectieve goede doelen. €24,3 mln gefaciliteerd, vijf betaalde medewerkers."
+    },
+    {
+      "name": "Tien Procent Club",
+      "note": "Nederlandse gemeenschap van mensen die tien procent van hun inkomen weggeven."
+    }
+  ]
+}

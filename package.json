@@ -1,0 +1,48 @@
+{
+  "name": "ea-nl-vacatures",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Curated job board for the Dutch effective altruism community — effectiefaltruisme.nl/vacatures",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "dev": "next dev --port 3300",
+    "build": "next build",
+    "start": "next start --port 3300",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "migrate": "tsx src/scripts/migrate.ts",
+    "seed": "tsx src/scripts/seed.ts",
+    "ingest": "tsx src/scripts/ingest.ts",
+    "classify": "tsx src/scripts/classify.ts",
+    "promote": "tsx src/scripts/promote.ts",
+    "expire": "tsx src/scripts/expire.ts",
+    "grade": "tsx src/scripts/grade.ts",
+    "pipeline": "tsx src/scripts/pipeline.ts",
+    "mirror-glossary": "tsx src/scripts/mirror-glossary.ts",
+    "generate-explainers": "tsx src/scripts/generate-explainers.ts",
+    "test": "tsx --test src/jobboard/pipeline.test.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.115.0",
+    "@electric-sql/pglite": "^0.5.4",
+    "@portabletext/react": "^7.0.1",
+    "@sanity/document-internationalization": "^6.2.28",
+    "@sanity/vision": "^6.9.0",
+    "next": "^16.3.0",
+    "next-sanity": "^13.3.1",
+    "pg": "^8.16.3",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "sanity": "^6.9.0",
+    "sanity-plugin-internationalized-array": "^5.1.25",
+    "styled-components": "^6.1.19"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.0",
+    "@types/pg": "^8.15.6",
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.1",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3"
+  }
+}
