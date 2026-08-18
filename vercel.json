@@ -2,32 +2,26 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "crons": [
     {
-      "comment": "Tier-1 watchlist and the government sitemap, daily before the working day.",
       "path": "/api/cron/ingest",
       "schedule": "0 5 * * *"
     },
     {
-      "comment": "Classify what arrived overnight. Runs after ingest so the queue is fresh.",
       "path": "/api/cron/classify",
       "schedule": "30 6 * * *"
     },
     {
-      "comment": "Promote the shortlist into Sanity as drafts. Nothing is auto-published (spec 8.3).",
       "path": "/api/cron/promote",
       "schedule": "0 7 * * *"
     },
     {
-      "comment": "Auto-unpublish anything past its expiry, so the board cannot fill with dead links.",
       "path": "/api/cron/expire",
       "schedule": "0 8 * * *"
     },
     {
-      "comment": "Weekly HEAD check on crawl-based sources, which cannot use set-difference closure detection (spec 7.8).",
       "path": "/api/cron/linkcheck",
       "schedule": "0 9 * * 1"
     },
     {
-      "comment": "Weekly employer/ATS discovery from the two EA boards. Poll them at most daily; weekly is plenty (spec 7.6).",
       "path": "/api/cron/ingest?source=80000hours&source=probablygood&discover=1",
       "schedule": "0 10 * * 1"
     }

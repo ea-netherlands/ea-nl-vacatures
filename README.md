@@ -245,7 +245,19 @@ and in use before the main repo arrives.
 2. Add the DNS record and deploy to Vercel.
 3. Set the environment from `.env.example`. `CRON_SECRET` is not optional — the
    pipeline endpoints are otherwise public.
-4. `vercel.json` already carries the cron schedule.
+4. `vercel.json` already carries the cron schedule:
+
+   | Cron | Schedule | Why |
+   |---|---|---|
+   | `ingest` | 05:00 daily | Tier-1 watchlist and the government sitemap, before the working day. |
+   | `classify` | 06:30 daily | After ingest, so the queue is fresh. |
+   | `promote` | 07:00 daily | Shortlist into Sanity as drafts. Nothing is auto-published (spec §8.3). |
+   | `expire` | 08:00 daily | Auto-unpublishes past-expiry listings, so the board can't fill with dead links. |
+   | `linkcheck` | 09:00 Mondays | Weekly HEAD check on crawl sources, which can't use set-difference closure detection (spec §7.8). |
+   | `ingest --discover` | 10:00 Mondays | Employer/ATS discovery from 80k and Probably Good. Poll them at most daily; weekly is plenty (spec §7.6). |
+
+   (`vercel.json`'s own schema rejects unrecognised keys on a cron entry, so this
+   table — not an inline `comment` field — is where that reasoning lives.)
 
 Phase 2 (M8, not urgent): copy `src/jobboard/` in, swap `theme/theme.css` for the
 main site's tokens, mount the routes at `/vacatures` and `/en/jobs`, and 301 the
