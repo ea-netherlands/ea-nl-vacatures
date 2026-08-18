@@ -47,6 +47,7 @@ import {
   CAUSE_SUBAREAS,
   type CauseArea,
 } from '../jobboard/taxonomy'
+import { t as translationsFor } from '../jobboard/content/i18n'
 import { slugify } from '../jobboard/lib/text'
 import { log, main, num, parseArgs, printReport } from './_cli'
 
@@ -162,7 +163,9 @@ ${
         : ''
     }This page must be worth reading on its own, independently of the job board. A page that only makes sense as a wrapper around vacancies will neither rank nor deserve to.
 
-For context on search: readers reach pages like this from queries such as "${CAUSE_SEARCH_HINTS[cause]}". Write the page those readers were looking for. Do not stuff keywords.`,
+For context on search: readers reach pages like this from queries such as "${CAUSE_SEARCH_HINTS[cause]}". Write the page those readers were looking for. Do not stuff keywords.
+
+This page's title is fixed by the site's own taxonomy and appears verbatim in its navigation, filters and breadcrumbs elsewhere on the board — it is not yours to phrase. Use exactly this string as the ===TITLE=== block, in whichever language you are writing this page in: Dutch page → "${translationsFor('nl').causeAreas[cause]}", English page → "${translationsFor('en').causeAreas[cause]}". Follow this even where the style guide's general phrasing preferences (e.g. "wereldwijde" over "mondiale") would suggest otherwise — a page whose own body avoids the exact words its H1 uses reads as broken, not careful.`,
   }))
 
   return [method, e2g, ...causes]

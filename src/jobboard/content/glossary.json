@@ -19,7 +19,7 @@
     "Verified against the page contents as described in the spec, 5 Aug 2026."
   ],
   "sourceUrl": "https://effectiefaltruisme.nl/begrippenlijst",
-  "lastMirrored": "2026-08-18T22:29:38.348Z",
+  "lastMirrored": "2026-08-18T22:49:10.673Z",
   "mirroredFrom": "https://effectiefaltruisme.nl/begrippenlijst",
   "keepInEnglish": [
     "earning to give",
@@ -316,6 +316,54 @@
       "nl": "Utilitarisme",
       "translate": true,
       "note": "van de begrippenlijst: Utilitarisme is de familie van morele theorieën volgens welke de juistheid van handelingen uitsluitend wordt bepaald door de totale som van welzijn die ze voort"
+    },
+    {
+      "en": "Animal Charity Evaluators",
+      "nl": "Animal Charity Evaluators (ACE)",
+      "translate": true,
+      "note": "van de begrippenlijst: Animal Charity Evaluators (ACE) is een internationale organisatie die liefdadigheidsevaluaties uitvoert om de organisaties te identificeren die waarschijnlijk h"
+    },
+    {
+      "en": "Centre for Effective Altruism",
+      "nl": "Centre for Effective Altruism (CEA)",
+      "translate": true,
+      "note": "van de begrippenlijst: De \"Centre for Effective Altruism\" (CEA) (CEA) is een non-profitorganisatie die wereldwijd werkt om de principes van effectief altruïsme te promoten en de gemee"
+    },
+    {
+      "en": "Disability Adjusted Life-Year",
+      "nl": "Disability Adjusted Life-Year (DALY)",
+      "translate": true,
+      "note": "van de begrippenlijst: \"De DALY (Disability-Adjusted Life Year) meet de ziektelast door het combineren van verloren levensjaren door voortijdige sterfte (YLL) en jaren geleefd met een"
+    },
+    {
+      "en": "Effectief altruïsme",
+      "nl": "Effectief altruïsme (EA)",
+      "translate": true,
+      "note": "van de begrippenlijst: Effectief altruïsme is een filosofie, een onderzoeksveld en een wereldwijde gemeenschap die zich richt op het gebruik van bewijs en rede om zoveel mogelijk goed"
+    },
+    {
+      "en": "Existentiële risico's",
+      "nl": "Existentiële risico's (X-risk)",
+      "translate": true,
+      "note": "van de begrippenlijst: Existentiële risico's (of X-risk) is het risico van een gebeurtenis die ofwel menselijke uitsterving kan veroorzaken of permanent en ernstig de langetermijnpote"
+    },
+    {
+      "en": "Giving What We Can",
+      "nl": "Giving What We Can (GWWC)",
+      "translate": true,
+      "note": "van de begrippenlijst: Giving What We Can (GWWC) is een internationale organisatie die zich inzet om mensen te inspireren en te ondersteunen om meer te geven, en effectiever te geven."
+    },
+    {
+      "en": "Global Catastrophic Risk",
+      "nl": "Global Catastrophic Risk (GCR)",
+      "translate": true,
+      "note": "van de begrippenlijst: Global Catastrophic Risk (GCR) is een hypothetische toekomstige gebeurtenis die het menselijk welzijn op wereldschaal zou kunnen schaden."
+    },
+    {
+      "en": "Quality-Adjusted Life Year",
+      "nl": "Quality-Adjusted Life Year (QALY)",
+      "translate": true,
+      "note": "van de begrippenlijst: De QALY (Quality-Adjusted Life Year) meet gezondheidsvoordelen door levensjaren die gewonnen zijn te combineren met de kwaliteit van die jaren, geschaald van 0 "
     },
     {
       "en": "Animal Charity Evaluators",
