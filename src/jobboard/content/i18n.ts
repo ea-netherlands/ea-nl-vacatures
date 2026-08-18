@@ -77,10 +77,12 @@ export type InternationalBoardId = (typeof INTERNATIONAL_BOARDS)[number]['id']
 /** External destinations for the onward step (§4). */
 export const ONWARD_LINKS = {
   introCourse: 'https://effectiefaltruisme.nl/introductiecursus',
-  newsletter: 'https://effectiefaltruisme.nl/nieuwsbrief',
+  // The site itself now routes its own "Nieuwsbrief" nav label to /contact
+  // rather than a dedicated signup page — matched here rather than left 404ing.
+  newsletter: 'https://effectiefaltruisme.nl/contact',
   glossary: 'https://effectiefaltruisme.nl/begrippenlijst',
-  careerGuide: 'https://effectiefaltruisme.nl/loopbaan',
-  community: 'https://effectiefaltruisme.nl/community',
+  // The site nav renamed this from /loopbaan at some point; verified live.
+  careerGuide: 'https://effectiefaltruisme.nl/carrieregids',
   doneerEffectief: 'https://doneereffectief.nl',
   tienProcentClub: 'https://tienprocentclub.nl',
   contact: 'mailto:jobs@effectiefaltruisme.nl',

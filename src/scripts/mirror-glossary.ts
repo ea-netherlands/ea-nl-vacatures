@@ -37,9 +37,11 @@ const CORPUS_URLS = [
   'https://effectiefaltruisme.nl/begrippenlijst',
   'https://effectiefaltruisme.nl',
   'https://effectiefaltruisme.nl/introductiecursus',
-  'https://effectiefaltruisme.nl/loopbaan',
-  'https://effectiefaltruisme.nl/doneren',
-  'https://effectiefaltruisme.nl/dierenwelzijn',
+  // Site nav changed since the spec was written: no /loopbaan, /doneren or
+  // /dierenwelzijn hub pages exist any more. Verified live (Aug 2026).
+  'https://effectiefaltruisme.nl/carrieregids',
+  'https://effectiefaltruisme.nl/donatie-gids-effectieve-goede-doelen',
+  'https://effectiefaltruisme.nl/animal-welfare',
 ]
 
 /**

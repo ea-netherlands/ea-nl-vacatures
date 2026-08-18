@@ -19,9 +19,8 @@
     "Verified against the page contents as described in the spec, 5 Aug 2026."
   ],
   "sourceUrl": "https://effectiefaltruisme.nl/begrippenlijst",
-  "lastMirrored": null,
-  "mirroredFrom": "spec Appendix / §9.5 enumeration — re-run mirror-glossary to refresh from the live page",
-
+  "lastMirrored": "2026-08-18T22:29:38.348Z",
+  "mirroredFrom": "https://effectiefaltruisme.nl/begrippenlijst",
   "keepInEnglish": [
     "earning to give",
     "biosecurity",
@@ -32,7 +31,6 @@
     "S-risk",
     "Cause X"
   ],
-
   "terms": [
     {
       "en": "AI safety",
@@ -132,9 +130,242 @@
       "en": "Cause X",
       "nl": "Cause X",
       "translate": false
+    },
+    {
+      "en": "A\nAI-veiligheid",
+      "nl": "A\nAI-veiligheid",
+      "translate": true,
+      "note": "van de begrippenlijst: AI-veiligheid (AI safety) is het vakgebied of de praktijk die zich richt op het waarborgen dat kunstmatige intelligentiesystemen op een veilige en voor de mensh"
+    },
+    {
+      "en": "Altruïsme",
+      "nl": "Altruïsme",
+      "translate": true,
+      "note": "van de begrippenlijst: Altruïsme is het principe of de praktijk van zorgen voor het welzijn van anderen."
+    },
+    {
+      "en": "Animal Charity Evaluators",
+      "nl": "Animal Charity Evaluators (ACE)",
+      "translate": true,
+      "note": "van de begrippenlijst: Animal Charity Evaluators (ACE) is een internationale organisatie die liefdadigheidsevaluaties uitvoert om de organisaties te identificeren die waarschijnlijk h"
+    },
+    {
+      "en": "B\nBiosecurity",
+      "nl": "B\nBiosecurity",
+      "translate": true,
+      "note": "van de begrippenlijst: Biosecurity omvat de procedures, praktijken en andere maatregelen die worden gebruikt om risico's van biologische agentia (bijv. virussen, bacteriën) of hun pro"
+    },
+    {
+      "en": "C\nCause X",
+      "nl": "C\nCause X",
+      "translate": true,
+      "note": "van de begrippenlijst: \"Cause X\" is een onbekend wereldprobleem dat momenteel wordt verwaarloosd door de gemeenschap van effectief altruïsme, meestal vanwege een vorm van morele blind"
+    },
+    {
+      "en": "Centre for Effective Altruism",
+      "nl": "Centre for Effective Altruism (CEA)",
+      "translate": true,
+      "note": "van de begrippenlijst: De \"Centre for Effective Altruism\" (CEA) (CEA) is een non-profitorganisatie die wereldwijd werkt om de principes van effectief altruïsme te promoten en de gemee"
+    },
+    {
+      "en": "Consequentialisme",
+      "nl": "Consequentialisme",
+      "translate": true,
+      "note": "van de begrippenlijst: Consequentialisme is de ethische visie dat de juistheid van een handeling uitsluitend afhangt van de gevolgen ervan. Varianten verschillen in welke uitkomsten b"
+    },
+    {
+      "en": "D\nDe 10% Pledge",
+      "nl": "D\nDe 10% Pledge",
+      "translate": true,
+      "note": "van de begrippenlijst: De 10% Pledge is een wereldwijde publieke toezegging om ten minste 10% van het inkomen te geven aan de organisaties waarvan u gelooft dat zij het het effectiefs"
+    },
+    {
+      "en": "Deontologie",
+      "nl": "Deontologie",
+      "translate": true,
+      "note": "van de begrippenlijst: Deontologie is de visie dat bepaalde handelingen moreel verplicht of verboden zijn op basis van regels of plichten, ongeacht de gevolgen. Het benadrukt principe"
+    },
+    {
+      "en": "Deugdethiek",
+      "nl": "Deugdethiek",
+      "translate": true,
+      "note": "van de begrippenlijst: Deugdethiek stelt dat moraliteit afhangt van het karakter van een persoon in plaats van specifieke handelingen of gevolgen. Geworteld in het denken van Aristote"
+    },
+    {
+      "en": "Disability Adjusted Life-Year",
+      "nl": "Disability Adjusted Life-Year (DALY)",
+      "translate": true,
+      "note": "van de begrippenlijst: \"De DALY (Disability-Adjusted Life Year) meet de ziektelast door het combineren van verloren levensjaren door voortijdige sterfte (YLL) en jaren geleefd met een"
+    },
+    {
+      "en": "Doneer Effectief",
+      "nl": "Doneer Effectief",
+      "translate": true,
+      "note": "van de begrippenlijst: Doneer Effectief is een Nederlandse non-profitorganisatie die Nederlandse en Belgische burgers helpt om goede doelen te steunen die beoordeeld zijn als zeer eff"
+    },
+    {
+      "en": "E\nEA Forum",
+      "nl": "E\nEA Forum",
+      "translate": true,
+      "note": "van de begrippenlijst: Het Effective Altruism Forum is een platform beheerd door het Centre for Effective Altruism om discussies die relevant zijn voor effectief altruïsme te facilite"
+    },
+    {
+      "en": "EA Global/EAGx",
+      "nl": "EA Global/EAGx",
+      "translate": true,
+      "note": "van de begrippenlijst: EA Global (EAG) en EAGx zijn conferenties voor zowel gevestigde als nieuwe leden van de effectief altruïsme (EA) gemeenschap. Elk evenement duurt doorgaans 2-3 "
+    },
+    {
+      "en": "Effectief altruïsme",
+      "nl": "Effectief altruïsme (EA)",
+      "translate": true,
+      "note": "van de begrippenlijst: Effectief altruïsme is een filosofie, een onderzoeksveld en een wereldwijde gemeenschap die zich richt op het gebruik van bewijs en rede om zoveel mogelijk goed"
+    },
+    {
+      "en": "Existentiële risico's",
+      "nl": "Existentiële risico's (X-risk)",
+      "translate": true,
+      "note": "van de begrippenlijst: Existentiële risico's (of X-risk) is het risico van een gebeurtenis die ofwel menselijke uitsterving kan veroorzaken of permanent en ernstig de langetermijnpote"
+    },
+    {
+      "en": "G\nGiveWell",
+      "nl": "G\nGiveWell",
+      "translate": true,
+      "note": "van de begrippenlijst: GiveWell is een internationale non-profitorganisatie die zich toelegt op het vinden van uitstekende donatiemogelijkheden en het publiceren van de volledige deta"
+    },
+    {
+      "en": "Giving What We Can",
+      "nl": "Giving What We Can (GWWC)",
+      "translate": true,
+      "note": "van de begrippenlijst: Giving What We Can (GWWC) is een internationale organisatie die zich inzet om mensen te inspireren en te ondersteunen om meer te geven, en effectiever te geven."
+    },
+    {
+      "en": "Global Catastrophic Risk",
+      "nl": "Global Catastrophic Risk (GCR)",
+      "translate": true,
+      "note": "van de begrippenlijst: Global Catastrophic Risk (GCR) is een hypothetische toekomstige gebeurtenis die het menselijk welzijn op wereldschaal zou kunnen schaden."
+    },
+    {
+      "en": "Global Priorities Research",
+      "nl": "Global Priorities Research",
+      "translate": true,
+      "note": "van de begrippenlijst: Global Priorities Research is onderzoek dat probeert te bepalen hoe we het meeste goed kunnen doen met onze beperkte middelen. Dit veld maakt gebruik van thema'"
+    },
+    {
+      "en": "H\nHits-based giving",
+      "nl": "H\nHits-based giving",
+      "translate": true,
+      "note": "van de begrippenlijst: Hits-based giving is een filantropische strategie die de verwachte waarde maximaliseert door het omarmen van kansen met een hoog risico en een hoge beloning, wa"
+    },
+    {
+      "en": "I\nITN-raamwerk",
+      "nl": "I\nITN-raamwerk",
+      "translate": true,
+      "note": "van de begrippenlijst: Het ITN-raamwerk helpt bij het identificeren van invloedrijke oorzaken door drie factoren te beoordelen: 1. Belangrijkheid (hoe groot en ernstig het probleem is"
+    },
+    {
+      "en": "K\nKosteneffectiviteitsanalyse",
+      "nl": "K\nKosteneffectiviteitsanalyse",
+      "translate": true,
+      "note": "van de begrippenlijst: Kosteneffectiviteitsanalyse is een vorm van economische analyse die de relatieve kosten en resultaten (effecten) van verschillende handelwijzen vergelijkt. De u"
+    },
+    {
+      "en": "L\nLangetermijndenken",
+      "nl": "L\nLangetermijndenken",
+      "translate": true,
+      "note": "van de begrippenlijst: Longtermisme is de visie dat het positief beïnvloeden van de verre toekomst een belangrijke morele prioriteit van onze tijd is."
+    },
+    {
+      "en": "Lijden van wilde dieren",
+      "nl": "Lijden van wilde dieren",
+      "translate": true,
+      "note": "van de begrippenlijst: Het welzijn van wilde dieren is het welzijn van niet-menselijke dieren onder natuurlijke omstandigheden, en de studie van interventies gericht op het verbeteren"
+    },
+    {
+      "en": "M\nMorele onzekerheid",
+      "nl": "M\nMorele onzekerheid",
+      "translate": true,
+      "note": "van de begrippenlijst: Morele onzekerheid is wanneer we niet zeker weten welke morele theorie, zoals utilitarisme, deontologie of deugdethiek, correct is, maar toch moeten handelen. H"
+    },
+    {
+      "en": "O\nOnpartijdigheid",
+      "nl": "O\nOnpartijdigheid",
+      "translate": true,
+      "note": "van de begrippenlijst: Onpartijdigheid is de drijfveer om de middelen te kiezen die aan altruïsme worden besteed, om te streven naar het helpen van degenen die het het meest nodig heb"
+    },
+    {
+      "en": "Quality-Adjusted Life Year",
+      "nl": "Quality-Adjusted Life Year (QALY)",
+      "translate": true,
+      "note": "van de begrippenlijst: De QALY (Quality-Adjusted Life Year) meet gezondheidsvoordelen door levensjaren die gewonnen zijn te combineren met de kwaliteit van die jaren, geschaald van 0 "
+    },
+    {
+      "en": "R\nRationaliteit",
+      "nl": "R\nRationaliteit",
+      "translate": true,
+      "note": "van de begrippenlijst: Rationaliteit betekent bewust helder denken om de waarheid te vinden, om te gaan met onzekerheid en je doelen te bereiken. Het gaat over het begrijpen van hoe j"
+    },
+    {
+      "en": "S\nS-risk",
+      "nl": "S\nS-risk",
+      "translate": true,
+      "note": "van de begrippenlijst: S-risico's (ook wel lijdenrisico's of risico's op astronomisch lijden genoemd) zijn risico's van gebeurtenissen die lijden veroorzaken in kosmisch significante "
+    },
+    {
+      "en": "Utilitarisme",
+      "nl": "Utilitarisme",
+      "translate": true,
+      "note": "van de begrippenlijst: Utilitarisme is de familie van morele theorieën volgens welke de juistheid van handelingen uitsluitend wordt bepaald door de totale som van welzijn die ze voort"
+    },
+    {
+      "en": "Animal Charity Evaluators",
+      "nl": "Animal Charity Evaluators (ACE)",
+      "translate": true,
+      "note": "van de begrippenlijst: Animal Charity Evaluators (ACE) is een internationale organisatie die liefdadigheidsevaluaties uitvoert om de organisaties te identificeren die waarschijnlijk h"
+    },
+    {
+      "en": "Centre for Effective Altruism",
+      "nl": "Centre for Effective Altruism (CEA)",
+      "translate": true,
+      "note": "van de begrippenlijst: De \"Centre for Effective Altruism\" (CEA) (CEA) is een non-profitorganisatie die wereldwijd werkt om de principes van effectief altruïsme te promoten en de gemee"
+    },
+    {
+      "en": "Disability Adjusted Life-Year",
+      "nl": "Disability Adjusted Life-Year (DALY)",
+      "translate": true,
+      "note": "van de begrippenlijst: \"De DALY (Disability-Adjusted Life Year) meet de ziektelast door het combineren van verloren levensjaren door voortijdige sterfte (YLL) en jaren geleefd met een"
+    },
+    {
+      "en": "Effectief altruïsme",
+      "nl": "Effectief altruïsme (EA)",
+      "translate": true,
+      "note": "van de begrippenlijst: Effectief altruïsme is een filosofie, een onderzoeksveld en een wereldwijde gemeenschap die zich richt op het gebruik van bewijs en rede om zoveel mogelijk goed"
+    },
+    {
+      "en": "Existentiële risico's",
+      "nl": "Existentiële risico's (X-risk)",
+      "translate": true,
+      "note": "van de begrippenlijst: Existentiële risico's (of X-risk) is het risico van een gebeurtenis die ofwel menselijke uitsterving kan veroorzaken of permanent en ernstig de langetermijnpote"
+    },
+    {
+      "en": "Giving What We Can",
+      "nl": "Giving What We Can (GWWC)",
+      "translate": true,
+      "note": "van de begrippenlijst: Giving What We Can (GWWC) is een internationale organisatie die zich inzet om mensen te inspireren en te ondersteunen om meer te geven, en effectiever te geven."
+    },
+    {
+      "en": "Global Catastrophic Risk",
+      "nl": "Global Catastrophic Risk (GCR)",
+      "translate": true,
+      "note": "van de begrippenlijst: Global Catastrophic Risk (GCR) is een hypothetische toekomstige gebeurtenis die het menselijk welzijn op wereldschaal zou kunnen schaden."
+    },
+    {
+      "en": "Quality-Adjusted Life Year",
+      "nl": "Quality-Adjusted Life Year (QALY)",
+      "translate": true,
+      "note": "van de begrippenlijst: De QALY (Quality-Adjusted Life Year) meet gezondheidsvoordelen door levensjaren die gewonnen zijn te combineren met de kwaliteit van die jaren, geschaald van 0 "
     }
   ],
-
   "framework": {
     "name": "ITN-raamwerk",
     "note": "The spine for /vacatures/waarom-deze-banen (§9.5). Established EA NL house vocabulary rather than something the board invents.",
@@ -162,12 +393,23 @@
       "note": "The fourth thing this board looks at that ITN alone does not capture (§9.5)."
     }
   },
-
   "organisations": [
-    { "name": "GiveWell", "note": "Onderzoekt welke goede doelen per euro het meeste goed doen." },
-    { "name": "Giving What We Can", "abbr": "GWWC" },
-    { "name": "Animal Charity Evaluators", "abbr": "ACE" },
-    { "name": "80,000 Hours", "note": "Loopbaanonderzoek. Let op de komma in de naam." },
+    {
+      "name": "GiveWell",
+      "note": "Onderzoekt welke goede doelen per euro het meeste goed doen."
+    },
+    {
+      "name": "Giving What We Can",
+      "abbr": "GWWC"
+    },
+    {
+      "name": "Animal Charity Evaluators",
+      "abbr": "ACE"
+    },
+    {
+      "name": "80,000 Hours",
+      "note": "Loopbaanonderzoek. Let op de komma in de naam."
+    },
     {
       "name": "Doneer Effectief",
       "note": "Nederlandse doorgeefluik voor effectieve goede doelen. €24,3 mln gefaciliteerd, vijf betaalde medewerkers."
