@@ -13,7 +13,7 @@
 
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { Container, OnwardStep, Section } from '../components/Chrome'
+import { Container, InternationalNote, OnwardStep, Section } from '../components/Chrome'
 import { Icon } from '../components/Icon'
 import { noteFor } from '../components/ListingCard'
 import { Callout } from '../components/Prose'
@@ -167,6 +167,11 @@ export async function DetailPage({ locale, slug }: { locale: Locale; slug: strin
               {copy.detailFrameLink} <Icon name="arrow-right" />
             </Link>
           </p>
+
+          {/* Most visitors arrive here rather than at the index, so the
+              look-elsewhere-first point has to be made on this page too — in one
+              line, above our own editorial pitch rather than after it. */}
+          <InternationalNote locale={locale} />
 
           {/* THE editorial field, above the role summary, visually distinct. */}
           {note ? (

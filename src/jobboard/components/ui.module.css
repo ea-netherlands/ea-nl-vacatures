@@ -535,3 +535,117 @@
   gap: var(--space-6);
   grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
 }
+
+/* ---------------------------------------------------------------------------
+   The international-first band and the climate note.
+
+   Both are informational rather than interactive, so they lean on the dashed
+   rule motif rather than the elevated card shadow — the pressable-key shadow is
+   reserved for things you can press.
+   --------------------------------------------------------------------------- */
+
+.intlBand {
+  border: 1px dashed var(--border-emphasized);
+  border-radius: var(--radius-card);
+  background: var(--primary-subtle);
+  padding: var(--space-6);
+  margin-bottom: var(--space-8);
+  max-width: var(--container-prose);
+}
+
+.intlHeading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-xl);
+  margin-bottom: var(--space-3);
+}
+
+.intlBoards {
+  list-style: none;
+  margin: var(--space-5) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.intlBoard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-0-5);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-input);
+  background: var(--bg);
+  text-decoration: none;
+  color: inherit;
+  transition: var(--transition-common);
+}
+
+.intlBoard:hover {
+  border-color: var(--primary-solid);
+}
+
+.intlBoardName {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1-5);
+  font-weight: var(--fw-semibold);
+  color: var(--link);
+}
+
+.intlBoardBlurb {
+  font-size: var(--text-sm);
+  color: var(--fg-muted);
+}
+
+/* Set off by a rule rather than a heading: this is the turn from "look
+   elsewhere" to "and here is why we exist", and it should read as a change of
+   address rather than a new topic. */
+.intlFallback {
+  border-top: var(--rule-dashed);
+  margin-top: var(--space-5);
+  padding-top: var(--space-5);
+  color: var(--fg-muted);
+  max-width: 62ch;
+}
+
+.intlShort {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--fg-muted);
+  margin-bottom: var(--space-6);
+}
+
+.climateNote {
+  border: 1px dashed var(--border-emphasized);
+  border-radius: var(--radius-card);
+  padding: var(--space-6);
+  max-width: var(--container-prose);
+  margin-top: var(--space-8);
+  background: var(--bg-subtle);
+}
+
+/* Cause sub-areas: display text answering "does my field count?", so it reads
+   as a plain list rather than a set of filters you could click. */
+.subareaList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  max-width: var(--container-prose);
+}
+
+.subareaList li {
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background: var(--bg-subtle);
+  font-size: var(--text-sm);
+  color: var(--fg-muted);
+}

@@ -35,8 +35,10 @@ export const ROUTES = {
     detail: (slug: string) => `/vacatures/${slug}`,
     employers: '/vacatures/organisaties',
     employer: (slug: string) => `/vacatures/organisaties/${slug}`,
-    causes: '/vacatures/oorzaken',
-    cause: (slug: string) => `/vacatures/oorzaken/${slug}`,
+    // 'probleemgebieden', not 'oorzaken': the Dutch for a cause area is a
+    // problem area, and 'oorzaak' means a root cause of something.
+    causes: '/vacatures/probleemgebieden',
+    cause: (slug: string) => `/vacatures/probleemgebieden/${slug}`,
     method: '/vacatures/waarom-deze-banen',
     earningToGive: '/vacatures/earning-to-give',
   },
@@ -52,6 +54,26 @@ export const ROUTES = {
   },
 } as const
 
+/**
+ * The three international boards we send people to *first* (§4a).
+ *
+ * This ordering is deliberate and the board's central piece of honesty: someone
+ * optimising hard for impact should look here before looking at us. Naming them
+ * up front costs us traffic and buys the only thing that makes the rest of the
+ * board credible.
+ */
+export const INTERNATIONAL_BOARDS = [
+  { id: '80k', name: '80,000 Hours', url: 'https://jobs.80000hours.org' },
+  { id: 'probably-good', name: 'Probably Good', url: 'https://jobs.probablygood.org' },
+  {
+    id: 'ea-opportunities',
+    name: 'EA Opportunities',
+    url: 'https://www.effectivealtruism.org/opportunities',
+  },
+] as const
+
+export type InternationalBoardId = (typeof INTERNATIONAL_BOARDS)[number]['id']
+
 /** External destinations for the onward step (§4). */
 export const ONWARD_LINKS = {
   introCourse: 'https://effectiefaltruisme.nl/introductiecursus',
@@ -62,12 +84,28 @@ export const ONWARD_LINKS = {
   doneerEffectief: 'https://doneereffectief.nl',
   tienProcentClub: 'https://tienprocentclub.nl',
   contact: 'mailto:jobs@effectiefaltruisme.nl',
+  effectiveEnvironmentalism: 'https://www.effectiveenvironmentalism.org',
 } as const
 
 type Strings = {
   boardName: string
   boardTagline: string
   skipToContent: string
+
+  // The international-first statement (§4a) — index, method page and every
+  // listing. `intlShort` is the compact form for a listing page, where a full
+  // section would be nagging but silence would be misleading.
+  intlHeading: string
+  intlBody: string[]
+  intlBoardBlurbs: Record<InternationalBoardId, string>
+  intlFallback: string
+  intlShort: string
+  intlLink: string
+
+  // Why climate is not on the board (§5.1)
+  climateHeading: string
+  climateBody: string[]
+  climateReferralLink: string
 
   // Index
   indexTitle: string
@@ -152,6 +190,7 @@ type Strings = {
   disagreeBody: string
 
   causeAreas: Record<CauseArea, string>
+  causeSubareas: Record<CauseArea, string[]>
   leverage: Record<LeverageType, string>
   locationModes: Record<LocationMode, string>
   languageRequirements: Record<LanguageRequirement, string>
@@ -161,13 +200,38 @@ type Strings = {
 
 const nl: Strings = {
   boardName: 'Vacatures',
-  boardTagline: 'Banen in Nederland waarmee je veel goed kunt doen',
+  boardTagline:
+    'Hoe je vanuit Nederland werkt aan de grootste en meest verwaarloosde problemen ter wereld',
   skipToContent: 'Naar de inhoud',
+
+  intlHeading: 'Kijk eerst buiten Nederland',
+  intlBody: [
+    'Als je je loopbaan echt inricht op zoveel goed mogelijk doen, liggen de sterkste kansen meestal niet in Nederland. De organisaties die het hardst aan deze problemen trekken zitten voor een groot deel in Londen, de Bay Area, Washington en Nairobi. Deze drie lijsten zijn daar beter in dan wij, en je zou ze eerst moeten bekijken.',
+  ],
+  intlBoardBlurbs: {
+    '80k': 'De grootste vacaturelijst bij organisaties die aan deze problemen werken, met uitgebreide loopbaanadviezen erbij.',
+    'probably-good':
+      'Vacatures en loopbaanadvies, met meer aandacht voor mondiale gezondheid en dierenwelzijn.',
+    'ea-opportunities':
+      'Ook stages, beurzen, onderzoeksprogramma’s en kortere projecten — nuttig als je nog niet aan een vaste baan toe bent.',
+  },
+  intlFallback:
+    'Verhuizen kan niet voor iedereen. Een partner met een baan hier, kinderen op school, een zorgtaak, een verblijfsvergunning — of je wilt simpelweg niet weg. Dat is een redelijke afweging en geen gebrek aan toewijding. Voor die situatie is dit bord gemaakt: de beste mogelijkheden die we in Nederland kunnen vinden. We zeggen het liever meteen dan dat je er later zelf achter komt.',
+  intlShort:
+    'Zit je niet vast aan Nederland? Kijk dan eerst bij 80,000 Hours, Probably Good en EA Opportunities — daar staan de sterkste kansen.',
+  intlLink: 'Waarom we dit zeggen',
+
+  climateHeading: 'Waarom staat klimaat er niet bij?',
+  climateBody: [
+    'Niet omdat we klimaatverandering onbelangrijk vinden. Het staat er niet bij omdat het in Nederland niet verwaarloosd is: er gaat al veel geld, talent en politieke aandacht naartoe. Dat is goed nieuws. De problemen op dit bord hebben die aandacht niet, en dat is precies waarom we ze eruit lichten.',
+    'Welk klimaatwerk dan wél ondergewaardeerd is, blijft een goede vraag — en een aparte. Effective Environmentalism stelt die vraag serieus en heeft er onderzoek en een gemeenschap omheen. Dat is een betere plek om te beginnen dan een handvol werkgevers hier zou zijn geweest.',
+  ],
+  climateReferralLink: 'Ga naar Effective Environmentalism',
 
   indexTitle: 'Vacatures',
   indexIntroHeading: 'Wat staat hier?',
   indexIntroBody: [
-    'Dit is een kleine, met de hand samengestelde lijst met banen in Nederland waarmee je volgens ons ongewoon veel goed kunt doen.',
+    'Dit bord gaat over één vraag: hoe werk je vanuit Nederland aan de grootste en meest verwaarloosde problemen ter wereld? We houden vier probleemgebieden bij en zoeken de Nederlandse functies die er echt iets aan veranderen.',
     'De meeste staan bij werkgevers die zelf niet zouden zeggen dat ze aan een groot wereldprobleem werken: een ministerie, een bank, een toezichthouder, een universiteit. Bij elke vacature schrijven we één of twee zinnen over waar de hefboom zit — waarom déze functie meer verandert dan het werk van één persoon.',
     'We houden de lijst kort. Vijfentwintig goede vacatures zijn meer waard dan tweehonderd middelmatige.',
   ],
@@ -249,14 +313,38 @@ const nl: Strings = {
     'Dit bord wordt samengesteld door mensen die het mis kunnen hebben. Vind je dat een vacature er niet op hoort, of mis je er een, mail ons dan.',
 
   causeAreas: {
-    'ai-safety-governance': 'AI-veiligheid en -beleid',
-    'biosecurity-pandemics': 'Biosecurity en pandemieën',
-    'animal-welfare-alt-protein': 'Dierenwelzijn en eiwittransitie',
-    'global-health-development': 'Mondiale gezondheid en ontwikkeling',
-    'global-catastrophic-risk': 'Mondiale catastrofale risico’s',
-    'effective-giving-meta': 'Effectief geven',
-    climate: 'Klimaat en biodiversiteit',
-    'career-capital': 'Loopbaankapitaal',
+    'global-health-wellbeing': 'Mondiale gezondheid en welzijn',
+    'farmed-animal-welfare': 'Dierenwelzijn in de veehouderij',
+    'global-catastrophic-risks': 'Mondiale catastrofale risico’s',
+    'better-futures': 'Betere toekomsten',
+  },
+  // Sub-areas are display text, not a filter. They exist because four
+  // categories are too coarse to tell a reader what actually falls inside one.
+  causeSubareas: {
+    'global-health-wellbeing': [
+      'Mondiale gezondheid en infectieziekten',
+      'Ontwikkelingsfinanciering en hulpbeleid',
+      'Zorgstelsels in lage- en middeninkomenslanden',
+      'Loodvergiftiging en luchtkwaliteit',
+      'Psychische gezondheid op schaal',
+    ],
+    'farmed-animal-welfare': [
+      'Campagnes richting bedrijven en belangenbehartiging',
+      'Dierenrecht en handhaving',
+      'Kweekvlees, fermentatie en plantaardige eiwitten',
+      'Beleid en financiering van de eiwittransitie',
+    ],
+    'global-catastrophic-risks': [
+      'AI die zich aan menselijke controle onttrekt, en catastrofaal misbruik',
+      'Biosecurity, pandemische paraatheid en dual-use onderzoek',
+      'Nucleaire veiligheid en conflict tussen grootmachten',
+    ],
+    'better-futures': [
+      'AI-beleid, machtsconcentratie en het vastleggen van waarden',
+      'Kwaliteit en weerbaarheid van democratische instituties',
+      'Uitbreiding van je morele cirkel, inclusief digitale wezens (digital minds)',
+      'Ruimtebeleid',
+    ],
   },
   leverage: {
     'capital-allocation': 'Geldstromen sturen',
@@ -296,13 +384,38 @@ const nl: Strings = {
 
 const en: Strings = {
   boardName: 'Jobs',
-  boardTagline: 'Jobs in the Netherlands where you can do a lot of good',
+  boardTagline:
+    'How to work on the world’s largest and most neglected problems from the Netherlands',
   skipToContent: 'Skip to content',
+
+  intlHeading: 'Look outside the Netherlands first',
+  intlBody: [
+    'If you are genuinely optimising your career for impact, the strongest opportunities are usually not in the Netherlands. Much of the work on these problems is concentrated in London, the Bay Area, Washington and Nairobi. These three boards cover it better than we do, and you should look at them first.',
+  ],
+  intlBoardBlurbs: {
+    '80k': 'The largest list of roles at organisations working on these problems, with detailed career research alongside it.',
+    'probably-good':
+      'Roles and career advice, with more weight on global health and animal welfare.',
+    'ea-opportunities':
+      'Also internships, fellowships, research programmes and shorter projects — useful if a permanent job is not the right next step.',
+  },
+  intlFallback:
+    'Not everyone can move. A partner with a job here, children in school, caring responsibilities, a residence permit — or you simply do not want to leave. That is a reasonable trade-off, not a lack of commitment. This board is built for that situation: the best options we can find in the Netherlands. We would rather say so up front than let you work it out later.',
+  intlShort:
+    'Free to leave the Netherlands? Look at 80,000 Hours, Probably Good and EA Opportunities first — the strongest opportunities are there.',
+  intlLink: 'Why we say this',
+
+  climateHeading: 'Why is climate not here?',
+  climateBody: [
+    'Not because we think climate change does not matter. It is not here because in the Netherlands it is not neglected: a great deal of money, talent and political attention already goes to it. That is good news. The problems on this board do not have that attention, which is exactly why we single them out.',
+    'Which climate work is genuinely underrated remains a good question — and a separate one. Effective Environmentalism takes it seriously and has research and a community around it. That is a better place to start than a handful of employers here would have been.',
+  ],
+  climateReferralLink: 'Go to Effective Environmentalism',
 
   indexTitle: 'Jobs',
   indexIntroHeading: 'What is this?',
   indexIntroBody: [
-    'A small, hand-picked list of jobs in the Netherlands where we think you can do an unusual amount of good.',
+    'This board is about one question: how do you work on the world’s largest and most neglected problems from the Netherlands? We track four problem areas and look for the Dutch roles that genuinely move them.',
     'Most are at employers who would not say they work on a big global problem: a ministry, a bank, a regulator, a university. For each one we write a sentence or two about where the leverage sits — why this particular role changes more than one person’s work.',
     'We keep the list short. Twenty-five good listings are worth more than two hundred mediocre ones.',
   ],
@@ -383,14 +496,36 @@ const en: Strings = {
     'This board is curated by people who can be wrong. If you think a listing does not belong, or we are missing one, email us.',
 
   causeAreas: {
-    'ai-safety-governance': 'AI safety and governance',
-    'biosecurity-pandemics': 'Biosecurity and pandemics',
-    'animal-welfare-alt-protein': 'Animal welfare and alternative proteins',
-    'global-health-development': 'Global health and development',
-    'global-catastrophic-risk': 'Global catastrophic risk',
-    'effective-giving-meta': 'Effective giving',
-    climate: 'Climate and biodiversity',
-    'career-capital': 'Career capital',
+    'global-health-wellbeing': 'Global health and wellbeing',
+    'farmed-animal-welfare': 'Farmed animal welfare',
+    'global-catastrophic-risks': 'Global catastrophic risks',
+    'better-futures': 'Better futures',
+  },
+  causeSubareas: {
+    'global-health-wellbeing': [
+      'Global health and infectious disease',
+      'Development finance and aid policy',
+      'Health systems in low- and middle-income countries',
+      'Lead exposure and air quality',
+      'Mental health at scale',
+    ],
+    'farmed-animal-welfare': [
+      'Corporate campaigns and advocacy',
+      'Animal law and enforcement',
+      'Cultivated meat, fermentation and plant-based protein',
+      'Protein transition policy and finance',
+    ],
+    'global-catastrophic-risks': [
+      'AI escaping human control, and catastrophic misuse',
+      'Biosecurity, pandemic preparedness and dual-use research',
+      'Nuclear security and great-power conflict',
+    ],
+    'better-futures': [
+      'AI governance, power concentration and value lock-in',
+      'Quality and resilience of democratic institutions',
+      'Moral circle expansion, including digital minds',
+      'Space governance',
+    ],
   },
   leverage: {
     'capital-allocation': 'Directing money',

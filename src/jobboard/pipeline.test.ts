@@ -2,10 +2,10 @@
  * Tests for the deterministic core of the pipeline.
  *
  * These cover the parts that decide what reaches a curator without any model
- * involved: the Netherlands-eligibility filter, the two mechanical gates, and
- * deduplication. Getting any of them wrong is a silent failure — an
- * over-eager NL filter empties the board, a leaky gate erodes a category, and a
- * false dedup merge hides a real job.
+ * involved: the Netherlands-eligibility filter, the earning-to-give gate, the
+ * cause vocabulary, and deduplication. Getting any of them wrong is a silent
+ * failure — an over-eager NL filter empties the board, a leaky gate erodes a
+ * category, and a false dedup merge hides a real job.
  *
  *   npm test
  */
@@ -15,7 +15,6 @@ import test from 'node:test'
 
 import { nlEligible, stage1 } from './classify/stage1'
 import {
-  climateAllowed,
   earningToGiveEligible,
   enforceGates,
   allowedCauseAreas,
@@ -37,12 +36,17 @@ import { splitStatements } from './db/migrate'
 import { detectAts } from './ingest/adapters/ea-boards'
 import { orgCodeFromUrl, extractWvnBody } from './ingest/adapters/dutch'
 import { extractJsonLd, findJobPosting } from './ingest/adapters/jsonld'
-import { meetsPromotionThreshold } from './taxonomy'
+import {
+  CAUSE_AREAS,
+  CAUSE_SUBAREAS,
+  EXCLUDED_TOPICS,
+  GATED_CAUSE_AREAS,
+  LEVERAGE_TYPES,
+  meetsPromotionThreshold,
+} from './taxonomy'
 import { firstLine } from './lib/note'
 
 const noFlags: EmployerGateFlags = {
-  giving_green_listed: false,
-  climate_exception: false,
   e2g_allowlisted: false,
   e2g_salary_presumed: false,
 }
@@ -136,51 +140,106 @@ test('stage1 passes a real Dutch government listing and withholds gated labels',
   })
   assert.equal(verdict.pass, true)
   if (verdict.pass) {
-    // The employer cleared neither gate, so neither label is on the menu.
-    assert.ok(!verdict.allowedCauses.includes('climate'))
+    // The employer is not on the earning-to-give allowlist, so that label is
+    // not on the menu. Every cause area is.
     assert.ok(!verdict.allowedLeverage.includes('earning-to-give'))
-    assert.ok(verdict.allowedCauses.includes('ai-safety-governance'))
+    assert.deepEqual([...verdict.allowedCauses].sort(), [...CAUSE_AREAS].sort())
   }
 })
 
 // ---------------------------------------------------------------------------
-// The climate gate (§5.1) — mechanical, never a judgement call
+// The cause vocabulary (§5.1)
+//
+// The board presents exactly four problem areas. These tests exist because the
+// vocabulary is duplicated into the Sanity dropdowns, the classifier's schema,
+// the filter UI and both locales' label maps — so the failure mode is drift
+// between layers rather than an outright bug.
 // ---------------------------------------------------------------------------
 
-test('climate requires a Giving Green listing or an explicit manual exception', () => {
-  assert.equal(climateAllowed(noFlags), false)
-  assert.equal(climateAllowed(null), false)
-  assert.equal(climateAllowed({ ...noFlags, giving_green_listed: true }), true)
-  assert.equal(climateAllowed({ ...noFlags, climate_exception: true }), true)
+test('there are exactly four cause areas and none of them is gated', () => {
+  assert.deepEqual(
+    [...CAUSE_AREAS],
+    ['global-health-wellbeing', 'farmed-animal-welfare', 'global-catastrophic-risks', 'better-futures'],
+  )
+  assert.deepEqual([...GATED_CAUSE_AREAS], [], 'no cause area is gated any more')
+  assert.deepEqual([...allowedCauseAreas()].sort(), [...CAUSE_AREAS].sort())
 })
 
-test('climate is absent from the allowed causes unless the gate is cleared', () => {
-  assert.ok(!allowedCauseAreas(noFlags).includes('climate'))
-  assert.ok(allowedCauseAreas({ ...noFlags, giving_green_listed: true }).includes('climate'))
+test('climate is not a cause area, and is recorded as an excluded topic with a referral', () => {
+  // The board used to carry a `climate` category behind a Giving Green
+  // allowlist. It is now out of scope, and the referral is the whole substitute
+  // for it — an exclusion with nowhere to send people is just a gap.
+  assert.ok(!(CAUSE_AREAS as readonly string[]).includes('climate'))
+  const climate = EXCLUDED_TOPICS.find((t) => t.id === 'climate')
+  assert.ok(climate, 'climate must stay documented as a deliberate exclusion')
+  assert.match(climate.referralUrl, /^https:\/\//)
+  assert.ok(climate.referralName.length > 0)
 })
 
-test('enforceGates strips a leaked climate label and reports it', () => {
-  // A model told not to use a label will occasionally use it anyway, and this is
-  // the one category where a single leak starts an erosion (§8.1).
+test('the retired cause labels are gone from the vocabulary entirely', () => {
+  // Each of these was a cause area before August 2026. Anything still emitting
+  // one is reading a stale copy of the taxonomy.
+  for (const retired of [
+    'ai-safety-governance',
+    'biosecurity-pandemics',
+    'animal-welfare-alt-protein',
+    'global-health-development',
+    'global-catastrophic-risk',
+    'effective-giving-meta',
+    'climate',
+  ]) {
+    assert.ok(
+      !(CAUSE_AREAS as readonly string[]).includes(retired),
+      `${retired} must not be a cause area`,
+    )
+  }
+  // `career-capital` moved axes rather than disappearing: it is a statement
+  // about leverage, not about a problem.
+  assert.ok(!(CAUSE_AREAS as readonly string[]).includes('career-capital'))
+  assert.ok((LEVERAGE_TYPES as readonly string[]).includes('career-capital'))
+})
+
+test('every cause area has sub-areas, and AI work is split across two of them', () => {
+  for (const cause of CAUSE_AREAS) {
+    assert.ok(CAUSE_SUBAREAS[cause]?.length, `${cause} needs sub-areas to be browsable`)
+  }
+  // The split is the substance of the revision: catastrophe-shaped AI risk on
+  // one side, lock-in and power concentration on the other. If a future edit
+  // collapses AI into one area this test is the thing that should complain.
+  const gcr = CAUSE_SUBAREAS['global-catastrophic-risks'].join(' ')
+  const better = CAUSE_SUBAREAS['better-futures'].join(' ')
+  assert.match(gcr, /AI/)
+  assert.match(better, /AI/)
+})
+
+test('enforceGates strips a cause label that is no longer in the vocabulary', () => {
+  // A model handed a stale prompt, or a listing classified before the revision,
+  // must not be able to reintroduce a retired label.
   const result = enforceGates(
-    { primaryCause: 'climate', secondaryCauses: ['climate', 'global-health-development'], leverage: 'direct-work' },
+    {
+      primaryCause: 'climate',
+      secondaryCauses: ['climate', 'global-health-wellbeing'],
+      leverage: 'direct-work',
+    },
     noFlags,
     { salary_max: null, salary_currency: null },
   )
   assert.equal(result.primaryCause, null)
-  assert.deepEqual(result.secondaryCauses, ['global-health-development'])
+  assert.deepEqual(result.secondaryCauses, ['global-health-wellbeing'])
   assert.equal(result.leverage, 'direct-work')
   assert.equal(result.violations.length, 2)
 })
 
-test('enforceGates leaves a legitimately gated climate label alone', () => {
-  const result = enforceGates(
-    { primaryCause: 'climate', secondaryCauses: [], leverage: 'field-building' },
-    { ...noFlags, giving_green_listed: true },
-    { salary_max: null, salary_currency: null },
-  )
-  assert.equal(result.primaryCause, 'climate')
-  assert.equal(result.violations.length, 0)
+test('enforceGates leaves the four current cause areas alone', () => {
+  for (const cause of CAUSE_AREAS) {
+    const result = enforceGates(
+      { primaryCause: cause, secondaryCauses: [], leverage: 'field-building' },
+      noFlags,
+      { salary_max: null, salary_currency: null },
+    )
+    assert.equal(result.primaryCause, cause)
+    assert.equal(result.violations.length, 0)
+  }
 })
 
 // ---------------------------------------------------------------------------
@@ -409,9 +468,9 @@ test('detectAts recognises the ATS behind an outbound apply URL', () => {
     ats: 'ashby',
     token: 'cradlebio',
   })
-  assert.deepEqual(detectAts('https://clean-air-task-force.breezy.hr/p/xyz'), {
+  assert.deepEqual(detectAts('https://example-org.breezy.hr/p/xyz'), {
     ats: 'breezy',
-    token: 'clean-air-task-force',
+    token: 'example-org',
   })
   assert.equal(detectAts('https://example.com/careers'), null)
 })

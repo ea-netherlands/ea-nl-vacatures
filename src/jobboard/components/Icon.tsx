@@ -37,6 +37,8 @@ export type IconName =
   | 'scale'
   | 'book'
   | 'alert-triangle'
+  | 'world'
+  | 'leaf'
 
 const PATHS: Record<IconName, string> = {
   hourglass:
@@ -68,6 +70,9 @@ const PATHS: Record<IconName, string> = {
   book: 'M3 19a9 9 0 0 1 9 0 9 9 0 0 1 9 0M3 6a9 9 0 0 1 9 0 9 9 0 0 1 9 0M3 6v13M12 6v13M21 6v13',
   'alert-triangle':
     'M12 9v4M12 16v.01M10.24 3.957 1.98 18a2 2 0 0 0 1.7 3h16.64a2 2 0 0 0 1.7-3L13.76 3.957a2 2 0 0 0-3.52 0z',
+  world:
+    'M3 12a9 9 0 1 0 18 0 9 9 0 0 0-18 0M3.6 9h16.8M3.6 15h16.8M11.5 3a17 17 0 0 0 0 18M12.5 3a17 17 0 0 1 0 18',
+  leaf: 'M5 21c.5-4.5 2.5-8 7-10M9 18c6.218 0 10.5-3.288 11-12V4h-4.014c-9 0-11.986 4-12 9 0 1 0 3 2 5h3z',
 }
 
 export type IconProps = Omit<SVGProps<SVGSVGElement>, 'name'> & {

@@ -1,5 +1,5 @@
 /**
- * The taxonomy — spec §5.
+ * The taxonomy — spec §5, revised August 2026.
  *
  * Two orthogonal axes (cause area, leverage archetype) plus the practical
  * eligibility fields that make the board usable in a Dutch context.
@@ -8,6 +8,26 @@
  * The Sanity schemas, the classifier's structured-output schema, the filter
  * UI and the interface translations all derive their option lists from here,
  * so a vocabulary change cannot drift between layers.
+ *
+ * ## What changed, and why it matters if you are reading this later
+ *
+ * The cause axis was eight categories and is now four: the board presents the
+ * same carve-up of the problem space that the rest of the field has converged
+ * on. Three consequences worth knowing before you change anything:
+ *
+ * 1. `climate` is no longer a cause area *at all* — not gated, not allowlisted,
+ *    simply out of scope, with a referral to Effective Environmentalism. See
+ *    `EXCLUDED_TOPICS` below. The old Giving Green allowlist gate is gone with
+ *    it; the earning-to-give gate is untouched.
+ * 2. `effective-giving-meta` and `career-capital` are no longer cause areas.
+ *    Meta work is categorised by the problem it serves, and "this is a stepping
+ *    stone" is a statement about leverage, not about a problem — so it lives on
+ *    the leverage axis, where it always belonged.
+ * 3. AI work now splits across two areas rather than having one of its own.
+ *    `global-catastrophic-risks` takes the failure modes that end in
+ *    catastrophe; `better-futures` takes the ones where humanity survives and
+ *    the outcome is still bad. That split is a real judgement call on some
+ *    listings, which is why `secondaryCauses` exists — see the prompt.
  */
 
 // ---------------------------------------------------------------------------
@@ -15,25 +35,20 @@
 // ---------------------------------------------------------------------------
 
 export const CAUSE_AREAS = [
-  'ai-safety-governance',
-  'biosecurity-pandemics',
-  'animal-welfare-alt-protein',
-  'global-health-development',
-  'global-catastrophic-risk',
-  'effective-giving-meta',
-  'climate',
-  'career-capital',
+  'global-health-wellbeing',
+  'farmed-animal-welfare',
+  'global-catastrophic-risks',
+  'better-futures',
 ] as const
 
 export type CauseArea = (typeof CAUSE_AREAS)[number]
 
 /**
- * `climate` is gated by an allowlist, not by the classifier's judgement
- * (§5.1). `career-capital` is not a cause area as such — it is a flag for
- * roles that are not directly impactful but are unusually strong stepping
- * stones. Neither may be assigned from the ad text alone.
+ * No cause area is gated any more. The constant stays because the classifier
+ * and the gate module both read it, and because a future contested category
+ * should be added here rather than by loosening the classifier's instructions.
  */
-export const GATED_CAUSE_AREAS: readonly CauseArea[] = ['climate']
+export const GATED_CAUSE_AREAS: readonly CauseArea[] = []
 
 /** Cause areas the classifier may choose from without an employer-level gate. */
 export const CLASSIFIER_ASSIGNABLE_CAUSES: readonly CauseArea[] = CAUSE_AREAS.filter(
@@ -41,23 +56,73 @@ export const CLASSIFIER_ASSIGNABLE_CAUSES: readonly CauseArea[] = CAUSE_AREAS.fi
 )
 
 export const CAUSE_AREA_DEFINITIONS: Record<CauseArea, string> = {
-  'ai-safety-governance':
-    'Technical AI safety, AI policy, compute governance, AI Act implementation and enforcement, standards work.',
-  'biosecurity-pandemics':
-    'Pandemic preparedness, biosurveillance, dual-use research governance, chemical and biological weapons regimes.',
-  'animal-welfare-alt-protein':
-    'Farmed animal advocacy, animal law, cultivated meat and fermentation, protein transition policy, and the finance and corporate roles that shape all of it.',
-  'global-health-development':
-    'Global health, development finance, aid policy, health systems in low- and middle-income countries.',
-  'global-catastrophic-risk':
-    'Nuclear security, great-power conflict, international institution building, existential risk research not covered by the AI or bio categories.',
-  'effective-giving-meta':
-    'Effective giving organisations, community building, grantmaking infrastructure, research on which problems to prioritise.',
-  climate:
-    'Climate and biodiversity, restricted to employers on one of Giving Green’s current recommendation lists. Gated by allowlist, never by the classifier.',
-  'career-capital':
-    'Not directly impactful, but an unusually strong stepping stone toward a high-leverage role. Used sparingly.',
+  'global-health-wellbeing':
+    'Health and material welfare of the world’s poorest people, alive today. Global health, development finance, aid policy, health systems in low- and middle-income countries, lead and air quality, mental health at scale.',
+  'farmed-animal-welfare':
+    'The suffering of animals in food production. Farmed animal advocacy, animal law and enforcement, cultivated meat and fermentation, the protein transition, and the corporate and finance roles that shape all of it. Not general nature or biodiversity work.',
+  'global-catastrophic-risks':
+    'Events that could kill a very large share of humanity or permanently end its prospects. AI takeover, misalignment and catastrophic misuse; pandemics, biosurveillance and dual-use research governance; nuclear security and great-power conflict.',
+  'better-futures':
+    'Whether the long-run future goes well *given* that humanity survives. Who holds power over transformative AI and whose values get locked in; the quality and resilience of democratic institutions; the moral circle, including digital minds; space governance. The concern here is not extinction but a surviving world that is much worse than it could have been.',
 }
+
+/**
+ * Sub-areas. Not a stored field and not a filter — descriptive text used in the
+ * classifier prompt and on the cause pages, so that a four-item taxonomy still
+ * tells a reader (and the model) what actually falls inside each area.
+ *
+ * The AI entries are deliberately split across two areas. That is the whole
+ * point of the revision, and the sub-area lists are where the boundary is
+ * stated concretely enough to act on.
+ */
+export const CAUSE_SUBAREAS: Record<CauseArea, readonly string[]> = {
+  'global-health-wellbeing': [
+    'Global health and disease control',
+    'Development finance and aid policy',
+    'Health systems in low- and middle-income countries',
+    'Lead exposure and air quality',
+    'Mental health at scale',
+  ],
+  'farmed-animal-welfare': [
+    'Farmed animal advocacy and corporate campaigns',
+    'Animal law and enforcement',
+    'Cultivated meat, fermentation and plant-based protein',
+    'Protein transition policy and finance',
+  ],
+  'global-catastrophic-risks': [
+    'AI takeover, misalignment and catastrophic misuse',
+    'Biosecurity, pandemic preparedness and dual-use research',
+    'Nuclear security and great-power conflict',
+  ],
+  'better-futures': [
+    'AI governance, power concentration and value lock-in',
+    'Quality and resilience of democratic institutions',
+    'Moral circle expansion, including digital minds',
+    'Space governance',
+  ],
+}
+
+/**
+ * Topics the board deliberately does not cover, and where to send someone
+ * instead. Rendered on the method page and used to instruct the classifier.
+ *
+ * This is the successor to the old climate allowlist gate. The gate existed
+ * because the Netherlands has an enormous sustainability sector that would
+ * swamp a climate category — but a gate that admits five organisations is a
+ * category nobody browses, and it implied the board had a view on climate
+ * effectiveness that it is not the right project to hold. Excluding the topic
+ * outright and naming the initiative that does cover it is both more honest and
+ * more useful to the reader.
+ */
+export const EXCLUDED_TOPICS = [
+  {
+    id: 'climate',
+    referralUrl: 'https://www.effectiveenvironmentalism.org',
+    referralName: 'Effective Environmentalism',
+  },
+] as const
+
+export type ExcludedTopic = (typeof EXCLUDED_TOPICS)[number]['id']
 
 // ---------------------------------------------------------------------------
 // Axis two — leverage archetype (§5.2). Each job gets exactly one.
@@ -77,7 +142,8 @@ export type LeverageType = (typeof LEVERAGE_TYPES)[number]
 
 /**
  * `earning-to-give` is gated by an employer allowlist plus a salary floor
- * (§5.3) and can never be assigned by the classifier.
+ * (§5.3) and can never be assigned by the classifier. This is now the only
+ * gate in the system, and it is the one that most needs to hold.
  */
 export const GATED_LEVERAGE_TYPES: readonly LeverageType[] = ['earning-to-give']
 
@@ -93,11 +159,11 @@ export const LEVERAGE_DEFINITIONS: Record<LeverageType, string> = {
   'research-evidence':
     'The role produces knowledge that feeds capital allocation and policy. Academic posts, think tanks, technical assessment institutes.',
   'field-building':
-    'The role builds the ecosystem: talent pipelines, coalitions, community infrastructure, movement organisations.',
+    'The role builds the ecosystem: talent pipelines, coalitions, community infrastructure, movement organisations, effective giving and grantmaking infrastructure.',
   'direct-work':
     'The role does the object-level thing. Programme delivery, engineering at a mission-aligned company, campaigning.',
   'career-capital':
-    'The role is a stepping stone rather than impactful in itself.',
+    'The role is a stepping stone rather than impactful in itself: it builds skills, credentials or a network that unlock a high-leverage role later. Used sparingly.',
   'earning-to-give':
     'The work itself is not the point. The role pays enough that a person donating a meaningful share can fund more good than they could produce directly.',
 }
@@ -167,14 +233,10 @@ export type SanityOption = { title: string; value: string }
  * Dutch and the public labels come from the i18n files, not from here.
  */
 export const CAUSE_AREA_TITLES_NL: Record<CauseArea, string> = {
-  'ai-safety-governance': 'AI-veiligheid en -beleid',
-  'biosecurity-pandemics': 'Biosecurity en pandemieën',
-  'animal-welfare-alt-protein': 'Dierenwelzijn en eiwittransitie',
-  'global-health-development': 'Mondiale gezondheid en ontwikkeling',
-  'global-catastrophic-risk': 'Mondiale catastrofale risico’s',
-  'effective-giving-meta': 'Effectief geven en meta',
-  climate: 'Klimaat en biodiversiteit (allowlist)',
-  'career-capital': 'Loopbaankapitaal',
+  'global-health-wellbeing': 'Mondiale gezondheid en welzijn',
+  'farmed-animal-welfare': 'Dierenwelzijn in de veehouderij',
+  'global-catastrophic-risks': 'Mondiale catastrofale risico’s',
+  'better-futures': 'Betere toekomsten',
 }
 
 export const LEVERAGE_TITLES_NL: Record<LeverageType, string> = {

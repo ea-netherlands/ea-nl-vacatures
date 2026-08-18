@@ -5,10 +5,10 @@
  * country codes and a remote-eligibility check. This discards the large
  * majority before any tokens are spent.
  *
- * Stage one also applies the climate gate: if the employer has cleared neither
- * `giving_green_listed` nor `climate_exception`, `climate` is stripped from the
- * set of causes the classifier is allowed to assign, and that constraint is
- * passed into the prompt.
+ * Stage one also resolves which labels the classifier is allowed to assign, and
+ * passes that constraint into the prompt. Since climate stopped being a cause
+ * area the only gated label left is `earning-to-give`, which needs the
+ * employer's allowlist flag and the listing's salary.
  */
 
 import { allowedCauseAreas, allowedLeverageTypes, type EmployerGateFlags } from '../taxonomy/gates'
@@ -111,9 +111,9 @@ export function stage1(input: Stage1Input): Stage1Verdict {
   return {
     pass: true,
     nlReason: nl.reason,
-    // The climate gate is applied here, before the model sees anything: if the
-    // employer has not cleared it, `climate` is simply not on the menu.
-    allowedCauses: allowedCauseAreas(input.employer),
+    // Every cause area is assignable; the earning-to-give gate below is the one
+    // label the model never gets to see unless the employer has cleared it.
+    allowedCauses: allowedCauseAreas(),
     allowedLeverage: allowedLeverageTypes(input.employer, {
       salary_max: input.salary_max,
       salary_currency: input.salary_currency,

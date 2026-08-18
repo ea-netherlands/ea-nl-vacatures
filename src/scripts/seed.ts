@@ -22,9 +22,9 @@ void main(async () => {
     await db.query(
       `insert into employer (
          id, name, website, careers_url, city, ats, ats_token, cause_areas,
-         leverage_note, giving_green_listed, e2g_allowlisted, e2g_salary_presumed,
+         leverage_note, e2g_allowlisted, e2g_salary_presumed,
          watchlist_tier, active, notes
-       ) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
+       ) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
        on conflict (id) do update set
          name                = excluded.name,
          city                = ${reset ? 'excluded.city' : 'coalesce(employer.city, excluded.city)'},
@@ -36,7 +36,6 @@ void main(async () => {
          leverage_note       = ${reset ? 'excluded.leverage_note' : 'coalesce(employer.leverage_note, excluded.leverage_note)'},
          -- The gates are pipeline-managed, so they always follow the seed:
          -- an allowlist nobody refreshes becomes a wrong allowlist.
-         giving_green_listed = excluded.giving_green_listed,
          e2g_allowlisted     = excluded.e2g_allowlisted,
          e2g_salary_presumed = excluded.e2g_salary_presumed,
          watchlist_tier      = ${reset ? 'excluded.watchlist_tier' : 'employer.watchlist_tier'},
@@ -51,7 +50,6 @@ void main(async () => {
         e.atsToken ?? null,
         e.causeAreas,
         e.leverageNote ?? null,
-        e.givingGreenListed ?? false,
         e.e2gAllowlisted ?? false,
         e.e2gSalaryPresumed ?? false,
         e.watchlistTier ?? 2,

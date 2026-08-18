@@ -1,15 +1,21 @@
 /**
- * The two mechanical gates — spec §5.1 (climate) and §5.3 (earning to give).
+ * The mechanical gate — spec §5.3 (earning to give).
  *
- * Both categories would swamp the board if judged by an LLM. The Netherlands
- * has an enormous sustainability sector and thousands of well-paid Amsterdam
- * jobs; a classifier will find a plausible case for most of them. So neither
- * label is ever a judgement call — both are employer-level booleans checked
- * before the classifier sees the listing, and enforced again on its output.
+ * There used to be two. `climate` was the other, gated to employers on Giving
+ * Green's recommendation lists; it is now out of scope entirely and handled by
+ * a referral rather than a gate (see `EXCLUDED_TOPICS` in ./index). Removing it
+ * from here rather than leaving a dormant gate behind is deliberate: a gate that
+ * nothing passes through is a trap for the next reader.
+ *
+ * Earning to give would swamp the board if judged by an LLM — there are
+ * thousands of well-paid Amsterdam jobs and a classifier will find a plausible
+ * case for most of them. So the label is never a judgement call: it is an
+ * employer-level boolean plus a salary floor, checked before the classifier
+ * sees the listing and enforced again on its output.
  *
  * The double enforcement is deliberate: an LLM told not to use a label will
- * occasionally use it anyway, and this is the one category where a single
- * leak starts an erosion (§8.1).
+ * occasionally use it anyway, and this is the category where a single leak
+ * starts an erosion (§8.1).
  */
 
 import {
@@ -28,8 +34,6 @@ export const E2G_SALARY_CURRENCY = 'EUR'
 
 /** The employer-level flags the gates read. Mirrors the `employer` table. */
 export type EmployerGateFlags = {
-  giving_green_listed: boolean
-  climate_exception: boolean
   e2g_allowlisted: boolean
   e2g_salary_presumed: boolean
 }
@@ -37,18 +41,6 @@ export type EmployerGateFlags = {
 export type ListingSalary = {
   salary_max: number | null
   salary_currency: string | null
-}
-
-/**
- * Climate gate. A role qualifies for `climate` only if the employer appears
- * on one of Giving Green's current recommendation lists — or on the manual
- * exception list, which requires an explicit human decision and should stay
- * near-empty. If it grows past a couple of entries the gate has stopped
- * working and the category is drifting back toward general sustainability.
- */
-export function climateAllowed(employer: EmployerGateFlags | null): boolean {
-  if (!employer) return false
-  return employer.giving_green_listed || employer.climate_exception
 }
 
 /**
@@ -74,14 +66,13 @@ export function earningToGiveEligible(
 }
 
 /**
- * The set of cause labels the classifier is allowed to assign for this
- * listing. Passed into the prompt so the model never sees `climate` as an
- * option unless the employer has cleared the gate.
+ * The set of cause labels the classifier is allowed to assign. No cause area is
+ * gated any more, so this is every area — but the call sites and the prompt
+ * still route through it, so re-introducing a gated category later is a change
+ * in one place rather than five.
  */
-export function allowedCauseAreas(employer: EmployerGateFlags | null): CauseArea[] {
-  const allowed = [...CLASSIFIER_ASSIGNABLE_CAUSES]
-  if (climateAllowed(employer)) allowed.push('climate')
-  return allowed
+export function allowedCauseAreas(): CauseArea[] {
+  return [...CLASSIFIER_ASSIGNABLE_CAUSES]
 }
 
 export function allowedLeverageTypes(
@@ -114,7 +105,7 @@ export function enforceGates(
   leverage: string | null
   violations: GateViolation[]
 } {
-  const causes = new Set(allowedCauseAreas(employer))
+  const causes = new Set(allowedCauseAreas())
   const leverages = new Set(allowedLeverageTypes(employer, listing))
   const violations: GateViolation[] = []
 
@@ -123,7 +114,7 @@ export function enforceGates(
     violations.push({
       field: 'primaryCause',
       value: primaryCause,
-      reason: `employer has not cleared the ${primaryCause} gate`,
+      reason: `${primaryCause} is not a cause area on this board`,
     })
     primaryCause = null
   }
@@ -133,7 +124,7 @@ export function enforceGates(
     violations.push({
       field: 'secondaryCauses',
       value: c,
-      reason: `employer has not cleared the ${c} gate`,
+      reason: `${c} is not a cause area on this board`,
     })
     return false
   })

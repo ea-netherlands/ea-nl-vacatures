@@ -11,7 +11,7 @@
 
 import Link from 'next/link'
 import { EmptyState, Filters, IntroBand, type FilterState } from '../components/Filters'
-import { Container, Hero, OnwardStep, Section } from '../components/Chrome'
+import { Container, Hero, InternationalFirst, OnwardStep, Section } from '../components/Chrome'
 import { ListingCard } from '../components/ListingCard'
 import { routes, t, type Locale } from '../content/i18n'
 import { getLiveListings } from '../sanity/queries'
@@ -86,6 +86,12 @@ export async function IndexPage({
       <Container>
         <Section first>
           <IntroBand locale={locale} />
+          {/*
+            Above the filters, deliberately. Someone who can relocate should hit
+            the three international boards before they hit a filter dropdown —
+            putting this below the listings would make it decoration.
+          */}
+          <InternationalFirst locale={locale} />
           <Filters locale={locale} state={state} resultCount={filtered.length} />
         </Section>
 

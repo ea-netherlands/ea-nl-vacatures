@@ -18,8 +18,6 @@ create table if not exists employer (
   ats_token           text,
   cause_areas         text[] not null default '{}',
   leverage_note       text,                      -- durable, employer-level "why this org matters"
-  giving_green_listed boolean not null default false,  -- gate for `climate`; §5.1
-  climate_exception   boolean not null default false,  -- manual override, requires a human decision
   e2g_allowlisted     boolean not null default false,  -- gate for earning to give; §5.3
   e2g_salary_presumed boolean not null default false,  -- known to clear the floor without publishing numbers
   watchlist_tier      int not null default 2,    -- 1 = poll daily, 2 = weekly, 3 = monthly

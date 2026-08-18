@@ -8,7 +8,14 @@
 
 import Link from 'next/link'
 import type { ReactNode } from 'react'
-import { ONWARD_LINKS, routes, t, otherLocale, type Locale } from '../content/i18n'
+import {
+  INTERNATIONAL_BOARDS,
+  ONWARD_LINKS,
+  routes,
+  t,
+  otherLocale,
+  type Locale,
+} from '../content/i18n'
 import { Icon } from './Icon'
 import s from './layout.module.css'
 import u from './ui.module.css'
@@ -244,6 +251,107 @@ export function OnwardStep({ locale }: { locale: Locale }) {
           {copy.onwardNewsletter}
         </a>
       </div>
+    </div>
+  )
+}
+
+/**
+ * The international-first band (§4a).
+ *
+ * The board's central piece of honesty, and the section most likely to be cut
+ * by someone optimising for engagement: it opens by telling the reader that the
+ * best opportunities are somewhere else. Keep it.
+ *
+ * The order matters. Look-elsewhere first, three named boards second, and only
+ * then the reason this board exists — because a reader who *can* move should be
+ * able to leave at the second paragraph, and a reader who cannot should not have
+ * to read a pitch before reaching the part addressed to them.
+ */
+export function InternationalFirst({ locale }: { locale: Locale }) {
+  const copy = t(locale)
+  const r = routes(locale)
+
+  return (
+    <div className={u.intlBand}>
+      <h2 className={u.intlHeading}>
+        <Icon name="world" />
+        {copy.intlHeading}
+      </h2>
+      <div className={u.introBody}>
+        {copy.intlBody.map((p) => (
+          <p key={p.slice(0, 24)}>{p}</p>
+        ))}
+      </div>
+
+      <ul className={u.intlBoards}>
+        {INTERNATIONAL_BOARDS.map((board) => (
+          <li key={board.id}>
+            <a href={board.url} className={u.intlBoard} rel="noopener">
+              <span className={u.intlBoardName}>
+                {board.name}
+                <Icon name="external-link" />
+              </span>
+              <span className={u.intlBoardBlurb}>{copy.intlBoardBlurbs[board.id]}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+
+      <p className={u.intlFallback}>{copy.intlFallback}</p>
+      <p className={u.linkRow}>
+        <Link href={r.method}>
+          {copy.intlLink} <Icon name="arrow-right" />
+        </Link>
+      </p>
+    </div>
+  )
+}
+
+/**
+ * The compact form, for listing pages. Most visitors never see the index — they
+ * land on a listing from a Dutch-language search (§4) — so the statement has to
+ * reach them there too. One line, because a full section on every listing would
+ * read as nagging and get tuned out, which is worse than not saying it.
+ */
+export function InternationalNote({ locale }: { locale: Locale }) {
+  const copy = t(locale)
+  const r = routes(locale)
+  return (
+    <p className={u.intlShort}>
+      <Icon name="world" />
+      <span>
+        {copy.intlShort} <Link href={r.method}>{copy.intlLink}</Link>
+      </span>
+    </p>
+  )
+}
+
+/**
+ * Why climate is not on the board (§5.1).
+ *
+ * This is the question a Dutch reader is most likely to arrive with, and the
+ * answer is about neglectedness rather than importance — so it has to be said
+ * plainly or it reads as a dismissal. The referral is not a courtesy: an
+ * exclusion with nowhere to send people is just a gap.
+ */
+export function ClimateNote({ locale }: { locale: Locale }) {
+  const copy = t(locale)
+  return (
+    <div className={u.climateNote}>
+      <h2 className={u.uncertaintyHeading}>
+        <Icon name="leaf" />
+        {copy.climateHeading}
+      </h2>
+      <div className={u.uncertaintyBody}>
+        {copy.climateBody.map((p) => (
+          <p key={p.slice(0, 24)}>{p}</p>
+        ))}
+      </div>
+      <p className={u.linkRow}>
+        <a href={ONWARD_LINKS.effectiveEnvironmentalism} rel="noopener">
+          {copy.climateReferralLink} <Icon name="external-link" />
+        </a>
+      </p>
     </div>
   )
 }

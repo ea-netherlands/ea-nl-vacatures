@@ -2,7 +2,7 @@
  * Generates the explainer layer — spec §9.5, M5b.
  *
  *   npm run generate-explainers -- --list
- *   npm run generate-explainers -- --page=ai-safety-governance
+ *   npm run generate-explainers -- --page=global-catastrophic-risks
  *   npm run generate-explainers -- --all
  *   npm run generate-explainers -- --all --publish   # write into Sanity
  *
@@ -41,7 +41,12 @@ import {
 } from '../jobboard/content/style'
 import { PROSE_MODEL, proseCall, structuredCall } from '../jobboard/lib/anthropic'
 import { isSanityConfigured, writeClient } from '../jobboard/sanity/client'
-import { CAUSE_AREA_DEFINITIONS, CAUSE_AREAS, type CauseArea } from '../jobboard/taxonomy'
+import {
+  CAUSE_AREA_DEFINITIONS,
+  CAUSE_AREAS,
+  CAUSE_SUBAREAS,
+  type CauseArea,
+} from '../jobboard/taxonomy'
 import { slugify } from '../jobboard/lib/text'
 import { log, main, num, parseArgs, printReport } from './_cli'
 
@@ -61,15 +66,14 @@ type PageSpec = {
 
 /** Dutch-language search terms with real volume and almost no good answer (§9.8). */
 const CAUSE_SEARCH_HINTS: Record<CauseArea, string> = {
-  'ai-safety-governance': 'banen AI-beleid, AI governance jobs Netherlands, beleidsmedewerker AI',
-  'biosecurity-pandemics': 'pandemische paraatheid werk, biosecurity banen Nederland',
-  'animal-welfare-alt-protein':
-    'banen eiwittransitie, alt protein careers Nederland, werken aan dierenwelzijn',
-  'global-health-development': 'banen ontwikkelingssamenwerking, mondiale gezondheid werk',
-  'global-catastrophic-risk': 'internationale veiligheid banen Den Haag, non-proliferatie werk',
-  'effective-giving-meta': 'effectieve loopbaan, werken bij een goed doel, filantropie banen',
-  climate: 'klimaatbanen Nederland, biodiversiteit werk',
-  'career-capital': 'loopbaankapitaal, welke baan nu voor later',
+  'global-health-wellbeing':
+    'banen ontwikkelingssamenwerking, mondiale gezondheid werk, global health vacatures Nederland',
+  'farmed-animal-welfare':
+    'banen eiwittransitie, alt protein careers Nederland, werken aan dierenwelzijn, kweekvlees banen',
+  'global-catastrophic-risks':
+    'banen AI-beleid, AI safety vacatures Nederland, pandemische paraatheid werk, internationale veiligheid banen Den Haag, non-proliferatie werk',
+  'better-futures':
+    'AI governance jobs Netherlands, beleidsmedewerker AI, banen digitale grondrechten, toekomstige generaties beleid',
 }
 
 async function buildSpecs(): Promise<PageSpec[]> {
@@ -93,7 +97,9 @@ Using the site's established vocabulary does double duty: it explains the board,
 
 Then cover, concretely:
 - that most listings are at employers who would not describe themselves as impact-focused, and why that is the point rather than a compromise
-- that two categories work differently and are gated by an allowlist rather than judgement: climate (only employers on Giving Green's current recommendation lists) and earning to give (a named employer list plus a salary floor). Say why: the Netherlands has an enormous sustainability sector and thousands of well-paid Amsterdam jobs, and a category that let everything in would drag down trust in the whole board.
+- FIRST, before anything about our own method: that someone genuinely optimising for impact should look at 80,000 Hours, Probably Good and the EA Opportunities board before looking here, because most of the strongest roles are not in the Netherlands. Then that this board is for people who cannot or will not relocate — a partner's job, children in school, caring responsibilities, a residence permit, or simply not wanting to leave — and that this is a reasonable trade-off rather than a lack of commitment. Do not soften this into a marketing line; the reader who can move should be able to act on it and leave.
+- why climate is not one of the four problem areas. The reason is neglectedness, not importance: climate already attracts a great deal of Dutch money, talent and political attention, and the problems on this board do not. Say that the question of which climate work is underrated is a good and separate one, and refer the reader to Effective Environmentalism (effectiveenvironmentalism.org). Do not imply the board has a view on which climate charities are effective — it deliberately does not.
+- that one category works differently and is gated by an allowlist rather than judgement: earning to give (a named employer list plus a salary floor). Say why: there are thousands of well-paid Amsterdam jobs, and a category that let everything in would drag down trust in the whole board.
 - that the board is deliberately small, and that 25 good listings beat 200 mediocre ones
 - that a piece of software drafts a first version of each note and a person edits and publishes it
 - that the board is curated by people who can be wrong, and how to disagree with a listing (email)
@@ -120,7 +126,8 @@ State plainly that listing an employer here is not an endorsement of that employ
 In "uncertainties": this is the honest case AGAINST, and it must be strong. Earning to give is contested within EA. Salary is a weak proxy for how much someone actually gives. The plan quietly fails for many people who adopt it — income rises and giving does not, or the job absorbs the person. High-paying work can do harm that donations do not offset. A newcomer who encounters a one-sided pitch and later discovers the debate will trust nothing else on the site, so do not hedge this section.`,
   }
 
-  const causes: PageSpec[] = CAUSE_AREAS.filter((c) => c !== 'career-capital').map((cause) => ({
+  // All four areas get a page. There is no longer a pseudo-category to skip.
+  const causes: PageSpec[] = CAUSE_AREAS.map((cause) => ({
     key: cause,
     kind: 'cause' as const,
     causeArea: cause,
@@ -139,7 +146,21 @@ Cover four things:
 3. What kinds of Dutch roles bear on it. Be concrete about the *kinds* of employer (a ministry, a regulator, a research institute, a lender, a foundation) rather than naming specific organisations, since the listings themselves change.
 4. Honest acknowledgement of what is uncertain or disputed — in the "uncertainties" field.
 
-${cause === 'climate' ? 'IMPORTANT: this category is gated by an allowlist. Only employers on Giving Green\'s current recommendation lists qualify. Explain why: the Netherlands has an enormous climate and sustainability employment sector, almost none of which meets an effectiveness bar, and one diluted category would drag down trust in the whole board. Name Wetlands International (Ede) as the most accessible qualifying organisation for a Dutch reader.\n\n' : ''}This page must be worth reading on its own, independently of the job board. A page that only makes sense as a wrapper around vacancies will neither rank nor deserve to.
+What falls inside this area: ${CAUSE_SUBAREAS[cause].join('; ')}.
+
+${
+      cause === 'global-catastrophic-risks'
+        ? 'This area and `better-futures` divide the AI work between them, and the page should make the boundary clear without labouring it: here the concern is a catastrophe — AI escaping human control, or being used to cause mass casualties. Work on who ends up holding power, and which values get entrenched, belongs to better futures.\n\n'
+        : ''
+    }${
+      cause === 'better-futures'
+        ? 'This is the least familiar of the four and the page carries the most explanatory load. The core idea: humanity could survive the century and still end up somewhere far worse than it had to be — power concentrated in very few hands, bad values locked in and made permanent by technology that makes them hard to reverse, or vast numbers of beings whose interests nobody counts. Distinguish it from global catastrophic risks explicitly: that area is about whether we make it through, this one is about whether what comes after is any good. Avoid science-fiction register; the Dutch reader most likely to bounce off this page is a serious person who suspects it is speculation.\n\n'
+        : ''
+    }${
+      cause === 'farmed-animal-welfare'
+        ? 'Be precise that this is about animals in food production, not nature or biodiversity work. That boundary is what keeps the category meaningful.\n\n'
+        : ''
+    }This page must be worth reading on its own, independently of the job board. A page that only makes sense as a wrapper around vacancies will neither rank nor deserve to.
 
 For context on search: readers reach pages like this from queries such as "${CAUSE_SEARCH_HINTS[cause]}". Write the page those readers were looking for. Do not stuff keywords.`,
   }))

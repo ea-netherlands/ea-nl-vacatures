@@ -255,8 +255,6 @@ async function loadCandidates(db: Db, options: ClassifyOptions): Promise<Candida
   const limit = options.limit ?? 200
   const { rows } = await db.query<
     Candidate & {
-      giving_green_listed: boolean | null
-      climate_exception: boolean | null
       e2g_allowlisted: boolean | null
       e2g_salary_presumed: boolean | null
     }
@@ -265,7 +263,6 @@ async function loadCandidates(db: Db, options: ClassifyOptions): Promise<Candida
             l.apply_url, l.employer_id, l.salary_min, l.salary_max, l.salary_currency,
             l.salary_period,
             e.leverage_note      as employer_leverage_note,
-            e.giving_green_listed, e.climate_exception,
             e.e2g_allowlisted, e.e2g_salary_presumed
        from listing l
        left join employer e on e.id = l.employer_id
@@ -285,8 +282,6 @@ async function loadCandidates(db: Db, options: ClassifyOptions): Promise<Candida
     ...r,
     employer: r.employer_id
       ? ({
-          giving_green_listed: r.giving_green_listed ?? false,
-          climate_exception: r.climate_exception ?? false,
           e2g_allowlisted: r.e2g_allowlisted ?? false,
           e2g_salary_presumed: r.e2g_salary_presumed ?? false,
         } satisfies EmployerGateFlags)

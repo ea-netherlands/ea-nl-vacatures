@@ -24,7 +24,6 @@ export type SeedEmployer = {
   atsToken?: string | null
   causeAreas: CauseArea[]
   leverageNote?: string
-  givingGreenListed?: boolean
   e2gAllowlisted?: boolean
   e2gSalaryPresumed?: boolean
   watchlistTier?: 1 | 2 | 3
@@ -50,6 +49,27 @@ export const CORRECTIONS = [
   'Oak Foundation has no verified Netherlands presence; it is Geneva-headquartered. Do not list under NL.',
 ] as const
 
+/**
+ * Organisations removed when climate stopped being a cause area (August 2026).
+ *
+ * All five were on a Giving Green recommendation list and were perfectly
+ * defensible entries under the old allowlist gate. They are out of scope now
+ * because the board does not cover climate at all, not because anything about
+ * them changed — so they are recorded rather than deleted. Anyone re-reading
+ * Appendix A will find them there and should not re-add them.
+ *
+ * Someone whose priority is climate should be sent to Effective Environmentalism
+ * (see `EXCLUDED_TOPICS` in ../taxonomy), which is a better resource for them
+ * than a five-employer category here would ever have been.
+ */
+export const OUT_OF_SCOPE = [
+  'Wetlands International (Ede) — climate and biodiversity. Out of scope.',
+  'Clean Air Task Force — climate. Out of scope.',
+  'Future Cleantech Architects — climate. Out of scope.',
+  'Opportunity Green — climate. Out of scope.',
+  'Project InnerSpace — geothermal. Out of scope.',
+] as const
+
 export const SEED_EMPLOYERS: SeedEmployer[] = [
   // -------------------------------------------------------------------------
   // Animal welfare and alternative proteins
@@ -65,7 +85,7 @@ export const SEED_EMPLOYERS: SeedEmployer[] = [
     // is the only route (§7.2).
     ats: 'homerun',
     atsToken: 'careers.mosameat.com',
-    causeAreas: ['animal-welfare-alt-protein'],
+    causeAreas: ['farmed-animal-welfare'],
     leverageNote:
       'De overgebleven Europese voorloper in gekweekt vlees. Of deze sector prijspariteit haalt, is bijna een kernvraag voor het hele probleemgebied.',
     watchlistTier: 1,
@@ -77,7 +97,7 @@ export const SEED_EMPLOYERS: SeedEmployer[] = [
     website: 'https://www.rabobank.com',
     careersUrl: 'https://rabobank.jobs/en',
     ats: null,
-    causeAreas: ['animal-welfare-alt-protein'],
+    causeAreas: ['farmed-animal-welfare'],
     leverageNote:
       'De grootste food-en-agrikredietverstrekker ter wereld. De sectorvooruitzichten van RaboResearch bewegen Europees kapitaal in veehouderij en alternatieve eiwitten. Plausibel de hoogste hefboom op dierenwelzijn van welke niet-voor-de-hand-liggende baan in Nederland ook.',
     watchlistTier: 1,
@@ -91,7 +111,7 @@ export const SEED_EMPLOYERS: SeedEmployer[] = [
     website: 'https://www.invest-nl.nl',
     careersUrl: 'https://www.invest-nl.nl/en/about-us/working-at',
     ats: null,
-    causeAreas: ['animal-welfare-alt-protein', 'climate'],
+    causeAreas: ['farmed-animal-welfare'],
     leverageNote:
       'Impactinvesteerder met staatssteun; circa €13 mln in startups voor alternatieve eiwitten. Werkt aan precies het gat in opschalingskapitaal dat net twee Nederlandse bedrijven de kop kostte.',
     watchlistTier: 2,
@@ -102,7 +122,7 @@ export const SEED_EMPLOYERS: SeedEmployer[] = [
     city: 'Amsterdam',
     website: 'https://unovis.vc',
     ats: null,
-    causeAreas: ['animal-welfare-alt-protein'],
+    causeAreas: ['farmed-animal-welfare'],
     leverageNote:
       'Pure-play durfkapitaal voor alternatieve eiwitten, tweede fonds van €146 mln, met Amsterdam als hub voor Europa en Azië.',
     watchlistTier: 3,
@@ -113,7 +133,7 @@ export const SEED_EMPLOYERS: SeedEmployer[] = [
     id: 'cellulaire-agricultuur-nederland',
     name: 'Cellulaire Agricultuur Nederland',
     ats: null,
-    causeAreas: ['animal-welfare-alt-protein'],
+    causeAreas: ['farmed-animal-welfare'],
     leverageNote:
       'Coördineert het nationale Groeifondsprogramma voor cellulaire landbouw.',
     watchlistTier: 3,
@@ -127,7 +147,7 @@ export const SEED_EMPLOYERS: SeedEmployer[] = [
     website: 'https://www.nwo.nl',
     careersUrl: 'https://www.nwo.nl/en/vacancies',
     ats: null,
-    causeAreas: ['animal-welfare-alt-protein'],
+    causeAreas: ['farmed-animal-welfare'],
     leverageNote: 'De onderzoeksraad die de academische kant financiert. PhD- en postdocstroom.',
     watchlistTier: 3,
   },
@@ -138,7 +158,7 @@ export const SEED_EMPLOYERS: SeedEmployer[] = [
     website: 'https://www.wur.nl',
     careersUrl: 'https://www.wur.nl/en/vacancies',
     ats: null,
-    causeAreas: ['animal-welfare-alt-protein', 'biosecurity-pandemics'],
+    causeAreas: ['farmed-animal-welfare', 'global-catastrophic-risks'],
     leverageNote:
       'De dominante Europese onderzoeksinstelling voor voedsel en landbouw, met een ongewoon korte weg van onderzoek naar beleid.',
     watchlistTier: 2,
@@ -151,7 +171,7 @@ export const SEED_EMPLOYERS: SeedEmployer[] = [
     website: 'https://www.wakkerdier.nl',
     careersUrl: 'https://www.wakkerdier.nl/over-wakker-dier/vacatures',
     ats: null,
-    causeAreas: ['animal-welfare-alt-protein'],
+    causeAreas: ['farmed-animal-welfare'],
     leverageNote:
       'Sterke staat van dienst in beleidswinst bij bedrijven per euro; de Nederlandse tegenhanger van het corporate-campaignmodel dat EA-donateurs voor dieren steunen.',
     watchlistTier: 2,
@@ -162,7 +182,7 @@ export const SEED_EMPLOYERS: SeedEmployer[] = [
     website: 'https://www.dierenrecht.nl',
     careersUrl: 'https://www.dierenrecht.nl/over-dier-en-recht/vacatures',
     ats: null,
-    causeAreas: ['animal-welfare-alt-protein'],
+    causeAreas: ['farmed-animal-welfare'],
     leverageNote:
       'Dierenrecht. Rechtszaken en handhavingsklachten zijn een verwaarloosde Nederlandse hefboom.',
     watchlistTier: 2,
@@ -173,7 +193,7 @@ export const SEED_EMPLOYERS: SeedEmployer[] = [
     website: 'https://proveg.org/nl',
     careersUrl: 'https://proveg.org/nl/vacatures',
     ats: null,
-    causeAreas: ['animal-welfare-alt-protein'],
+    causeAreas: ['farmed-animal-welfare'],
     leverageNote: 'Voedingsverandering, bedrijvenaanpak en institutionele catering.',
     watchlistTier: 2,
   },
@@ -183,7 +203,7 @@ export const SEED_EMPLOYERS: SeedEmployer[] = [
     website: 'https://www.worldanimalprotection.nl',
     careersUrl: 'https://www.worldanimalprotection.nl/over-ons/vacatures',
     ats: null,
-    causeAreas: ['animal-welfare-alt-protein'],
+    causeAreas: ['farmed-animal-welfare'],
     watchlistTier: 3,
   },
   {
@@ -192,18 +212,17 @@ export const SEED_EMPLOYERS: SeedEmployer[] = [
     website: 'https://gfieurope.org',
     careersUrl: 'https://gfi.org/careers',
     ats: null,
-    causeAreas: ['animal-welfare-alt-protein', 'climate'],
+    causeAreas: ['farmed-animal-welfare'],
     leverageNote:
       'Niet in Nederland gevestigd, maar plaatst regelmatig thuiswerkfuncties die openstaan voor mensen in Nederland.',
     // Qualifies on both the climate and biodiversity Giving Green tracks.
-    givingGreenListed: true,
     watchlistTier: 2,
   },
   {
     id: 'green-protein-alliance',
     name: 'Green Protein Alliance / Transitiecoalitie Voedsel',
     ats: null,
-    causeAreas: ['animal-welfare-alt-protein'],
+    causeAreas: ['farmed-animal-welfare'],
     leverageNote: 'Kleine secretariaten, goed geplaatst voor beleid rond de eiwittransitie.',
     watchlistTier: 3,
     active: false,
@@ -220,7 +239,7 @@ export const SEED_EMPLOYERS: SeedEmployer[] = [
     website: 'https://autoriteitpersoonsgegevens.nl',
     careersUrl: 'https://www.werkenvoornederland.nl/organisaties/autoriteit-persoonsgegevens',
     ats: null,
-    causeAreas: ['ai-safety-governance'],
+    causeAreas: ['better-futures'],
     leverageNote:
       'Deelt de coördinerende rol in AI-toezicht met de RDI onder de conceptuitvoeringswet, en is daarnaast de restcategorie-toezichthouder voor domeinen zonder eigen toezichthouder. Handhaaft de verboden praktijken uit de AI-verordening. Bouwt zichtbaar op. Vermoedelijk de AI-governancewerkgever met de grootste hefboom in het land.',
     watchlistTier: 1,
@@ -234,7 +253,7 @@ export const SEED_EMPLOYERS: SeedEmployer[] = [
     city: 'Den Haag',
     careersUrl: 'https://www.werkenvoornederland.nl',
     ats: null,
-    causeAreas: ['ai-safety-governance'],
+    causeAreas: ['better-futures', 'global-catastrophic-risks'],
     leverageNote:
       'Heeft sinds februari 2026 digitale zaken en AI-beleid. Er is geen minister van Digitale Zaken, dus een klein team draagt een grote portefeuille — veel invloed per persoon.',
     watchlistTier: 1,
@@ -247,7 +266,7 @@ export const SEED_EMPLOYERS: SeedEmployer[] = [
     website: 'https://www.rdi.nl',
     careersUrl: 'https://www.werkenvoornederland.nl',
     ats: null,
-    causeAreas: ['ai-safety-governance'],
+    causeAreas: ['better-futures'],
     leverageNote:
       'Samen met de AP coördinerend AI-toezichthouder, en de technische pijler: markttoezicht op AI in producten, en aanmeldende autoriteit voor conformiteitsbeoordelingsinstanties.',
     watchlistTier: 1,
@@ -261,7 +280,7 @@ export const SEED_EMPLOYERS: SeedEmployer[] = [
     website: 'https://www.tno.nl',
     careersUrl: 'https://www.tno.nl/en/careers/vacancies',
     ats: null,
-    causeAreas: ['ai-safety-governance', 'biosecurity-pandemics'],
+    causeAreas: ['global-catastrophic-risks'],
     leverageNote:
       'Doet het toegepaste onderzoek waar ministeries en toezichthouders op leunen. Heeft lopende functies rond verantwoorde AI en taalmodellen.',
     watchlistTier: 2,
@@ -273,7 +292,7 @@ export const SEED_EMPLOYERS: SeedEmployer[] = [
     website: 'https://www.rathenau.nl',
     careersUrl: 'https://www.rathenau.nl/en/careers',
     ats: null,
-    causeAreas: ['ai-safety-governance'],
+    causeAreas: ['better-futures'],
     leverageNote:
       'Technologiebeoordeling voor de Tweede Kamer. Kleine organisatie, onevenredig veel agenderende macht.',
     watchlistTier: 2,
@@ -285,7 +304,7 @@ export const SEED_EMPLOYERS: SeedEmployer[] = [
     website: 'https://www.ivir.nl',
     careersUrl: 'https://www.ivir.nl/about-us/vacancies',
     ats: null,
-    causeAreas: ['ai-safety-governance'],
+    causeAreas: ['better-futures'],
     leverageNote:
       'Het sterkste Nederlandse deep-learningcentrum, gecombineerd met serieuze capaciteit in informatierecht.',
     watchlistTier: 2,
@@ -296,7 +315,7 @@ export const SEED_EMPLOYERS: SeedEmployer[] = [
     city: 'Delft',
     website: 'https://www.tudelft.nl',
     ats: null,
-    causeAreas: ['ai-safety-governance'],
+    causeAreas: ['global-catastrophic-risks'],
     leverageNote: 'Werkt aan zinvolle menselijke controle over autonome systemen.',
     watchlistTier: 2,
   },
@@ -305,7 +324,7 @@ export const SEED_EMPLOYERS: SeedEmployer[] = [
     name: 'AFM, DNB, IGJ en Inspectie van het Onderwijs',
     careersUrl: 'https://www.werkenvoornederland.nl',
     ats: null,
-    causeAreas: ['ai-safety-governance'],
+    causeAreas: ['better-futures'],
     leverageNote:
       'Sectorale toezichthouders onder de AI-verordening. Het Nederlandse model is bewust gedecentraliseerd, dus AI-kennis is bij al deze organisaties nodig.',
     watchlistTier: 3,
@@ -317,7 +336,7 @@ export const SEED_EMPLOYERS: SeedEmployer[] = [
     name: 'Safe AI Netherlands',
     website: 'https://safeainetherlands.org',
     ats: null,
-    causeAreas: ['ai-safety-governance'],
+    causeAreas: ['global-catastrophic-risks'],
     leverageNote:
       'Nederlandse non-profit voor AI-veiligheid; AISF-cursussen, onderzoeksmatching, afdelingen in Groningen, Amsterdam en Utrecht.',
     watchlistTier: 3,
@@ -331,7 +350,7 @@ export const SEED_EMPLOYERS: SeedEmployer[] = [
     city: 'Zeist',
     website: 'https://pauseai.info',
     ats: null,
-    causeAreas: ['ai-safety-governance'],
+    causeAreas: ['global-catastrophic-risks'],
     leverageNote:
       'De belangrijkste internationale beweging rond AI-risico is juridisch een Nederlandse stichting.',
     watchlistTier: 3,
@@ -345,7 +364,7 @@ export const SEED_EMPLOYERS: SeedEmployer[] = [
     website: 'https://www.asml.com',
     careersUrl: 'https://www.asml.com/en/careers',
     ats: null,
-    causeAreas: ['career-capital'],
+    causeAreas: [],
     leverageNote:
       'Enige producent van EUV-lithografie — het knelpunt in de toeleveringsketen voor AI-rekenkracht. Een gewone commerciële baan, maar verdedigbaar loopbaankapitaal voor wie richting compute governance wil.',
     watchlistTier: 3,
@@ -355,7 +374,7 @@ export const SEED_EMPLOYERS: SeedEmployer[] = [
     name: 'Existential Risk Observatory',
     city: 'Amsterdam',
     ats: null,
-    causeAreas: ['global-catastrophic-risk', 'ai-safety-governance'],
+    causeAreas: ['global-catastrophic-risks'],
     watchlistTier: 3,
     active: false,
     notes: 'Explicitly states no full-time openings — list as volunteer/future.',
@@ -372,7 +391,7 @@ export const SEED_EMPLOYERS: SeedEmployer[] = [
     website: 'https://www.rivm.nl',
     careersUrl: 'https://www.werkenvoornederland.nl/organisaties/rivm',
     ats: null,
-    causeAreas: ['biosecurity-pandemics'],
+    causeAreas: ['global-catastrophic-risks'],
     leverageNote:
       'Voert de Nederlandse pandemiedetectie en -respons uit; het Centrum Infectieziektebestrijding is de operationele kern.',
     watchlistTier: 1,
@@ -384,7 +403,7 @@ export const SEED_EMPLOYERS: SeedEmployer[] = [
     website: 'https://www.erasmusmc.nl',
     careersUrl: 'https://www.werkenbijerasmusmc.nl',
     ats: null,
-    causeAreas: ['biosecurity-pandemics'],
+    causeAreas: ['global-catastrophic-risks'],
     leverageNote:
       'Een van de leidende virologieafdelingen ter wereld, en een van de weinige plekken waar het debat over dual-use-onderzoek niet theoretisch maar geleefd is.',
     watchlistTier: 1,
@@ -396,7 +415,7 @@ export const SEED_EMPLOYERS: SeedEmployer[] = [
     website: 'https://www.ema.europa.eu',
     careersUrl: 'https://careers.ema.europa.eu',
     ats: null,
-    causeAreas: ['biosecurity-pandemics', 'global-health-development'],
+    causeAreas: ['global-catastrophic-risks', 'global-health-wellbeing'],
     leverageNote:
       'Een EU-brede toezichthouder die fysiek in Nederland zit en de toelatingsroutes voor vaccins en geneesmiddelen in 27 landen bepaalt. Vermoedelijk de meest onderschatte werkgever voor mondiale gezondheid in Nederland.',
     watchlistTier: 1,
@@ -407,7 +426,7 @@ export const SEED_EMPLOYERS: SeedEmployer[] = [
     city: 'Lelystad',
     careersUrl: 'https://www.wur.nl/en/vacancies',
     ats: null,
-    causeAreas: ['biosecurity-pandemics'],
+    causeAreas: ['global-catastrophic-risks'],
     leverageNote:
       'Nationaal referentielaboratorium voor dierziekten, waaronder vogelgriep. Surveillance op zoönotische overdracht in het dichtstbevolkte veehouderijland van Europa.',
     watchlistTier: 2,
@@ -418,7 +437,7 @@ export const SEED_EMPLOYERS: SeedEmployer[] = [
     city: 'Den Haag',
     careersUrl: 'https://www.werkenvoornederland.nl',
     ats: null,
-    causeAreas: ['biosecurity-pandemics'],
+    causeAreas: ['global-catastrophic-risks'],
     leverageNote: 'Voert het programma pandemische paraatheid uit.',
     watchlistTier: 2,
   },
@@ -427,7 +446,7 @@ export const SEED_EMPLOYERS: SeedEmployer[] = [
     name: 'Pandemic & Disaster Preparedness Center',
     city: 'Rotterdam / Delft',
     ats: null,
-    causeAreas: ['biosecurity-pandemics'],
+    causeAreas: ['global-catastrophic-risks'],
     leverageNote: 'Gezamenlijk centrum van Erasmus MC, EUR en TU Delft.',
     watchlistTier: 3,
     active: false,
@@ -452,7 +471,7 @@ export const SEED_EMPLOYERS: SeedEmployer[] = [
     city: 'Den Haag',
     careersUrl: 'https://www.werkenvoornederland.nl',
     ats: null,
-    causeAreas: ['global-health-development'],
+    causeAreas: ['global-health-wellbeing'],
     leverageNote:
       'Verdeelt het hele Nederlandse hulpbudget. Beleidsfuncties hier bewegen meer geld dan bijna elke ngo-functie.',
     watchlistTier: 1,
@@ -464,7 +483,7 @@ export const SEED_EMPLOYERS: SeedEmployer[] = [
     website: 'https://www.fmo.nl',
     careersUrl: 'https://www.fmo.nl/careers',
     ats: null,
-    causeAreas: ['global-health-development'],
+    causeAreas: ['global-health-wellbeing'],
     leverageNote:
       'De Nederlandse ontwikkelingsbank. Zet kapitaal in op een schaal die ngo’s met giften niet benaderen. Sterke match voor wie financieel geschoold is.',
     watchlistTier: 1,
@@ -476,7 +495,7 @@ export const SEED_EMPLOYERS: SeedEmployer[] = [
     website: 'https://www.pharmaccess.org',
     careersUrl: 'https://www.pharmaccess.org/vacancies',
     ats: null,
-    causeAreas: ['global-health-development'],
+    causeAreas: ['global-health-wellbeing'],
     leverageNote:
       'Zorgfinanciering en verzekeringsmarkten in sub-Sahara-Afrika — een hefboom op systeemniveau waar de meeste ngo’s in mondiale gezondheid niet aan raken.',
     watchlistTier: 2,
@@ -487,7 +506,7 @@ export const SEED_EMPLOYERS: SeedEmployer[] = [
     city: 'Amsterdam',
     website: 'https://www.kit.nl',
     ats: null,
-    causeAreas: ['global-health-development'],
+    causeAreas: ['global-health-wellbeing'],
     leverageNote: 'Onderzoek en advies op het gebied van mondiale gezondheid.',
     watchlistTier: 3,
     notes: 'Posts via AcademicTransfer.',
@@ -499,7 +518,7 @@ export const SEED_EMPLOYERS: SeedEmployer[] = [
     website: 'https://www.cordaid.org',
     careersUrl: 'https://www.cordaid.org/nl/over-cordaid/vacatures',
     ats: null,
-    causeAreas: ['global-health-development'],
+    causeAreas: ['global-health-wellbeing'],
     leverageNote: 'Zorgsystemen, fragiele staten en humanitaire hulp.',
     watchlistTier: 3,
   },
@@ -510,7 +529,7 @@ export const SEED_EMPLOYERS: SeedEmployer[] = [
     website: 'https://aidsfonds.org',
     careersUrl: 'https://aidsfonds.org/vacancies',
     ats: null,
-    causeAreas: ['global-health-development'],
+    causeAreas: ['global-health-wellbeing'],
     watchlistTier: 3,
   },
   {
@@ -518,7 +537,7 @@ export const SEED_EMPLOYERS: SeedEmployer[] = [
     name: 'WaterAid Nederland',
     website: 'https://www.wateraid.org/nl',
     ats: null,
-    causeAreas: ['global-health-development'],
+    causeAreas: ['global-health-wellbeing'],
     leverageNote: 'Water, sanitatie en vrouwengezondheid in Afrika en Azië.',
     watchlistTier: 3,
     notes: 'Formerly Simavi; renamed March 2026. Vacancies URL unverified.',
@@ -530,7 +549,7 @@ export const SEED_EMPLOYERS: SeedEmployer[] = [
     website: 'https://www.partos.nl',
     careersUrl: 'https://www.partos.nl/vacatures',
     ats: null,
-    causeAreas: ['global-health-development'],
+    causeAreas: ['global-health-wellbeing'],
     leverageNote:
       'Branchevereniging met meer dan honderd leden. Voor het bord is dit vooral een bron, niet alleen een werkgever.',
     watchlistTier: 2,
@@ -545,7 +564,7 @@ export const SEED_EMPLOYERS: SeedEmployer[] = [
     city: 'Reeuwijk',
     website: 'https://www.adessium.org',
     ats: null,
-    causeAreas: ['effective-giving-meta'],
+    causeAreas: [],
     leverageNote:
       '€18,7 mln naar 95 organisaties in 2025, ongeveer de helft in Nederland. Onafhankelijk, en werkt met strategisch advies in plaats van alleen cheques. Programmamedewerkers sturen bedragen met acht cijfers.',
     watchlistTier: 1,
@@ -561,7 +580,7 @@ export const SEED_EMPLOYERS: SeedEmployer[] = [
     website: 'https://www.goededoelenloterijen.nl',
     careersUrl: 'https://www.werkendoejebij.nl',
     ats: null,
-    causeAreas: ['effective-giving-meta'],
+    causeAreas: [],
     leverageNote:
       'Steunt 150 goede doelen en hoort bij de grootste particuliere filantropische geldschieters ter wereld. De verdeellogica zit stroomopwaarts van de meeste grote Nederlandse ngo’s.',
     watchlistTier: 2,
@@ -573,7 +592,7 @@ export const SEED_EMPLOYERS: SeedEmployer[] = [
     website: 'https://www.doen.nl',
     careersUrl: 'https://www.doen.nl/en/about-us/vacancies',
     ats: null,
-    causeAreas: ['effective-giving-meta'],
+    causeAreas: [],
     leverageNote: 'De subsidiërende arm van de Nederlandse goededoelenloterijen.',
     watchlistTier: 2,
   },
@@ -583,7 +602,7 @@ export const SEED_EMPLOYERS: SeedEmployer[] = [
     website: 'https://goldschmeding.foundation',
     careersUrl: 'https://goldschmeding.foundation/vacatures',
     ats: null,
-    causeAreas: ['effective-giving-meta'],
+    causeAreas: [],
     leverageNote:
       'Expliciet gericht op onderzoeksfinanciering — de Nederlandse mainstreamstichting die het dichtst bij een bewijsgedreven model komt.',
     watchlistTier: 2,
@@ -594,7 +613,7 @@ export const SEED_EMPLOYERS: SeedEmployer[] = [
     city: 'Amsterdam',
     website: 'https://www.porticus.com',
     ats: null,
-    causeAreas: ['effective-giving-meta'],
+    causeAreas: [],
     leverageNote: 'Wereldwijde subsidieverstrekking voor de bedrijven van de familie Brenninkmeijer.',
     watchlistTier: 3,
     notes: 'Careers page unverified.',
@@ -606,7 +625,7 @@ export const SEED_EMPLOYERS: SeedEmployer[] = [
     city: 'Amsterdam',
     website: 'https://doneereffectief.nl',
     ats: null,
-    causeAreas: ['effective-giving-meta'],
+    causeAreas: ['global-health-wellbeing', 'farmed-animal-welfare'],
     leverageNote:
       '€24,3 mln gefaciliteerd per augustus 2026, met vijf betaalde medewerkers — de hoogste hoeveelheid verplaatst geld per medewerker van alles op deze lijst.',
     watchlistTier: 2,
@@ -619,7 +638,7 @@ export const SEED_EMPLOYERS: SeedEmployer[] = [
     name: 'Tien Procent Club / De Geefrevolutie',
     website: 'https://tienprocentclub.nl',
     ats: null,
-    causeAreas: ['effective-giving-meta'],
+    causeAreas: ['global-health-wellbeing', 'farmed-animal-welfare'],
     leverageNote: 'De Nederlandse gemeenschap rond de geefbelofte.',
     watchlistTier: 3,
     active: false,
@@ -630,7 +649,7 @@ export const SEED_EMPLOYERS: SeedEmployer[] = [
     name: 'Turing Foundation',
     website: 'https://www.turingfoundation.org',
     ats: null,
-    causeAreas: ['effective-giving-meta'],
+    causeAreas: [],
     watchlistTier: 3,
     active: false,
     notes:
@@ -639,86 +658,7 @@ export const SEED_EMPLOYERS: SeedEmployer[] = [
   },
 
   // -------------------------------------------------------------------------
-  // Climate and biodiversity — ALLOWLIST ONLY (§5.1)
-  //
-  // An employer qualifies only by appearing on one of Giving Green's two
-  // recommendation tracks. Most are US-based and will never produce a Dutch
-  // role — that is fine; the gate costs nothing to maintain and the few that do
-  // produce European roles are worth catching.
-  //
-  // RUNBOOK: re-check both tracks when a new cycle publishes and update
-  // giving_green_listed. The biodiversity track is new as of 2026 and likely to
-  // expand. An allowlist nobody refreshes becomes a wrong allowlist.
-  // -------------------------------------------------------------------------
-  {
-    id: 'wetlands-international',
-    name: 'Wetlands International',
-    city: 'Ede',
-    website: 'https://www.wetlands.org',
-    careersUrl: 'https://www.wetlands.org/vacancies',
-    ats: null,
-    causeAreas: ['climate'],
-    leverageNote:
-      'De sterkste naam op beide Giving Green-lijsten voor dit publiek: Nederlands hoofdkantoor, neemt lokaal aan in Ede-Wageningen, en benoemd als Top Biodiversity Nonprofit in de cyclus van 2026. Wetlands dragen tot 40% van alle soorten op 10% van het landoppervlak — dat is het argument in één zin.',
-    givingGreenListed: true,
-    watchlistTier: 1,
-  },
-  {
-    id: 'clean-air-task-force',
-    name: 'Clean Air Task Force',
-    website: 'https://www.catf.us',
-    careersUrl: 'https://www.catf.us/careers',
-    ats: 'breezy',
-    atsToken: 'clean-air-task-force',
-    causeAreas: ['climate'],
-    leverageNote:
-      'Neemt aantoonbaar in Europa aan, Amsterdam inbegrepen — er stond ten minste één directeursfunctie open voor "Brussel, Berlijn of Amsterdam" — en plaatst veel functies als Remote (Europa).',
-    givingGreenListed: true,
-    watchlistTier: 2,
-  },
-  {
-    id: 'future-cleantech-architects',
-    name: 'Future Cleantech Architects',
-    website: 'https://fcarchitects.org',
-    careersUrl: 'https://fcarchitects.org/we-are-hiring',
-    ats: null,
-    causeAreas: ['climate'],
-    leverageNote:
-      'Heeft Nederlandse senior medewerkers en heeft direct met het Nederlandse EA-ecosysteem opgetrokken, onder meer als spreker bij de Tien Procent Club in Rotterdam.',
-    givingGreenListed: true,
-    watchlistTier: 2,
-    notes:
-      'Their public team page lists Germany, Brussels and Geneva without individual NL locations, so do not rely on the site to identify Dutch roles — treat FCA as NL-relevant by default. Appendix B asks EA NL to confirm Magnolia Tovar’s location and role.',
-    verify: true,
-  },
-  {
-    id: 'opportunity-green',
-    name: 'Opportunity Green',
-    website: 'https://www.opportunitygreen.org',
-    ats: null,
-    causeAreas: ['climate'],
-    givingGreenListed: true,
-    watchlistTier: 3,
-    active: false,
-    notes: 'Allowlisted; NL presence unverified and probably nil.',
-  },
-  {
-    id: 'project-innerspace',
-    name: 'Project InnerSpace',
-    website: 'https://www.projectinnerspace.org',
-    ats: null,
-    causeAreas: ['climate'],
-    givingGreenListed: true,
-    watchlistTier: 3,
-    active: false,
-    notes: 'Allowlisted; NL presence unverified and probably nil.',
-  },
-
-  // -------------------------------------------------------------------------
-  // Global catastrophic risk and international security
-  //
-  // The Hague's concentration of international institutions is the
-  // Netherlands' most distinctive GCR asset.
+  // Global catastrophic risks — arms control and international regimes
   // -------------------------------------------------------------------------
   {
     id: 'opcw',
@@ -727,7 +667,7 @@ export const SEED_EMPLOYERS: SeedEmployer[] = [
     website: 'https://www.opcw.org',
     careersUrl: 'https://jobs.opcw.org',
     ats: null,
-    causeAreas: ['global-catastrophic-risk'],
+    causeAreas: ['global-catastrophic-risks'],
     leverageNote:
       'Het enige functionerende internationale regime voor een categorie massavernietigingswapens — een werkend model voor de bio- en AI-regimes die nog niet bestaan.',
     watchlistTier: 2,
@@ -739,7 +679,7 @@ export const SEED_EMPLOYERS: SeedEmployer[] = [
     website: 'https://www.clingendael.org',
     careersUrl: 'https://careers.clingendael.org',
     ats: null,
-    causeAreas: ['global-catastrophic-risk'],
+    causeAreas: ['global-catastrophic-risks'],
     leverageNote:
       'De belangrijkste Nederlandse denktank voor internationale betrekkingen; de voornaamste route naar Nederlands buitenland- en veiligheidsbeleid.',
     watchlistTier: 2,
@@ -751,7 +691,7 @@ export const SEED_EMPLOYERS: SeedEmployer[] = [
     website: 'https://hcss.nl',
     careersUrl: 'https://hcss.nl/jobs',
     ats: null,
-    causeAreas: ['global-catastrophic-risk', 'ai-safety-governance'],
+    causeAreas: ['global-catastrophic-risks'],
     leverageNote:
       'Een van de weinige Europese denktanks die strategische studies en opkomende technologie echt verbindt.',
     watchlistTier: 2,
@@ -761,7 +701,7 @@ export const SEED_EMPLOYERS: SeedEmployer[] = [
     name: 'ICC, ICJ, Europol en Eurojust',
     city: 'Den Haag',
     ats: null,
-    causeAreas: ['global-catastrophic-risk'],
+    causeAreas: ['global-catastrophic-risks'],
     leverageNote: 'Loopbaankapitaal in internationaal recht en veiligheid.',
     watchlistTier: 3,
     active: false,
@@ -1055,18 +995,6 @@ export const SEED_SOURCES: SeedSource[] = [
   },
 
   // ---- ATS sources for watchlist employers with a known public feed ----
-  {
-    id: 'breezy:clean-air-task-force',
-    kind: 'ats',
-    adapter: 'breezy',
-    employerId: 'clean-air-task-force',
-    returnsCompleteSet: true,
-    config: {
-      company: 'clean-air-task-force',
-      employerId: 'clean-air-task-force',
-      employerName: 'Clean Air Task Force',
-    },
-  },
   {
     id: 'jsonld:mosa-meat',
     kind: 'crawl',

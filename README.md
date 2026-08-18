@@ -46,7 +46,7 @@ is a folder copy plus a handful of route entries (spec §6.2a).
 ```
 src/jobboard/
   theme/theme.css        THE MERGE SWAP POINT — every design value, scoped to .jb-root
-  taxonomy/              cause areas, leverage archetypes, and the two gates
+  taxonomy/              the four cause areas, leverage archetypes, the e2g gate
   db/                    schema.sql + a dual-mode client (pg | PGlite)
   ingest/adapters/       one file per source family; adapters are pure
   classify/              stage one (deterministic) and stage two (the model)
@@ -72,31 +72,72 @@ Three rules keep the merge cheap, and all three are good practice anyway:
 
 ---
 
-## The two mechanical gates
+## The framing
 
-These are the most important thing to understand before changing anything.
+The board answers one question, and every page is built around it: **how do you
+work on the world's largest and most neglected problems from the Netherlands?**
 
-`climate` and `earning-to-give` are **never** judgement calls. The Netherlands
-has an enormous sustainability sector and thousands of well-paid Amsterdam jobs,
-and a classifier will find a plausible case for most of them. One diluted
-category would drag down trust in the whole board.
+The part that is easy to erode, and shouldn't be: the board says up front that
+someone genuinely optimising for impact should look at **80,000 Hours**,
+**Probably Good** and the **EA Opportunities board** first, because most of the
+strongest roles are not in the Netherlands. Only then does it explain that this
+board is for people who cannot or will not relocate — a partner's job, children
+in school, caring responsibilities, a residence permit, or simply not wanting to
+leave — and that this is a reasonable trade-off rather than a lack of commitment.
 
-So both are employer-level booleans, checked **before** the model sees a listing
+That statement appears in three places by design: the full band on the index and
+the method page (`InternationalFirst`), and a one-line form on every listing page
+(`InternationalNote`), because most visitors arrive at a listing from a
+Dutch-language search and never see the index. Copy lives in `content/i18n.ts`
+under `intl*`, not in Sanity, so it cannot quietly disappear from a page.
+
+### The four cause areas
+
+`global-health-wellbeing`, `farmed-animal-welfare`, `global-catastrophic-risks`,
+`better-futures`. That is the whole vocabulary — see `taxonomy/index.ts`, which
+documents what changed from the earlier eight and why.
+
+Two consequences worth knowing:
+
+- **AI work splits across two areas.** Catastrophe-shaped risk (takeover,
+  misalignment, catastrophic misuse) is `global-catastrophic-risks`; who holds
+  power and which values get locked in is `better-futures`. This is a real
+  judgement call on some listings, so the prompt states the boundary explicitly
+  and tells the model to use `secondaryCauses` when a role touches both.
+- **Effective giving, meta and career capital are not cause areas.** Meta work is
+  categorised by the problem it serves. "This is a stepping stone" is a statement
+  about leverage, so `career-capital` lives on the leverage axis.
+
+### Climate is out of scope, with a referral
+
+Climate is not a cause area and there is no label for it. The reason is
+neglectedness, not importance: it already attracts a great deal of Dutch money,
+talent and political attention, and the problems on this board do not. Readers
+who want climate work are sent to **Effective Environmentalism**.
+
+This replaced a Giving Green allowlist gate. That gate worked, but it admitted
+five organisations — a category nobody browses — and it implied the board held a
+view on climate effectiveness that it is not the right project to hold. The
+exclusion is recorded in `EXCLUDED_TOPICS` (`taxonomy/index.ts`), fed into the
+classifier prompt, rendered on the method and problem-area pages, and the five
+removed employers are listed in `OUT_OF_SCOPE` (`seed/employers.ts`) so nobody
+re-adds them from Appendix A.
+
+## The one mechanical gate
+
+`earning-to-give` is **never** a judgement call. There are thousands of
+well-paid Amsterdam jobs and a classifier will find a plausible case for most of
+them; one diluted category would drag down trust in the whole board.
+
+So it is an employer-level boolean, checked **before** the model sees a listing
 (the label is simply absent from the options it is given) and enforced **again**
 on its output. The double enforcement is deliberate: a model told not to use a
 label will occasionally use it anyway.
 
-- **`climate`** requires `giving_green_listed` or the near-empty
-  `climate_exception`. If the exception list grows past a couple of entries the
-  gate has stopped working.
 - **`earning-to-give`** requires `e2g_allowlisted` **and** (`salary_max >=
   E2G_SALARY_FLOOR` **or** `e2g_salary_presumed`).
 
 `src/jobboard/taxonomy/gates.ts`, with tests in `pipeline.test.ts`.
-
-**Runbook item:** re-check both Giving Green tracks when a new cycle publishes
-and update `giving_green_listed`. An allowlist nobody refreshes becomes a wrong
-allowlist.
 
 ---
 
@@ -129,7 +170,7 @@ human decisions to calibrate against.
 | `npm run pipeline` | ingest → classify → promote, end to end. |
 | `npm run mirror-glossary` | Refreshes the glossary mirror and distils the style guide. **Run before generating any page.** |
 | `npm run generate-explainers` | Generates the explainer layer, Dutch-first. |
-| `npm test` | 37 tests over the deterministic core. |
+| `npm test` | 39 tests over the deterministic core. |
 
 ### Calibrate the thresholds before trusting the queue (M3)
 

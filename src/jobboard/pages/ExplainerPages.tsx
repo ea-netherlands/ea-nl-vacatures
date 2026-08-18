@@ -13,7 +13,15 @@
 
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { Container, Eyebrow, Hero, OnwardStep, Section } from '../components/Chrome'
+import {
+  ClimateNote,
+  Container,
+  Eyebrow,
+  Hero,
+  InternationalFirst,
+  OnwardStep,
+  Section,
+} from '../components/Chrome'
 import { Icon } from '../components/Icon'
 import { EarningToGiveCard, ListingCard } from '../components/ListingCard'
 import { Callout, RichText, Uncertainties } from '../components/Prose'
@@ -57,7 +65,25 @@ export async function CausePage({ locale, slug }: { locale: Locale; slug: string
         lead={explainer?.summary ?? undefined}
       />
       <Container>
+        {/*
+          Four cause areas are coarse enough that the name alone does not tell a
+          reader whether their field is inside one. The sub-areas are display
+          text, not filters — they answer "does my work count?" without adding a
+          vocabulary the classifier would then have to be calibrated against.
+        */}
         <Section first>
+          <Eyebrow>
+            <Icon name="filter" />
+            {locale === 'nl' ? 'Wat hieronder valt' : 'What this covers'}
+          </Eyebrow>
+          <ul className={u.subareaList}>
+            {copy.causeSubareas[cause].map((sub) => (
+              <li key={sub}>{sub}</li>
+            ))}
+          </ul>
+        </Section>
+
+        <Section>
           {explainer ? (
             <RichText value={explainer.body} />
           ) : (
@@ -134,9 +160,23 @@ export async function CausesIndexPage({ locale }: { locale: Locale }) {
                 <p className={u.cardMeta}>
                   {copy.resultCount(counts.get(cause) ?? 0)}
                 </p>
+                <p className={u.cardNote}>{copy.causeSubareas[cause].join(' · ')}</p>
               </Link>
             ))}
           </div>
+        </Section>
+
+        {/*
+          This is where the question actually gets asked. Someone scanning four
+          problem areas for the one they care about, and not finding climate,
+          deserves the answer on this page rather than having to hunt for it.
+        */}
+        <Section tight>
+          <ClimateNote locale={locale} />
+        </Section>
+
+        <Section tight>
+          <OnwardStep locale={locale} />
         </Section>
       </Container>
     </>
@@ -172,13 +212,23 @@ export async function MethodPage({ locale }: { locale: Locale }) {
       />
       <Container>
         {/*
+          Before the framework, before the method, before anything about us: if
+          the reader can move, the honest advice is to look elsewhere. Putting
+          this after the ITN explanation would bury the one thing on the page
+          that costs us something to say.
+        */}
+        <Section first>
+          <InternationalFirst locale={locale} />
+        </Section>
+
+        {/*
           The ITN framework is the spine of this page. Using EA NL's existing
           Dutch definitions rather than inventing a frame does double duty: it
           explains the board, and it teaches the single most useful idea a
           newcomer could take away — in vocabulary consistent with the rest of
           the site (§9.5).
         */}
-        <Section first>
+        <Section>
           <Eyebrow>
             <Icon name="scale" />
             {framework.name}
@@ -238,6 +288,12 @@ export async function MethodPage({ locale }: { locale: Locale }) {
             </div>
           </Section>
         )}
+
+        {/* Having just explained how a listing gets picked, answer the obvious
+            follow-up: what a reader will notice is missing. */}
+        <Section tight>
+          <ClimateNote locale={locale} />
+        </Section>
 
         <Section>
           <h2 className={s.sectionHeading}>

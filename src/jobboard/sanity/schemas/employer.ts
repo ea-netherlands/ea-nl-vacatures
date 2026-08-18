@@ -90,26 +90,7 @@ export const employer = defineType({
       options: { list: causeAreaOptions() },
     }),
 
-    // ---- The gates. Mirrored so a curator can see why a label is available. ----
-    defineField({
-      name: 'givingGreenListed',
-      title: 'Staat op een Giving Green-lijst',
-      type: 'boolean',
-      group: 'gates',
-      initialValue: false,
-      readOnly: true,
-      description:
-        'Poort voor het label "klimaat" (§5.1). Wordt beheerd in de pipeline, niet hier. Ververs bij een nieuwe Giving Green-cyclus — een allowlist die niemand bijhoudt wordt een verkeerde allowlist.',
-    }),
-    defineField({
-      name: 'climateException',
-      title: 'Handmatige klimaatuitzondering',
-      type: 'boolean',
-      group: 'gates',
-      initialValue: false,
-      description:
-        'Vereist een expliciet menselijk besluit en hoort bijna leeg te blijven. Groeit deze lijst voorbij een paar organisaties, dan werkt de poort niet meer.',
-    }),
+    // ---- The gate. Mirrored so a curator can see why a label is available. ----
     defineField({
       name: 'e2gAllowlisted',
       title: 'Toegelaten voor earning to give',

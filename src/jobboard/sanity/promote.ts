@@ -70,7 +70,6 @@ type PromotableRow = {
   employer_careers_url: string | null
   employer_cause_areas: string[] | null
   employer_ats: string | null
-  employer_giving_green: boolean | null
   employer_e2g: boolean | null
 }
 
@@ -213,7 +212,6 @@ async function loadPromotable(db: Db, limit: number): Promise<PromotableRow[]> {
             e.careers_url         as employer_careers_url,
             e.cause_areas         as employer_cause_areas,
             e.ats                 as employer_ats,
-            e.giving_green_listed as employer_giving_green,
             e.e2g_allowlisted     as employer_e2g
        from listing l
        join classification c on c.listing_id = l.id
@@ -273,7 +271,6 @@ async function ensureEmployer(
       leverageNoteNl: row.employer_leverage_note ?? undefined,
       causeAreas: row.employer_cause_areas ?? [],
       ats: row.employer_ats ?? undefined,
-      givingGreenListed: row.employer_giving_green ?? false,
       e2gAllowlisted: row.employer_e2g ?? false,
       notEndorsement: row.employer_e2g ?? false,
     })
