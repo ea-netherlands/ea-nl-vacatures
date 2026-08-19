@@ -119,6 +119,13 @@ type Strings = {
   sortLabel: string
   sortRecent: string
   sortLeverage: string
+  /** The two labelled tiers on the index — see IndexPage. */
+  tierRecommendedHeading: string
+  tierRecommendedBody: string
+  tierRecommendedCount: (n: number) => string
+  tierDutchHeading: string
+  tierDutchBody: string
+  tierDutchCount: (n: number) => string
   filtersHeading: string
   clearFilters: string
   emptyHeading: string
@@ -242,7 +249,15 @@ const nl: Strings = {
   resultCount: (n) => (n === 1 ? '1 vacature' : `${n} vacatures`),
   sortLabel: 'Sorteer op',
   sortRecent: 'Nieuwste eerst',
-  sortLeverage: 'Aanbevolen eerst',
+  sortLeverage: 'Grootste hefboom eerst',
+  tierRecommendedHeading: 'Onze beste aanbevelingen',
+  tierRecommendedBody:
+    'Deze functies zijn bij organisaties die door onafhankelijke onderzoeksorganisaties zijn doorgelicht — GiveWell, Animal Charity Evaluators, Founders Pledge en The Life You Can Save — of die door 80,000 Hours worden uitgelicht. Zij hebben het werk al gedaan om te beoordelen of de organisatie zelf iets betekent. Daarom staat hier elke functie die openstaat voor iemand in Nederland, ook een ondersteunende of operationele rol.',
+  tierRecommendedCount: (n) => (n === 1 ? '1 vacature' : `${n} vacatures`),
+  tierDutchHeading: 'Nederlandse organisaties met een hefboom',
+  tierDutchBody:
+    'Grote Nederlandse organisaties — ministeries, toezichthouders, universiteiten, banken — die invloed hebben op een van deze vier problemen. Niemand heeft ze als geheel doorgelicht, dus beoordelen we hier per functie: telt wat deze specifieke rol doet, of leunt het vooral op de missie van de werkgever? Dat oordeel is van ons, en je mag het van ons betwisten.',
+  tierDutchCount: (n) => (n === 1 ? '1 vacature' : `${n} vacatures`),
   filtersHeading: 'Filter',
   clearFilters: 'Wis filters',
   emptyHeading: 'Geen vacatures met deze filters',
@@ -427,7 +442,15 @@ const en: Strings = {
   resultCount: (n) => (n === 1 ? '1 job' : `${n} jobs`),
   sortLabel: 'Sort by',
   sortRecent: 'Newest first',
-  sortLeverage: 'Recommended first',
+  sortLeverage: 'Highest leverage first',
+  tierRecommendedHeading: 'Our strongest recommendations',
+  tierRecommendedBody:
+    'These roles are at organisations vetted by independent research organisations — GiveWell, Animal Charity Evaluators, Founders Pledge and The Life You Can Save — or featured by 80,000 Hours. They have already done the work of judging whether the organisation itself is worth your time. So we list every role there that is open to someone in the Netherlands, including support and operations roles.',
+  tierRecommendedCount: (n) => (n === 1 ? '1 role' : `${n} roles`),
+  tierDutchHeading: 'Dutch organisations with leverage',
+  tierDutchBody:
+    'Large Dutch organisations — ministries, regulators, universities, banks — with influence over one of these four problems. Nobody has vetted them as a whole, so here we judge role by role: does what this specific job does count, or is it leaning on the employer’s mission? That judgement is ours, and you are welcome to argue with it.',
+  tierDutchCount: (n) => (n === 1 ? '1 role' : `${n} roles`),
   filtersHeading: 'Filter',
   clearFilters: 'Clear filters',
   emptyHeading: 'No jobs match these filters',

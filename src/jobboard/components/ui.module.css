@@ -649,3 +649,47 @@
   font-size: var(--text-sm);
   color: var(--fg-muted);
 }
+
+/* ---------------------------------------------------------------------------
+   The two tiers on the index.
+
+   The board's priority order used to live only in the sort dropdown, where a
+   reader could not see it. These headers state it: which roles someone else
+   vetted, which ones we judged ourselves, and why that difference matters.
+
+   Informational, so they follow the dashed-rule motif rather than the
+   pressable-key shadow — nothing here is pressable.
+   --------------------------------------------------------------------------- */
+.tierHeader {
+  border-top: var(--rule-dashed);
+  padding-top: var(--space-6);
+  margin-bottom: var(--space-6);
+  max-width: var(--container-prose);
+}
+
+.tierHeading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  font-size: var(--text-2xl);
+  margin-bottom: var(--space-3);
+}
+
+/* Set in the body face at body scale: it is a count, not part of the heading,
+   and matching the heading would make it compete with the words that matter. */
+.tierCount {
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: var(--fw-regular);
+  color: var(--fg-muted);
+  padding: var(--space-0-5) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background: var(--bg-subtle);
+}
+
+.tierBody {
+  color: var(--fg-muted);
+  max-width: 68ch;
+}

@@ -16,7 +16,7 @@ import {
   otherLocale,
   type Locale,
 } from '../content/i18n'
-import { Icon } from './Icon'
+import { Icon, type IconName } from './Icon'
 import s from './layout.module.css'
 import u from './ui.module.css'
 
@@ -303,6 +303,39 @@ export function InternationalFirst({ locale }: { locale: Locale }) {
           {copy.intlLink} <Icon name="arrow-right" />
         </Link>
       </p>
+    </div>
+  )
+}
+
+/**
+ * The header for one of the index's two tiers.
+ *
+ * The board ranks recommended-by-an-evaluator roles above the ones it judges
+ * itself, and that ranking used to live only in the sort order — which told
+ * the reader nothing. Saying it out loud costs two headings and two
+ * paragraphs, and it lets someone weigh the recommendation for themselves:
+ * the first tier names the organisations who did the vetting, the second
+ * admits the judgement is ours.
+ */
+export function TierHeading({
+  icon,
+  heading,
+  body,
+  count,
+}: {
+  icon: IconName
+  heading: string
+  body: string
+  count: string
+}) {
+  return (
+    <div className={u.tierHeader}>
+      <h2 className={u.tierHeading}>
+        <Icon name={icon} />
+        {heading}
+        <span className={u.tierCount}>{count}</span>
+      </h2>
+      <p className={u.tierBody}>{body}</p>
     </div>
   )
 }

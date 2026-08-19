@@ -11,7 +11,14 @@
 
 import Link from 'next/link'
 import { EmptyState, Filters, IntroBand, type FilterState } from '../components/Filters'
-import { Container, Hero, InternationalFirst, OnwardStep, Section } from '../components/Chrome'
+import {
+  Container,
+  Hero,
+  InternationalFirst,
+  OnwardStep,
+  Section,
+  TierHeading,
+} from '../components/Chrome'
 import { ListingCard } from '../components/ListingCard'
 import { routes, t, type Locale } from '../content/i18n'
 import { getLiveListings } from '../sanity/queries'
@@ -73,16 +80,19 @@ export async function IndexPage({
 
   // Earning to give is excluded here: it has its own route because it needs
   // different framing and a different card layout (§9.6).
-  //
-  // Default to the priority-ordered sort, not recency: the board's stated
-  // priority is evaluator/80k-vetted roles first, then the leverage-scored
-  // roles this board judges itself, and recency only breaks ties within each
-  // tier. A reader who wants pure recency can still choose it explicitly.
   const all = await getLiveListings({
     excludeEarningToGive: true,
-    sort: state.sort === 'recent' ? 'recent' : 'leverage',
+    sort: state.sort === 'leverage' ? 'leverage' : 'recent',
   })
   const filtered = applyFilters(all, state)
+
+  // The board's priority order, stated rather than implied. Roles at
+  // organisations an independent evaluator or 80,000 Hours already vetted go
+  // first, under a heading that names who did the vetting; everything else
+  // follows under a heading that admits the judgement is ours. The sort
+  // control orders within each tier, not across them.
+  const recommended = filtered.filter((l) => l.leverage === 'trusted-recommendation')
+  const dutch = filtered.filter((l) => l.leverage !== 'trusted-recommendation')
 
   return (
     <>
@@ -108,11 +118,42 @@ export async function IndexPage({
               suggestions={suggestions(all, state, locale)}
             />
           ) : (
-            <ul className={u.cardList}>
-              {filtered.map((listing) => (
-                <ListingCard key={listing.id} listing={listing} locale={locale} />
-              ))}
-            </ul>
+            <>
+              {/* A tier with nothing in it — because a filter excluded it —
+                  renders nothing at all: an explanation of an empty list is
+                  worse than no heading. */}
+              {recommended.length > 0 ? (
+                <>
+                  <TierHeading
+                    icon="circle-check"
+                    heading={copy.tierRecommendedHeading}
+                    body={copy.tierRecommendedBody}
+                    count={copy.tierRecommendedCount(recommended.length)}
+                  />
+                  <ul className={u.cardList}>
+                    {recommended.map((listing) => (
+                      <ListingCard key={listing.id} listing={listing} locale={locale} />
+                    ))}
+                  </ul>
+                </>
+              ) : null}
+
+              {dutch.length > 0 ? (
+                <>
+                  <TierHeading
+                    icon="building"
+                    heading={copy.tierDutchHeading}
+                    body={copy.tierDutchBody}
+                    count={copy.tierDutchCount(dutch.length)}
+                  />
+                  <ul className={u.cardList}>
+                    {dutch.map((listing) => (
+                      <ListingCard key={listing.id} listing={listing} locale={locale} />
+                    ))}
+                  </ul>
+                </>
+              ) : null}
+            </>
           )}
 
           <p className={u.linkRow}>
