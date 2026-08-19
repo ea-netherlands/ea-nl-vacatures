@@ -89,8 +89,12 @@ export async function runIngest(options: IngestOptions = {}): Promise<IngestRepo
 
   const { rows: sources } = await db.query<SourceRecord>(
     options.sourceIds?.length
-      ? 'select * from source where enabled and id = any($1) order by id'
-      : 'select * from source where enabled order by id',
+      ? `select s.*, e.name as employer_name from source s
+           left join employer e on e.id = s.employer_id
+          where s.enabled and s.id = any($1) order by s.id`
+      : `select s.*, e.name as employer_name from source s
+           left join employer e on e.id = s.employer_id
+          where s.enabled order by s.id`,
     options.sourceIds?.length ? [options.sourceIds] : [],
   )
 
@@ -280,11 +284,15 @@ async function upsertListing(
   n: NormalisedListing,
 ): Promise<'inserted' | 'updated'> {
   const employerId = n.employerId ?? source.employer_id ?? null
+  // A single-tenant ATS board (one employer per source) often never repeats
+  // the company name in its own job payloads, so fall back to the watchlist
+  // employer's canonical name rather than surfacing a blank employer.
+  const employerName = n.employerName?.trim() || source.employer_name || n.employerName
   const dedupKey = computeDedupKey({
     applyUrl: n.applyUrl,
     title: n.title,
     employerId,
-    employerName: n.employerName,
+    employerName,
   })
 
   const { rows } = await db.query<{ inserted: boolean }>(
@@ -325,7 +333,7 @@ async function upsertListing(
       source.id,
       n.externalId,
       employerId,
-      n.employerName,
+      employerName,
       n.title,
       n.applyUrl,
       n.description,

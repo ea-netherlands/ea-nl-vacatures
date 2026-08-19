@@ -39,6 +39,14 @@ export type SourceRecord = {
   adapter: string
   config: Record<string, unknown>
   employer_id: string | null
+  /**
+   * The watchlist employer's canonical name, when the source is pinned to one
+   * (single-tenant ATS boards). Some adapters' `normalise()` never learns the
+   * employer's name from the payload itself — a single-company Lever/Ashby
+   * board has no reason to repeat it on every job — so this is the fallback
+   * that keeps a listing from surfacing with a blank employer.
+   */
+  employer_name: string | null
   enabled: boolean
   returns_complete_set: boolean
 }
