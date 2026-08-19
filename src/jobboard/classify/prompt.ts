@@ -30,11 +30,32 @@ Your readers are Dutch-based people who want their career to do a large amount o
 
 Most listings you see will not belong on the board. Be willing to reject. A board with 25 excellent listings is far more valuable than one with 200 mediocre ones.
 
-Score two things independently.
+Score two things independently. Both scales are anchored on what *this specific
+role's day-to-day work* is, not on the employer's mission statement — a
+generic support function at a high-impact organisation scores low on both
+scales even though the organisation itself would score high. Do not let the
+employer's relevance leak into the role's score. When genuinely unsure between
+two adjacent numbers, round down: a board that is too strict loses a good
+listing to human review; a board that is too generous erodes the trust the
+whole product depends on.
 
-**Cause relevance (0–3):** how well does the work bear on a problem the effective altruism community treats as large, neglected and tractable? A role at an EA-identified organisation is not automatically a 3, and a role at an ordinary Dutch employer is not automatically a 0.
+**Cause relevance (0–3):** how well does the work bear on a problem the effective altruism community treats as large, neglected and tractable?
 
-**Leverage (0–3):** how much does *this specific role* influence outcomes beyond the work of the individual holding it? A programme officer allocating a foundation's grants is high leverage. A grants administrator processing paperwork at the same foundation is not. A regulator drafting AI Act enforcement guidance is high leverage. A generalist IT role at the same regulator is not. Judge the role, not the employer's mission statement.
+- **0** — no real connection. The role could exist at almost any employer regardless of cause area.
+- **1** — the employer's mission touches the cause, but this role's actual tasks would be near-identical at an employer with no such mission (generic IT, HR, facilities, finance-administration, executive-assistant work).
+- **2** — the role's substantive output is part of the organisation's cause-relevant work, but is one contribution among many rather than a distinctive lever (e.g. a policy officer among a large team, a researcher on a well-staffed study).
+- **3** — the role's substance *is* the cause-relevant work at a point that plausibly shapes how it goes — drafting the policy, running the research programme, making the allocation call.
+
+A role at an EA-identified organisation is not automatically a 3, and a role at an ordinary Dutch employer is not automatically a 0.
+
+**Leverage (0–3):** how much does *this specific role* influence outcomes beyond the work of the individual holding it?
+
+- **0** — the role's output is fully consumed by routine operations; nothing about it compounds or shapes what others do.
+- **1** — the role *enables* people who do the leveraged work (generalist IT, internal process support, administrative coordination) without itself shaping the substance of what they produce. This is the default score for internal/support functions at a regulator, ministry, or foundation — being useful to a high-leverage team is not the same as being high leverage.
+- **2** — the role shapes how a specific piece of cause-relevant work gets done, but within a process others ultimately control (a mid-level policy adviser contributing analysis, a researcher on someone else's programme).
+- **3** — the role sets direction that many others then execute: a programme officer allocating a foundation's grants, a regulator drafting the actual enforcement guidance, a lead researcher choosing the research agenda. A grants administrator processing paperwork at the same foundation is not a 3. A generalist IT role at the same regulator is not a 3 — it is almost always a 1, even when the regulator's mission is squarely on-topic.
+
+Judge the role, not the employer's mission statement.
 
 Pay particular attention to roles at organisations that would not describe themselves as impact-focused at all — a food and agribusiness analyst at a large agricultural lender, an investment officer at a development bank, a policy officer in a ministry. These are often the highest-leverage and least-discovered roles, and they are the main reason this board exists.
 
