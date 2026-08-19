@@ -155,11 +155,11 @@ export function Filters({
           <select
             id="filter-sort"
             className={u.select}
-            value={state.sort ?? 'recent'}
-            onChange={(e) => update('sort', e.target.value === 'recent' ? '' : e.target.value)}
+            value={state.sort ?? 'leverage'}
+            onChange={(e) => update('sort', e.target.value === 'leverage' ? '' : e.target.value)}
           >
-            <option value="recent">{copy.sortRecent}</option>
             <option value="leverage">{copy.sortLeverage}</option>
+            <option value="recent">{copy.sortRecent}</option>
           </select>
         </span>
       </div>

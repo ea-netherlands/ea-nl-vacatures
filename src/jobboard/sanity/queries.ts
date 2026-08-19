@@ -137,17 +137,22 @@ export async function getLiveListings(opts?: {
   const filter = opts?.excludeEarningToGive
     ? `${LIVE} && leverage != "earning-to-give"`
     : LIVE
-  // "Highest leverage first" ranks by the leverage archetype the scoring rubric
-  // rewards, then recency — the board has no public score, and exposing the
-  // LLM's number would be both meaningless and misleading to a reader.
+  // "Highest leverage first" ranks by the board's stated priority order
+  // (§ discussion August 2026): a role at an org an independent evaluator or
+  // 80,000 Hours has already vetted ranks above the leverage-scored roles
+  // this board itself judges, which in turn rank above everything else. The
+  // board has no public score, and exposing the LLM's number would be both
+  // meaningless and misleading to a reader — this ranking is the honest
+  // proxy for it.
   const order =
     opts?.sort === 'leverage'
       ? `order(select(
-            leverage == "capital-allocation" => 0,
-            leverage == "policy-regulation" => 1,
-            leverage == "research-evidence" => 2,
-            leverage == "field-building" => 3,
-            4
+            leverage == "trusted-recommendation" => 0,
+            leverage == "capital-allocation" => 1,
+            leverage == "policy-regulation" => 2,
+            leverage == "research-evidence" => 3,
+            leverage == "field-building" => 4,
+            5
           ) asc, coalesce(postedAt, _createdAt) desc)`
       : `order(coalesce(postedAt, _createdAt) desc)`
 

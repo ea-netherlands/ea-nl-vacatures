@@ -73,9 +73,14 @@ export async function IndexPage({
 
   // Earning to give is excluded here: it has its own route because it needs
   // different framing and a different card layout (§9.6).
+  //
+  // Default to the priority-ordered sort, not recency: the board's stated
+  // priority is evaluator/80k-vetted roles first, then the leverage-scored
+  // roles this board judges itself, and recency only breaks ties within each
+  // tier. A reader who wants pure recency can still choose it explicitly.
   const all = await getLiveListings({
     excludeEarningToGive: true,
-    sort: state.sort === 'leverage' ? 'leverage' : 'recent',
+    sort: state.sort === 'recent' ? 'recent' : 'leverage',
   })
   const filtered = applyFilters(all, state)
 
