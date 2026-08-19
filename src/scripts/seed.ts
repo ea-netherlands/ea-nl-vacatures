@@ -22,9 +22,9 @@ void main(async () => {
     await db.query(
       `insert into employer (
          id, name, website, careers_url, city, ats, ats_token, cause_areas,
-         leverage_note, e2g_allowlisted, e2g_salary_presumed,
+         leverage_note, e2g_allowlisted, e2g_salary_presumed, recommender_allowlisted,
          watchlist_tier, active, notes
-       ) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+       ) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
        on conflict (id) do update set
          name                = excluded.name,
          city                = ${reset ? 'excluded.city' : 'coalesce(employer.city, excluded.city)'},
@@ -36,8 +36,9 @@ void main(async () => {
          leverage_note       = ${reset ? 'excluded.leverage_note' : 'coalesce(employer.leverage_note, excluded.leverage_note)'},
          -- The gates are pipeline-managed, so they always follow the seed:
          -- an allowlist nobody refreshes becomes a wrong allowlist.
-         e2g_allowlisted     = excluded.e2g_allowlisted,
-         e2g_salary_presumed = excluded.e2g_salary_presumed,
+         e2g_allowlisted         = excluded.e2g_allowlisted,
+         e2g_salary_presumed     = excluded.e2g_salary_presumed,
+         recommender_allowlisted = excluded.recommender_allowlisted,
          watchlist_tier      = ${reset ? 'excluded.watchlist_tier' : 'employer.watchlist_tier'},
          notes               = coalesce(employer.notes, excluded.notes)`,
       [
@@ -52,6 +53,7 @@ void main(async () => {
         e.leverageNote ?? null,
         e.e2gAllowlisted ?? false,
         e.e2gSalaryPresumed ?? false,
+        e.recommenderAllowlisted ?? false,
         e.watchlistTier ?? 2,
         e.active ?? true,
         [e.notes, e.verify ? 'VERIFY before going live.' : null].filter(Boolean).join(' ') || null,

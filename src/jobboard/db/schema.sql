@@ -26,6 +26,13 @@ create table if not exists employer (
   created_at          timestamptz not null default now()
 );
 
+-- Added August 2026: an org already vetted by an independent evaluator (GiveWell,
+-- ACE, Founders Pledge, ...) or featured by 80,000 Hours. Any role there is in
+-- scope, not just high-leverage ones — trust in the evaluator's own vetting
+-- substitutes for the classifier's role-level leverage judgement. See the
+-- `trusted-recommendation` leverage archetype in ../taxonomy/index.ts.
+alter table employer add column if not exists recommender_allowlisted boolean not null default false;
+
 create table if not exists source (
   id                   text primary key,         -- 'greenhouse:mosameat', 'cso-api', 'academictransfer'
   kind                 text not null,            -- 'ats' | 'gov-api' | 'crawl' | 'ea-board' | 'manual'

@@ -356,6 +356,7 @@ const nl: Strings = {
     'direct-work': 'Direct werk',
     'career-capital': 'Loopbaankapitaal',
     'earning-to-give': 'Earning to give',
+    'trusted-recommendation': 'Aanbevolen door een evaluator',
   },
   locationModes: {
     'on-site': 'Op locatie',
@@ -537,6 +538,7 @@ const en: Strings = {
     'direct-work': 'Direct work',
     'career-capital': 'Career capital',
     'earning-to-give': 'Earning to give',
+    'trusted-recommendation': 'Recommended by an evaluator',
   },
   locationModes: {
     'on-site': 'On site',

@@ -26,6 +26,13 @@ export type SeedEmployer = {
   leverageNote?: string
   e2gAllowlisted?: boolean
   e2gSalaryPresumed?: boolean
+  /**
+   * This org is itself vetted by an independent evaluator (GiveWell, ACE,
+   * Founders Pledge, ...) or featured by 80,000 Hours/Probably Good. Any role
+   * here is in scope regardless of the classifier's own leverage judgement —
+   * see `trusted-recommendation` in ../taxonomy/index.ts.
+   */
+  recommenderAllowlisted?: boolean
   watchlistTier?: 1 | 2 | 3
   /** False when something in the appendix still needs confirming. */
   active?: boolean
@@ -807,6 +814,76 @@ export const SEED_EMPLOYERS: SeedEmployer[] = [
     active: false,
     verify: true,
   },
+
+  // -------------------------------------------------------------------------
+  // Trusted recommendation — ALLOWLIST, NO LEVERAGE JUDGEMENT (added August 2026)
+  //
+  // These organisations are already vetted by an independent evaluator or
+  // featured by 80,000 Hours/Probably Good. Any role there is in scope — see
+  // `trusted-recommendation` in ../taxonomy/index.ts and the score override in
+  // ../classify/run.ts. Researched against the Giving What We Can evaluator
+  // database (April 2026); GiveWell is deliberately excluded from this list
+  // despite being the highest-profile evaluator, because its own remote-work
+  // policy restricts hiring to within three hours of Pacific Time or to
+  // US/UK/Canada work authorisation — not realistically NL-accessible.
+  // -------------------------------------------------------------------------
+  {
+    id: 'founders-pledge',
+    name: 'Founders Pledge',
+    website: 'https://founderspledge.com',
+    careersUrl: 'https://founderspledge.teamtailor.com',
+    ats: 'teamtailor',
+    atsToken: 'founderspledge.teamtailor.com',
+    causeAreas: ['global-health-wellbeing', 'global-catastrophic-risks', 'better-futures'],
+    leverageNote:
+      'Onderzoekt en beheert fondsen over meerdere probleemgebieden voor techondernemers die willen doneren; eigen research- en fondsenwervingsrollen bepalen waar honderden miljoenen euro’s aan donaties naartoe gaan.',
+    recommenderAllowlisted: true,
+    watchlistTier: 2,
+    notes: 'Careers page lists "Europe (flexible remote)" as an eligible location for some roles.',
+  },
+  {
+    id: 'animal-charity-evaluators',
+    name: 'Animal Charity Evaluators',
+    website: 'https://animalcharityevaluators.org',
+    careersUrl: 'https://animalcharityevaluators.org/about/our-team/join-our-team/',
+    ats: null,
+    causeAreas: ['farmed-animal-welfare'],
+    leverageNote:
+      'De belangrijkste onafhankelijke evaluator van dierenwelzijnsorganisaties; bepaalt welke liefdadigheidsinstellingen het vertrouwen en geld van donateurs wereldwijd krijgen.',
+    recommenderAllowlisted: true,
+    watchlistTier: 3,
+    notes:
+      'Careers hosted directly on their own WordPress site (no third-party ATS found) — needs a bespoke scraper or manual watch, not one of the existing adapters. "All positions are remote" per their benefits language.',
+    verify: true,
+  },
+  {
+    id: 'the-life-you-can-save',
+    name: 'The Life You Can Save',
+    website: 'https://www.thelifeyoucansave.org',
+    ats: null,
+    causeAreas: ['global-health-wellbeing'],
+    leverageNote:
+      'Peter Singers evaluator en fondsenwerver voor bewezen kosteneffectieve armoedebestrijding; stuurt donaties naar een kleine lijst zorgvuldig geëvalueerde organisaties.',
+    recommenderAllowlisted: true,
+    watchlistTier: 3,
+    notes:
+      'Described as "a fully remote organization with a globally distributed team" — no specific ATS found and no confirmed NL staff yet.',
+    verify: true,
+  },
+  {
+    id: 'happier-lives-institute',
+    name: 'Happier Lives Institute',
+    website: 'https://www.happierlivesinstitute.org',
+    ats: null,
+    causeAreas: ['global-health-wellbeing'],
+    leverageNote:
+      'Evalueert liefdadigheidsinstellingen op subjectief welzijn in plaats van op traditionele gezondheidsmaatstaven — een ander lens op wat "de meeste goed doen" betekent.',
+    recommenderAllowlisted: true,
+    watchlistTier: 3,
+    notes:
+      'Registered as a Dutch ANBI charity (tax status only, not an office or hiring signal). No open roles found at time of research (July 2026) — revisit periodically.',
+    verify: true,
+  },
 ]
 
 /**
@@ -982,7 +1059,7 @@ export const SEED_SOURCES: SeedSource[] = [
       fallback: { appId: 'W6KM1UDIB3', apiKey: '', index: 'jobs_prod' },
     },
     notes:
-      'Treat as a discovery source for the watchlist more than a listings source: none of 80k’s 53 featured organisations are Netherlands-based. Email them before launch (§10).',
+      'Also a real listings source (not just discovery, revised August 2026): the facet filter already covers remote-Europe/remote-global roles, which is most of what makes an 80k-featured organisation NL-accessible even with no physical NL presence. Email them before launch (§10).',
   },
   {
     id: 'probablygood',
@@ -1009,5 +1086,13 @@ export const SEED_SOURCES: SeedSource[] = [
     },
     notes:
       'Homerun has no public feed — every endpoint needs a Bearer token — so this reads JobPosting markup from the career page instead (§7.2).',
+  },
+  {
+    id: 'teamtailor:founders-pledge',
+    kind: 'ats',
+    adapter: 'teamtailor',
+    employerId: 'founders-pledge',
+    returnsCompleteSet: true,
+    config: { host: 'founderspledge.teamtailor.com' },
   },
 ]

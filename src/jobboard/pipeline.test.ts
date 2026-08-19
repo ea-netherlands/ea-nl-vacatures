@@ -49,6 +49,7 @@ import { firstLine } from './lib/note'
 const noFlags: EmployerGateFlags = {
   e2g_allowlisted: false,
   e2g_salary_presumed: false,
+  recommender_allowlisted: false,
 }
 
 // ---------------------------------------------------------------------------

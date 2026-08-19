@@ -11,7 +11,7 @@ import type { Db } from '../db/client'
 import { getDb } from '../db/client'
 import { structuredCall, TRIAGE_MODEL, DRAFTING_MODEL } from '../lib/anthropic'
 import { truncateWords } from '../lib/text'
-import { meetsPromotionThreshold, NEAR_MISS_TOTAL } from '../taxonomy'
+import { meetsPromotionThreshold, NEAR_MISS_TOTAL, PROMOTION_MIN_CAUSE_SCORE } from '../taxonomy'
 import { enforceGates, type EmployerGateFlags } from '../taxonomy/gates'
 import { buildNoteSystemPrompt, buildTriageUserPrompt, TRIAGE_SYSTEM_PROMPT } from './prompt'
 import { NOTE_SCHEMA, TRIAGE_SCHEMA, type TriageResult } from './schema'
@@ -133,11 +133,22 @@ export async function runClassification(
         )
       }
 
+      // A role at an evaluator/80k-endorsed org is in scope regardless of what
+      // the classifier's own leverage judgement would have said — that
+      // judgement is exactly what the evaluator has already done at the
+      // organisation level (§ trusted-recommendation in taxonomy/gates.ts).
+      // Override rather than trust the model to self-assign the label: it was
+      // never offered as an option to the model in the first place.
+      const trusted = c.employer?.recommender_allowlisted ?? false
+      const leverage = trusted ? 'trusted-recommendation' : gated.leverage
+      const leverageScore = trusted ? 3 : raw.leverageScore
+      const causeScore = trusted ? Math.max(raw.causeScore, PROMOTION_MIN_CAUSE_SCORE) : raw.causeScore
+
       const promotable =
         raw.nlEligible &&
         gated.primaryCause !== null &&
-        gated.leverage !== null &&
-        meetsPromotionThreshold(raw.causeScore, raw.leverageScore)
+        leverage !== null &&
+        meetsPromotionThreshold(causeScore, leverageScore)
 
       // Draft the editorial note only for listings that will reach a curator.
       // This is the expensive model, and the set is much smaller (§8.4).
@@ -154,7 +165,7 @@ export async function runClassification(
               c.employer_leverage_note
                 ? `**Wat we van deze werkgever weten:** ${c.employer_leverage_note}`
                 : null,
-              `**Hefboomtype:** ${gated.leverage}`,
+              `**Hefboomtype:** ${leverage}`,
               `**Probleemgebied:** ${gated.primaryCause}`,
               ``,
               `**Waarom de triage dit doorliet:** ${raw.reasoning}`,
@@ -210,9 +221,9 @@ export async function runClassification(
           raw.nlEligible,
           gated.primaryCause,
           gated.secondaryCauses,
-          gated.leverage,
-          raw.causeScore,
-          raw.leverageScore,
+          leverage,
+          causeScore,
+          leverageScore,
           raw.languageRequirement,
           raw.workAuthorisation,
           raw.securityScreening,
@@ -227,7 +238,7 @@ export async function runClassification(
       )
       report.classified++
 
-      const total = raw.causeScore + raw.leverageScore
+      const total = causeScore + leverageScore
       if (promotable) {
         report.promotable++
       } else {
@@ -237,7 +248,7 @@ export async function runClassification(
           c.id,
           'auto-rejected',
           'pipeline',
-          `stage 2: cause ${raw.causeScore} + leverage ${raw.leverageScore} = ${total}` +
+          `stage 2: cause ${causeScore} + leverage ${leverageScore} = ${total}` +
             (raw.nlEligible ? '' : '; not NL-eligible on a full read'),
         )
       }
@@ -257,13 +268,14 @@ async function loadCandidates(db: Db, options: ClassifyOptions): Promise<Candida
     Candidate & {
       e2g_allowlisted: boolean | null
       e2g_salary_presumed: boolean | null
+      recommender_allowlisted: boolean | null
     }
   >(
     `select l.id, l.title, l.employer_name, l.location_raw, l.country, l.description,
             l.apply_url, l.employer_id, l.salary_min, l.salary_max, l.salary_currency,
             l.salary_period,
             e.leverage_note      as employer_leverage_note,
-            e.e2g_allowlisted, e.e2g_salary_presumed
+            e.e2g_allowlisted, e.e2g_salary_presumed, e.recommender_allowlisted
        from listing l
        left join employer e on e.id = l.employer_id
        left join classification c on c.listing_id = l.id
@@ -284,6 +296,7 @@ async function loadCandidates(db: Db, options: ClassifyOptions): Promise<Candida
       ? ({
           e2g_allowlisted: r.e2g_allowlisted ?? false,
           e2g_salary_presumed: r.e2g_salary_presumed ?? false,
+          recommender_allowlisted: r.recommender_allowlisted ?? false,
         } satisfies EmployerGateFlags)
       : null,
   }))

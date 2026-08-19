@@ -16,6 +16,13 @@
  * The double enforcement is deliberate: an LLM told not to use a label will
  * occasionally use it anyway, and this is the category where a single leak
  * starts an erosion (§8.1).
+ *
+ * `trusted-recommendation` (added August 2026) is the same pattern for a
+ * different reason: not to prevent over-eager use, but because the classifier
+ * would otherwise score a legitimate support role at an evaluator-endorsed org
+ * as low leverage and reject it — exactly the outcome the label exists to
+ * avoid. See `run.ts` for the score override; this module only decides
+ * whether the label is available at all.
  */
 
 import {
@@ -36,6 +43,7 @@ export const E2G_SALARY_CURRENCY = 'EUR'
 export type EmployerGateFlags = {
   e2g_allowlisted: boolean
   e2g_salary_presumed: boolean
+  recommender_allowlisted: boolean
 }
 
 export type ListingSalary = {
@@ -81,6 +89,7 @@ export function allowedLeverageTypes(
 ): LeverageType[] {
   const allowed = [...CLASSIFIER_ASSIGNABLE_LEVERAGE]
   if (earningToGiveEligible(employer, listing)) allowed.push('earning-to-give')
+  if (employer?.recommender_allowlisted) allowed.push('trusted-recommendation')
   return allowed
 }
 

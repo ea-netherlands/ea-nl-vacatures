@@ -136,16 +136,20 @@ export const LEVERAGE_TYPES = [
   'direct-work',
   'career-capital',
   'earning-to-give',
+  'trusted-recommendation',
 ] as const
 
 export type LeverageType = (typeof LEVERAGE_TYPES)[number]
 
 /**
- * `earning-to-give` is gated by an employer allowlist plus a salary floor
- * (§5.3) and can never be assigned by the classifier. This is now the only
- * gate in the system, and it is the one that most needs to hold.
+ * `earning-to-give` and `trusted-recommendation` are both gated by an
+ * employer-level allowlist and can never be assigned by the classifier
+ * itself (§5.3, and August 2026 for the latter).
  */
-export const GATED_LEVERAGE_TYPES: readonly LeverageType[] = ['earning-to-give']
+export const GATED_LEVERAGE_TYPES: readonly LeverageType[] = [
+  'earning-to-give',
+  'trusted-recommendation',
+]
 
 export const CLASSIFIER_ASSIGNABLE_LEVERAGE: readonly LeverageType[] = LEVERAGE_TYPES.filter(
   (l) => !GATED_LEVERAGE_TYPES.includes(l),
@@ -166,6 +170,8 @@ export const LEVERAGE_DEFINITIONS: Record<LeverageType, string> = {
     'The role is a stepping stone rather than impactful in itself: it builds skills, credentials or a network that unlock a high-leverage role later. Used sparingly.',
   'earning-to-give':
     'The work itself is not the point. The role pays enough that a person donating a meaningful share can fund more good than they could produce directly.',
+  'trusted-recommendation':
+    'Any role at an organisation already vetted by an independent evaluator (GiveWell, Animal Charity Evaluators, Founders Pledge, ...) or featured by 80,000 Hours or Probably Good, open to a Netherlands-based or NL-remote applicant. The evaluator has already done the leverage judgement at the organisation level; this label exists so a generic support role there is not filtered out by a role-level score it was never meant to pass.',
 }
 
 /**
@@ -247,6 +253,7 @@ export const LEVERAGE_TITLES_NL: Record<LeverageType, string> = {
   'direct-work': 'Direct werk',
   'career-capital': 'Loopbaankapitaal',
   'earning-to-give': 'Earning to give',
+  'trusted-recommendation': 'Aanbevolen door een evaluator',
 }
 
 export const causeAreaOptions = (): SanityOption[] =>
