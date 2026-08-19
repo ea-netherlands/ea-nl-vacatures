@@ -803,6 +803,80 @@ export const SEED_EMPLOYERS: SeedEmployer[] = [
     verify: true,
     notes: 'The one candidate in the sweep with a readable feed: Personio, token war-child-alliance.',
   },
+
+  // --- Government bodies reached through the werkenvoornederland sitemap ---
+  // Added August 2026 after finding the crawl was configured for `LNV`, a code
+  // that stopped existing when the ministry was renamed in 2024, and had never
+  // listed the NVWA at all.
+  {
+    id: 'nvwa',
+    name: 'Nederlandse Voedsel- en Warenautoriteit',
+    website: 'https://www.nvwa.nl',
+    careersUrl: 'https://www.werkenvoornederland.nl/organisaties/nederlandse-voedsel-en-warenautoriteit',
+    city: 'Utrecht',
+    ats: null,
+    causeAreas: ['farmed-animal-welfare', 'global-catastrophic-risks'],
+    leverageNote:
+      'Handhaaft de dierenwelzijnsregels in Nederlandse slachthuizen en op boerderijen, en houdt toezicht op diervoeder en import. Wie hier inspecteert of beleid maakt, bepaalt wat de regels in de praktijk betekenen.',
+    watchlistTier: 1,
+    verify: true,
+    notes:
+      'Had 27 open vacancies when the sweep found it, including supervising vets for red meat. Reached via the wvn sitemap, keyword-gated on the animal and food terms.',
+  },
+  {
+    id: 'ministerie-lvvn',
+    name: 'Ministerie van Landbouw, Visserij, Voedselzekerheid en Natuur',
+    website: 'https://www.rijksoverheid.nl/ministeries/ministerie-van-lvvn',
+    careersUrl: 'https://www.werkenvoornederland.nl/organisaties/ministerie-van-landbouw-visserij-voedselzekerheid-en-natuur',
+    city: 'Den Haag',
+    ats: null,
+    causeAreas: ['farmed-animal-welfare'],
+    leverageNote:
+      'Het ministerie dat het Nederlandse beleid voor de veehouderij en de eiwittransitie schrijft. Nederland is een van de grootste vleesexporteurs van Europa, dus wat hier wordt vastgelegd werkt ver buiten de landsgrenzen door.',
+    watchlistTier: 1,
+    verify: true,
+    notes: 'Formerly LNV; renamed 2024. The old org code matched nothing.',
+  },
+  {
+    id: 'anvs',
+    name: 'Autoriteit Nucleaire Veiligheid en Stralingsbescherming',
+    website: 'https://www.anvs.nl',
+    careersUrl: 'https://www.werkenvoornederland.nl/organisaties/autoriteit-nucleaire-veiligheid-en-stralingsbescherming',
+    city: 'Den Haag',
+    ats: null,
+    causeAreas: ['global-catastrophic-risks'],
+    leverageNote:
+      'De Nederlandse toezichthouder op nucleaire veiligheid en stralingsbescherming — klein, gespecialiseerd, en het enige punt waar Nederland hier eigen regels stelt.',
+    watchlistTier: 2,
+    verify: true,
+    notes: 'Small enough to always include: three open roles at the time of the sweep.',
+  },
+  {
+    id: 'rvo',
+    name: 'Rijksdienst voor Ondernemend Nederland',
+    website: 'https://www.rvo.nl',
+    careersUrl: 'https://www.werkenvoornederland.nl/organisaties/rijksdienst-voor-ondernemend-nederland',
+    city: 'Den Haag',
+    ats: null,
+    causeAreas: ['farmed-animal-welfare', 'global-health-wellbeing'],
+    leverageNote:
+      'Voert subsidies en regelingen uit die bepalen welk landbouw- en voedselonderzoek doorgaat, en huisvest het Nationaal Comité advies dierproevenbeleid.',
+    watchlistTier: 2,
+    verify: true,
+  },
+  {
+    id: 'acm',
+    name: 'Autoriteit Consument & Markt',
+    website: 'https://www.acm.nl',
+    careersUrl: 'https://www.werkenvoornederland.nl/organisaties/autoriteit-consument-en-markt',
+    city: 'Den Haag',
+    ats: null,
+    causeAreas: ['better-futures'],
+    leverageNote:
+      'De mededingingstoezichthouder, en daarmee de plek waar concentratie van marktmacht in digitale markten in Nederland daadwerkelijk wordt beoordeeld.',
+    watchlistTier: 3,
+    verify: true,
+  },
   {
     id: 'turing-foundation',
     name: 'Turing Foundation',
@@ -1411,8 +1485,44 @@ export type SeedSource = {
 }
 
 /** Organisation codes on werkenvoornederland, from the slug suffix. */
-const WVN_ALWAYS_INCLUDE = ['RIVM', 'AP', 'RDI', 'EZK', 'VWS', 'BZ']
-const WVN_KEYWORD_GATED = ['BZK', 'JENV', 'DEF', 'IENW', 'LNV', 'OCW', 'FIN', 'AZ']
+/*
+  Small enough, and specialised enough, that everything they post is worth
+  looking at. ANVS joins them in August 2026: the nuclear safety and radiation
+  regulator posts a handful of roles a year and the board carried almost
+  nothing on nuclear despite listing it as a sub-area.
+*/
+const WVN_ALWAYS_INCLUDE = ['RIVM', 'AP', 'RDI', 'EZK', 'VWS', 'BZ', 'ANVS']
+
+/*
+  Large organisations where only some roles are in scope, so a keyword decides.
+
+  Three changes in August 2026, all of which were costing us the roles this
+  board exists to surface:
+
+  - `LNV` is gone. The ministry was renamed to Landbouw, Visserij,
+    Voedselzekerheid en Natuur in 2024 and its code is now LVVN, so the entry
+    had been matching nothing at all — Dutch farm animal policy, invisible.
+  - `NVWA` added. The food and consumer product safety authority enforces
+    animal welfare law in slaughterhouses and on farms, and was never listed:
+    27 open vacancies at the time of writing, including supervising vets for
+    red meat, and we were fetching none of them.
+  - `RVO` and `ACM` added. RVO runs the national committee on animal
+    experiments; ACM is the competition regulator, which is where digital
+    market concentration actually gets decided.
+*/
+const WVN_KEYWORD_GATED = [
+  'BZK',
+  'JENV',
+  'DEF',
+  'IENW',
+  'LVVN',
+  'NVWA',
+  'RVO',
+  'ACM',
+  'OCW',
+  'FIN',
+  'AZ',
+]
 const WVN_KEYWORDS = [
   'algoritme',
   'artificiele intelligentie',
@@ -1434,6 +1544,27 @@ const WVN_KEYWORDS = [
   'dierenwelzijn',
   'eiwittransitie',
   'biotechnologie',
+  // Animal welfare inside government, added August 2026. The old list had
+  // `dierenwelzijn` alone, which only catches an ad that names the value
+  // rather than the work: an inspector enforcing welfare rules in an abattoir
+  // is advertised as a `toezichthoudend dierenarts`, and the policy officer
+  // shaping the sector is advertised on `veehouderij`. Neither said
+  // "dierenwelzijn" and neither was ever fetched.
+  'dieren',
+  'dierenarts',
+  'diergezondheid',
+  'dierziekte',
+  'dierproeven',
+  'veehouderij',
+  'diervoeder',
+  'slacht',
+  'voedselveiligheid',
+  'landbouw',
+  'visserij',
+  // The nuclear regulator's own vocabulary, so ANVS-adjacent roles elsewhere
+  // in government surface too.
+  'straling',
+  'stralingsbescherming',
 ]
 
 export const SEED_SOURCES: SeedSource[] = [
@@ -1459,7 +1590,11 @@ export const SEED_SOURCES: SeedSource[] = [
         JENV: 'Ministerie van Justitie en Veiligheid',
         DEF: 'Ministerie van Defensie',
         IENW: 'Ministerie van Infrastructuur en Waterstaat',
-        LNV: 'Ministerie van Landbouw, Natuur en Voedselkwaliteit',
+        LVVN: 'Ministerie van Landbouw, Visserij, Voedselzekerheid en Natuur',
+        NVWA: 'Nederlandse Voedsel- en Warenautoriteit',
+        ANVS: 'Autoriteit Nucleaire Veiligheid en Stralingsbescherming',
+        RVO: 'Rijksdienst voor Ondernemend Nederland',
+        ACM: 'Autoriteit Consument & Markt',
       },
       employerIdByOrg: {
         RIVM: 'rivm',
@@ -1468,6 +1603,11 @@ export const SEED_SOURCES: SeedSource[] = [
         EZK: 'ministerie-ezk',
         VWS: 'ministerie-vws',
         BZ: 'ministerie-buitenlandse-zaken-dgis',
+        LVVN: 'ministerie-lvvn',
+        NVWA: 'nvwa',
+        ANVS: 'anvs',
+        RVO: 'rvo',
+        ACM: 'acm',
       },
     },
     notes:
