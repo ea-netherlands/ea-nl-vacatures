@@ -138,14 +138,16 @@ type Strings = {
    * counterfactual impact in the third.
    */
   /**
-   * The reasoning, compressed to one line under the hero.
+   * The reasoning, in one line under the hero.
    *
-   * The long-form version already exists on the method page, built on the ITN
-   * framework from EA NL’s own glossary plus leverage — so a full section on
-   * the index made the same case twice, and the second telling pushed the jobs
-   * themselves off the screen. Names no framework: a reader who knows this
-   * thinking will hear neglectedness, leverage and counterfactual impact; a
-   * reader who does not should hear plain sense.
+   * Says "leverage" — "hefboom" in Dutch — rather than talking around it. The
+   * house rule bans *unexplained* jargon, not vocabulary: hefboom is defined in
+   * EA NL's own glossary, the method page is structured on it, and the index's
+   * own tier heading already reads "Functies met een hefboom". Avoiding the
+   * word here while using it two screens down was inconsistent, and the
+   * paraphrase was longer and vaguer than the term it replaced.
+   *
+   * The long-form argument still lives on the method page; this links there.
    */
   heroWhy: string
   heroWhyLink: string
@@ -324,9 +326,9 @@ const nl: Strings = {
 
   heroTitle: 'De banen in Nederland waarmee je het meeste goed doet.',
   heroLead:
-    'Een korte, met de hand samengestelde lijst. Bij elke vacature schrijven we waarom juist die functie meer verandert dan het werk van één persoon.',
+    'Een korte, met de hand samengestelde lijst, met bij elke vacature onze reden erbij.',
   heroWhy:
-    'We kiezen eerst problemen die groot zijn, weinig aandacht krijgen en op te lossen zijn. Daarbinnen zoeken we de zeldzame functies die meer veranderen dan het werk van één persoon — en waarbij het uitmaakt dat jij het doet, en niet iemand die er toch al zat.',
+    'Functies met een echte hefboom op problemen die groot zijn, weinig aandacht krijgen en op te lossen zijn. Werk waarin je meer verandert dan het werk van één persoon — en waarbij het uitmaakt dat jij het doet, en niet iemand die er toch al zat.',
   heroWhyLink: 'Zo redeneren we',
   heroStat: (n, newest) =>
     `${n === 1 ? '1 vacature' : `${n} vacatures`} · nieuwste van ${newest}`,
@@ -591,9 +593,9 @@ const en: Strings = {
 
   heroTitle: 'The most socially impactful jobs in the Netherlands.',
   heroLead:
-    'A short, hand-picked list. For every vacancy we write down why that particular role changes more than one person’s work.',
+    'A short, hand-picked list, with our reason written down for every vacancy on it.',
   heroWhy:
-    'We start from problems that are large, neglected and actually solvable. Within those we look for the rare roles that change more than one person’s work — and where it matters that you take it, rather than someone who would have been there anyway.',
+    'Roles with real leverage on problems that are large, neglected and actually solvable. Work where what you do changes more than one person’s work — and where it matters that you take it, rather than someone who would have been there anyway.',
   heroWhyLink: 'How we reason',
   heroStat: (n, newest) => `${n === 1 ? '1 job' : `${n} jobs`} · newest from ${newest}`,
   heroBrowseCta: 'Pick a problem area',
