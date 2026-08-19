@@ -22,6 +22,8 @@ export type ClassifyOptions = {
   limit?: number
   /** Re-classify listings that already have a classification row. */
   force?: boolean
+  /** Restrict to specific listing ids — e.g. re-checking a few after a prompt change. */
+  ids?: number[]
   /** Skip the note-drafting pass; useful for cheap threshold calibration. */
   skipNotes?: boolean
   budgetMs?: number
@@ -285,9 +287,10 @@ async function loadCandidates(db: Db, options: ClassifyOptions): Promise<Candida
       where l.closed_at is null
         and d.id is null                      -- never re-surface a human decision
         and ($2 or c.listing_id is null)      -- unclassified unless forced
+        and ($3::bigint[] is null or l.id = any($3))
       order by l.first_seen_at desc
       limit $1`,
-    [limit, options.force ?? false],
+    [limit, options.force ?? false, options.ids?.length ? options.ids : null],
   )
 
   return rows.map((r) => ({

@@ -5,6 +5,7 @@
  *   npm run classify -- --limit=100
  *   npm run classify -- --skip-notes    # cheap: triage only, no note drafting
  *   npm run classify -- --force         # re-classify already-classified listings
+ *   npm run classify -- --force --ids=61,74,78,79   # re-check specific listings only
  *
  * Requires ANTHROPIC_API_KEY, ANTHROPIC_AUTH_TOKEN, or an `ant auth login`
  * profile. Stage one costs nothing and runs regardless.
@@ -20,9 +21,11 @@ void main(async () => {
   console.log(`triage model:   ${TRIAGE_MODEL}`)
   console.log(`drafting model: ${DRAFTING_MODEL}\n`)
 
+  const idsRaw = args.values.get('ids')
   const report = await runClassification({
     limit: num(args, 'limit', 200),
     force: args.flags.has('force'),
+    ids: idsRaw ? idsRaw.split(',').map(Number) : undefined,
     skipNotes: args.flags.has('skip-notes'),
     budgetMs: num(args, 'budget', 900) * 1000,
     onLog: log,
