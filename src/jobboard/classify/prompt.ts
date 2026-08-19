@@ -77,7 +77,7 @@ ${(Object.entries(CAUSE_AREA_DEFINITIONS) as [CauseArea, string][])
   )
   .join('\n')}
 
-### The one boundary that needs care
+### Two boundaries that need care
 
 AI work is split across two areas, and this is the judgement you will make most
 often. Ask what the role is actually trying to prevent:
@@ -94,6 +94,21 @@ often. Ask what the role is actually trying to prevent:
 Many real roles touch both. When they do, pick the one the role's day-to-day work
 bears on most directly and put the other in \`secondaryCauses\`. Do not refuse to
 choose, and do not default everything AI-shaped to one side.
+
+The second boundary is easy to get wrong in the specific direction of over-including:
+\`global-health-wellbeing\` is about the world's poorest people in low- and
+middle-income countries, not health or welfare work in general. A Dutch
+ministry policy officer on domestic healthcare, a researcher on Dutch elderly
+care, a policy adviser on Dutch social security, an RIVM scientist studying
+Dutch or European soil, water or air quality — none of these are
+\`global-health-wellbeing\` no matter how substantively health-related the work
+is, because the population served is not in the developing world. If a role's
+day-to-day work does not clearly touch people in low- and middle-income
+countries or in extreme poverty, do not assign this cause area to it — score it
+0 on cause relevance for this area, or pick a different area if another one
+genuinely fits, or assign none at all. A well-run Dutch public-sector health
+job is not automatically a 0 on this board — it is simply not a
+\`global-health-wellbeing\` role.
 
 ## Out of scope
 

@@ -57,7 +57,7 @@ export const CLASSIFIER_ASSIGNABLE_CAUSES: readonly CauseArea[] = CAUSE_AREAS.fi
 
 export const CAUSE_AREA_DEFINITIONS: Record<CauseArea, string> = {
   'global-health-wellbeing':
-    'Health and material welfare of the world’s poorest people, alive today. Global health, development finance, aid policy, health systems in low- and middle-income countries, lead and air quality, mental health at scale.',
+    'Health and material welfare of the world’s poorest people, alive today — specifically people living in extreme poverty or in low- and middle-income countries. Global health, development finance, aid policy, health systems in low- and middle-income countries, lead and air quality in poor countries, mental health at scale in the developing world. Explicitly NOT Dutch or European domestic healthcare, welfare, or environmental policy, however well-run or well-intentioned — a role improving the Dutch healthcare system, Dutch elderly care, Dutch social security, or Dutch/EU environmental regulation does not belong here just because it touches "health". Judge by whose welfare the work actually serves.',
   'farmed-animal-welfare':
     'The suffering of animals in food production. Farmed animal advocacy, animal law and enforcement, cultivated meat and fermentation, the protein transition, and the corporate and finance roles that shape all of it. Not general nature or biodiversity work.',
   'global-catastrophic-risks':
@@ -77,11 +77,11 @@ export const CAUSE_AREA_DEFINITIONS: Record<CauseArea, string> = {
  */
 export const CAUSE_SUBAREAS: Record<CauseArea, readonly string[]> = {
   'global-health-wellbeing': [
-    'Global health and disease control',
+    'Global health and disease control in low- and middle-income countries',
     'Development finance and aid policy',
     'Health systems in low- and middle-income countries',
-    'Lead exposure and air quality',
-    'Mental health at scale',
+    'Lead exposure and air quality in poor countries',
+    'Mental health at scale in the developing world',
   ],
   'farmed-animal-welfare': [
     'Farmed animal advocacy and corporate campaigns',
