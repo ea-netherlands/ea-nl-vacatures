@@ -38,7 +38,7 @@
  */
 
 import Link from 'next/link'
-import { EmptyState, Filters, IntroBand, type FilterState } from '../components/Filters'
+import { EmptyState, Filters, type FilterState } from '../components/Filters'
 import {
   Container,
   Hero,
@@ -205,11 +205,40 @@ export async function IndexPage({
         </Hero>
 
         <Container>
+          {/*
+            The reasoning, directly under the claim.
+
+            The hero asserts these are the most socially impactful jobs in the
+            Netherlands, which is a strong claim and not self-evidently true —
+            a sceptical reader's first thought is "says who". Answering that
+            immediately is worth more than another row of tiles, and it is the
+            single most useful idea a newcomer could take away even if they
+            never apply for anything here.
+
+            It names no framework. Someone who has never encountered any of
+            this should follow every sentence; someone who has will recognise
+            importance, neglectedness and tractability in the first point,
+            leverage in the second, and counterfactual impact in the third.
+          */}
           <Section first>
+            <h2 className={u.browseHeading}>{copy.whyHeading}</h2>
+            <p className={u.whyLead}>{copy.whyLead}</p>
+            <ol className={u.whyList}>
+              {copy.whyPoints.map((point) => (
+                <li key={point.title} className={u.whyItem}>
+                  <h3 className={u.whyItemTitle}>{point.title}</h3>
+                  <p className={u.whyItemBody}>{point.body}</p>
+                </li>
+              ))}
+            </ol>
+            <p className={u.whyClose}>{copy.whyClose}</p>
+          </Section>
+
+          <Section tight>
             {/*
-              Above the grid, deliberately. Someone who can relocate should hit
-              the three international boards before they hit a tile — putting
-              this below the grid would make it decoration.
+              Still above the grid. Someone who can relocate should hit the
+              three international boards before they hit a tile — putting this
+              below the grid would make it decoration.
             */}
             <InternationalFirst locale={locale} compact />
           </Section>
@@ -229,7 +258,9 @@ export async function IndexPage({
           </Section>
 
           <Section tight>
-            <IntroBand locale={locale} />
+            {/* The dismissible "what is this?" band used to live here. The
+                reasoning section above now does that job properly, in the one
+                place a reader is actually asking the question. */}
             <p className={u.linkRow}>
               <Link href={`${r.index}?view=all`}>{copy.browseShowAll(all.length)}</Link>
               <Link href={r.suggest}>{copy.suggestNavLabel}</Link>
