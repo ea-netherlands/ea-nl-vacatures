@@ -266,7 +266,8 @@ export async function getAllExplainers(language: string): Promise<ExplainerView[
   return fetchOrEmpty<ExplainerView[]>(
     `*[_type == "explainerPage" && language == $language]{
       "id": _id, kind, causeArea, title, "slug": slug.current, summary, body,
-      uncertainties, reviewedByHuman, language
+      uncertainties, "sources": coalesce(sources[]{org, title, url}, []),
+      reviewedByHuman, language
     }`,
     { language },
     [],

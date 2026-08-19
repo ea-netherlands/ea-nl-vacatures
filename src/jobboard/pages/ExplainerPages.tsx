@@ -482,7 +482,16 @@ export async function EarningToGivePage({ locale }: { locale: Locale }) {
               page, in those words (§5.3). */}
           <div className={u.notEndorsement}>{copy.e2gNotEndorsement}</div>
 
-          {explainer ? <RichText value={explainer.body} /> : null}
+          {explainer ? (
+            <>
+              {/* Below the not-an-endorsement statement, above the argument.
+                  This page summarises 80,000 Hours' article on earning to give,
+                  and a reader deciding whether to reshape a career around the
+                  idea should be able to reach the long version first. */}
+              <SourceAttribution sources={explainer.sources ?? []} locale={locale} />
+              <RichText value={explainer.body} />
+            </>
+          ) : null}
 
           {/* The explainer must also present the honest case against. Earning to
               give is contested within EA, salary is a weak proxy for how much
