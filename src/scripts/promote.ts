@@ -29,7 +29,7 @@ void main(async () => {
   })
 
   if (!report.dryRun && report.promoted > 0) {
-    console.log('Review them at /studio → Vacaturebord → Beoordelen\n')
+    console.log('Review them at /studio → Job board → Review\n')
   }
 
   await (await getDb()).close()
