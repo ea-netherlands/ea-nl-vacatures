@@ -347,30 +347,51 @@ export const academictransfer: SourceAdapter = {
       (config.listingUrl as string) ?? 'https://www.academictransfer.com/en/jobs/'
     const maxDetailFetches = Number(config.maxDetailFetches ?? 25)
 
+    /*
+      Search terms, not the raw index.
+
+      AcademicTransfer carries every vacancy at every Dutch university and the
+      NWO and KNAW institutes — thousands of them, overwhelmingly chemistry
+      postdocs and lecturer posts with no bearing on anything this board covers.
+      Walking that index unfiltered and fetching 25 details a run, under a
+      10-second crawl delay, meant spending the entire budget on roles that were
+      going to be dropped: eleven listings survived from months of crawling.
+
+      The site's `?q=` search works and pages the same way, so the crawl now
+      runs the board's own vocabulary against it. Same politeness, same budget,
+      aimed at the roles we would actually publish.
+    */
+    const queries = (config.queries as string[] | undefined) ?? []
+
     const seenKey = 'at:seen-ids'
     const seen = new Set((await ctx.cache.get<string[]>(seenKey)) ?? [])
 
-    // Walk index pages until we stop finding new IDs.
     const ids: string[] = []
-    for (let page = 1; page <= Number(config.maxIndexPages ?? 6); page++) {
+    // With no queries configured this falls back to the old unfiltered walk,
+    // so an existing source keeps working rather than silently fetching nothing.
+    const searches = queries.length ? queries : ['']
+
+    for (const query of searches) {
       if (Date.now() >= ctx.deadline) break
-      const url = page === 1 ? listingUrl : `${listingUrl}?page=${page}`
-      const html = await fetchText(url)
-      const found = [...html.matchAll(/\/en\/jobs\/(\d+)\/([a-z0-9-]+)\/?/gi)].map((m) => m[1])
-      const unique = [...new Set(found)]
-      if (unique.length === 0) break
-      ids.push(...unique)
-      // Stop paging once a whole page is already known — the index is
-      // reverse-chronological, so everything beyond it is older still.
-      if (unique.every((id) => seen.has(id))) {
-        ctx.log(`academictransfer: page ${page} fully known, stopping index walk`)
-        break
+      const qs = query ? `q=${encodeURIComponent(query)}` : ''
+      for (let page = 1; page <= Number(config.maxIndexPages ?? 6); page++) {
+        if (Date.now() >= ctx.deadline) break
+        const params = [qs, page > 1 ? `page=${page}` : ''].filter(Boolean).join('&')
+        const url = params ? `${listingUrl}?${params}` : listingUrl
+        const html = await fetchText(url)
+        const found = [...html.matchAll(/\/en\/jobs\/(\d+)\/([a-z0-9-]+)\/?/gi)].map((m) => m[1])
+        const unique = [...new Set(found)]
+        if (unique.length === 0) break
+        ids.push(...unique)
+        // Stop paging once a whole page is already known — results are
+        // reverse-chronological, so everything beyond it is older still.
+        if (unique.every((id) => seen.has(id))) break
       }
     }
 
     const fresh = [...new Set(ids)].filter((id) => !seen.has(id))
     ctx.log(
-      `academictransfer: ${ids.length} ids on index, ${fresh.length} new; ` +
+      `academictransfer: ${searches.length} search(es), ${ids.length} ids seen, ${fresh.length} new; ` +
         `fetching up to ${maxDetailFetches} detail pages this run (10s crawl-delay)`,
     )
 

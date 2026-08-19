@@ -1637,10 +1637,39 @@ export const SEED_SOURCES: SeedSource[] = [
     config: {
       listingUrl: 'https://www.academictransfer.com/en/jobs/',
       maxDetailFetches: 25,
-      maxIndexPages: 6,
+      maxIndexPages: 3,
+      /*
+        The board's vocabulary, run against the site's own search.
+
+        English and Dutch both, because AcademicTransfer carries ads in either
+        language and a Dutch-only post about `dierenwelzijn` will not surface
+        for `animal welfare`. Terms are deliberately narrow: this platform
+        covers every discipline at every Dutch university, so a broad word like
+        "health" or "policy" returns hundreds of irrelevant posts and spends the
+        crawl budget on roles that will be dropped.
+      */
+      queries: [
+        'AI safety',
+        'AI governance',
+        'algorithmic accountability',
+        'biosecurity',
+        'pandemic preparedness',
+        'infectious disease',
+        'zoonosis',
+        'animal welfare',
+        'dierenwelzijn',
+        'cultivated meat',
+        'cellular agriculture',
+        'eiwittransitie',
+        'global health',
+        'mondiale gezondheid',
+        'development economics',
+        'nuclear security',
+        'existential risk',
+      ],
     },
     notes:
-      'Crawl-delay: 10 is honoured centrally in lib/http.ts. A full crawl would take ~90 minutes, so this walks the index and fetches only new numeric IDs, 25 per run.',
+      'Crawl-delay: 10 is honoured centrally in lib/http.ts. Search-driven since August 2026 — the unfiltered index is thousands of vacancies across every discipline and produced 11 usable listings in months of crawling.',
   },
   {
     id: 'euraxess',
@@ -1844,6 +1873,24 @@ export const SEED_SOURCES: SeedSource[] = [
     `source` row is never polled, which is how nine new entries can sit in the
     watchlist looking like coverage while nothing reaches the board.
   */
+  {
+    /*
+      The only Recruitee board across 59 feedless watchlist employers.
+
+      Worth recording, because the platform's reputation says otherwise:
+      Recruitee is Amsterdam-built and widely used by Dutch NGOs, so it looked
+      like the cheapest coverage going. Probing every feedless employer found
+      one. The dominance is real in the Dutch market generally and not in this
+      slice of it — the organisations here skew smaller and older than
+      Recruitee's typical customer.
+    */
+    id: 'recruitee:investnl',
+    kind: 'ats',
+    adapter: 'recruitee',
+    employerId: 'invest-nl',
+    returnsCompleteSet: true,
+    config: { company: 'investnl', employerName: 'Invest-NL' },
+  },
   {
     // FMO runs SAP SuccessFactors. The employer was seeded from the start and
     // had no source for months, so the Dutch development bank — one of the
