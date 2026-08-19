@@ -19,7 +19,7 @@ import {
   Section,
   TierHeading,
 } from '../components/Chrome'
-import { ListingCard } from '../components/ListingCard'
+import { ExpandableCardList } from '../components/ExpandableCardList'
 import { routes, t, type Locale } from '../content/i18n'
 import { getLiveListings } from '../sanity/queries'
 import type { ListingView } from '../sanity/queries'
@@ -130,11 +130,7 @@ export async function IndexPage({
                     body={copy.tierRecommendedBody}
                     count={copy.tierRecommendedCount(recommended.length)}
                   />
-                  <ul className={u.cardList}>
-                    {recommended.map((listing) => (
-                      <ListingCard key={listing.id} listing={listing} locale={locale} />
-                    ))}
-                  </ul>
+                  <ExpandableCardList listings={recommended} locale={locale} />
                 </>
               ) : null}
 
@@ -146,11 +142,7 @@ export async function IndexPage({
                     body={copy.tierDutchBody}
                     count={copy.tierDutchCount(dutch.length)}
                   />
-                  <ul className={u.cardList}>
-                    {dutch.map((listing) => (
-                      <ListingCard key={listing.id} listing={listing} locale={locale} />
-                    ))}
-                  </ul>
+                  <ExpandableCardList listings={dutch} locale={locale} />
                 </>
               ) : null}
             </>
