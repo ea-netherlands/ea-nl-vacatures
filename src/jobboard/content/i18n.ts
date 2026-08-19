@@ -88,7 +88,10 @@ export const ONWARD_LINKS = {
   // The site nav renamed this from /loopbaan at some point; verified live.
   careerGuide: 'https://effectiefaltruisme.nl/carrieregids',
   doneerEffectief: 'https://doneereffectief.nl',
-  tienProcentClub: 'https://tienprocentclub.nl',
+  // Rebranded from the Tien Procent Club in 2026. tienprocentclub.nl no longer
+  // resolves at all, so this was a dead link in the footer and on the
+  // earning-to-give page, not merely an out-of-date name.
+  geefrevolutie: 'https://www.geefrevolutie.nl',
   contact: 'mailto:jobs@effectiefaltruisme.nl',
   effectiveEnvironmentalism: 'https://www.effectiveenvironmentalism.org',
 } as const

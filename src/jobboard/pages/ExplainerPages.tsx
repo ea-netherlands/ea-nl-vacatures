@@ -530,12 +530,12 @@ export async function EarningToGivePage({ locale }: { locale: Locale }) {
                   : 'A Dutch channel for tax-efficient giving to effective charities. €24.3M facilitated with five paid staff — the concrete answer to "does this actually work?".'}
               </p>
             </a>
-            <a href={ONWARD_LINKS.tienProcentClub} className={u.card} rel="noopener">
-              <h3 className={u.cardTitle}>Tien Procent Club</h3>
+            <a href={ONWARD_LINKS.geefrevolutie} className={u.card} rel="noopener">
+              <h3 className={u.cardTitle}>De Geefrevolutie</h3>
               <p style={{ color: 'var(--fg-muted)' }}>
                 {locale === 'nl'
-                  ? 'De Nederlandse gemeenschap van mensen die tien procent van hun inkomen weggeven. De logische volgende stap als je zo’n baan neemt.'
-                  : 'The Dutch community of people giving away ten percent of their income. The natural next step if you take one of these jobs.'}
+                  ? 'De Nederlandse gemeenschap van mensen die een vast deel van hun inkomen weggeven — voorheen de Tien Procent Club. De logische volgende stap als je zo’n baan neemt.'
+                  : 'The Dutch community of people giving away a fixed share of their income, formerly the Tien Procent Club. The natural next step if you take one of these jobs.'}
               </p>
             </a>
           </div>

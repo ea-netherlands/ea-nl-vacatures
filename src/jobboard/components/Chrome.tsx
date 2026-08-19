@@ -198,7 +198,7 @@ function Footer({ locale }: { locale: Locale }) {
                 <a href={ONWARD_LINKS.doneerEffectief}>Doneer Effectief</a>
               </li>
               <li>
-                <a href={ONWARD_LINKS.tienProcentClub}>Tien Procent Club</a>
+                <a href={ONWARD_LINKS.geefrevolutie}>De Geefrevolutie</a>
               </li>
             </ul>
           </div>

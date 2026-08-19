@@ -128,7 +128,7 @@ ${(Object.entries(SKILL_DEFINITIONS) as [Skill, string][])
 This cause area is new, so no listing in front of you was ever able to be assigned it. Set \`movementBuilding\` true only for two kinds of work:
 
 - **Community building** — growing and supporting the population of people who work on these problems. Local and university groups, conferences, fellowships, talent pipelines, careers advice. The Centre for Effective Altruism, the School for Moral Ambition, national groups, Kairos.
-- **Public-facing effective giving** — persuading the general public to donate and directing those donations well. Giving What We Can, Doneer Effectief, the Tien Procent Club, pledge and platform work.
+- **Public-facing effective giving** — persuading the general public to donate and directing those donations well. Giving What We Can, Doneer Effectief, De Geefrevolutie (formerly the Tien Procent Club), pledge and platform work.
 
 It is false for everything else, including work that sounds adjacent:
 

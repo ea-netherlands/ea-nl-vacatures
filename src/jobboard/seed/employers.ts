@@ -644,9 +644,12 @@ export const SEED_EMPLOYERS: SeedEmployer[] = [
     verify: true,
   },
   {
+    // The id stays `tien-procent-club` deliberately: it is the Sanity document
+    // id, and renaming it would orphan every listing already pointing here.
+    // The rebrand is a display change, not an identity change.
     id: 'tien-procent-club',
-    name: 'Tien Procent Club / De Geefrevolutie',
-    website: 'https://tienprocentclub.nl',
+    name: 'De Geefrevolutie',
+    website: 'https://www.geefrevolutie.nl',
     ats: null,
     causeAreas: ['movement-building', 'global-health-wellbeing', 'farmed-animal-welfare'],
     leverageNote: 'De Nederlandse gemeenschap rond de geefbelofte.',
