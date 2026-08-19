@@ -172,7 +172,7 @@ export async function runPromotion(options: PromoteOptions = {}): Promise<Promot
         deadlineAt: row.deadline_at,
         expiresAt,
 
-        pipelineListingId: row.id,
+        pipelineListingId: Number(row.id),
         sourceId: row.source_id,
         llmScore: row.total_score,
         llmReasoning: row.reasoning,
