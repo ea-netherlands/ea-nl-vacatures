@@ -40,8 +40,10 @@ export const TRIAGE_SCHEMA = {
         'False if, having read the whole ad, a Netherlands-resident candidate could not hold this role.',
     },
     primaryCause: {
-      type: ['string', 'null'],
-      enum: [...CAUSE_AREAS, null],
+      // Anthropic's json_schema output format doesn't accept the JSON Schema
+      // `type: [X, 'null']` array shorthand — it needs `anyOf` for a nullable
+      // enum. Confirmed live: the array form threw a 400 on every listing.
+      anyOf: [{ type: 'string', enum: [...CAUSE_AREAS] }, { type: 'null' }],
       description: 'One primary cause area, or null if none of them fit.',
     },
     secondaryCauses: {
@@ -50,21 +52,20 @@ export const TRIAGE_SCHEMA = {
       description: 'Zero or more secondary cause areas.',
     },
     leverage: {
-      type: ['string', 'null'],
-      enum: [...LEVERAGE_TYPES, null],
+      anyOf: [{ type: 'string', enum: [...LEVERAGE_TYPES] }, { type: 'null' }],
       description: 'Exactly one leverage archetype, or null if none fit.',
     },
     causeScore: {
+      // Anthropic's json_schema format rejects minimum/maximum on integers too
+      // — confirmed live. An explicit enum is the supported way to bound one.
       type: 'integer',
-      minimum: 0,
-      maximum: 3,
+      enum: [0, 1, 2, 3],
       description:
         'How well the work bears on a problem treated as large, neglected and tractable.',
     },
     leverageScore: {
       type: 'integer',
-      minimum: 0,
-      maximum: 3,
+      enum: [0, 1, 2, 3],
       description:
         'How much this specific role influences outcomes beyond the work of the person holding it.',
     },
@@ -75,7 +76,7 @@ export const TRIAGE_SCHEMA = {
       description: 'True if a VOG or a vertrouwensfunctie screening is required.',
     },
     securityNote: {
-      type: ['string', 'null'],
+      anyOf: [{ type: 'string' }, { type: 'null' }],
       description: 'Short free-text detail on the screening requirement, or null.',
     },
     seniority: { type: 'string', enum: [...SENIORITIES] },
