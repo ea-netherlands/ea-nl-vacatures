@@ -16,20 +16,20 @@ import { icon } from '../components/Icon'
 
 export const structure: StructureResolver = (S) =>
   S.list()
-    .title('Vacaturebord')
+    .title('Job board')
     .items([
       // Drafts, ordered by score descending — the highest-scoring listing a
       // curator has not yet looked at is the first thing they see.
       S.listItem()
-        .title('Beoordelen')
+        .title('Review')
         .icon(icon('hourglass'))
         .child(
           S.documentList()
-            .title('Wachten op beoordeling')
+            .title('Awaiting review')
             .apiVersion('2024-10-01')
             .filter('_type == "jobListing" && _id in path("drafts.**")')
             .defaultOrdering([{ field: 'llmScore', direction: 'desc' }])
-            .menuItemGroups([{ id: 'sort', title: 'Sorteren' }]),
+            .menuItemGroups([{ id: 'sort', title: 'Sort' }]),
         ),
 
       S.listItem()
@@ -37,7 +37,7 @@ export const structure: StructureResolver = (S) =>
         .icon(icon('circle-check'))
         .child(
           S.documentList()
-            .title('Live op het bord')
+            .title('Live on the board')
             .apiVersion('2024-10-01')
             .filter(
               '_type == "jobListing" && !(_id in path("drafts.**")) && (!defined(expiresAt) || expiresAt > now())',
@@ -48,11 +48,11 @@ export const structure: StructureResolver = (S) =>
       // The view that keeps the board from rotting: a curator can extend
       // anything still live before it auto-unpublishes (§7.8).
       S.listItem()
-        .title('Verloopt deze week')
+        .title('Expiring this week')
         .icon(icon('clock-exclamation'))
         .child(
           S.documentList()
-            .title('Verloopt binnen zeven dagen')
+            .title('Expiring within seven days')
             .apiVersion('2024-10-01')
             .filter(
               '_type == "jobListing" && !(_id in path("drafts.**")) && defined(expiresAt) && expiresAt > now() && expiresAt < $weekOut',
@@ -62,11 +62,11 @@ export const structure: StructureResolver = (S) =>
         ),
 
       S.listItem()
-        .title('Archief')
+        .title('Archive')
         .icon(icon('archive'))
         .child(
           S.documentList()
-            .title('Verlopen of gesloten')
+            .title('Expired or closed')
             .apiVersion('2024-10-01')
             .filter(
               '_type == "jobListing" && !(_id in path("drafts.**")) && defined(expiresAt) && expiresAt <= now()',
@@ -77,26 +77,26 @@ export const structure: StructureResolver = (S) =>
       S.divider(),
 
       S.listItem()
-        .title('Organisaties')
+        .title('Organisations')
         .icon(icon('building'))
         .child(
           S.documentTypeList('employer')
-            .title('Organisaties')
+            .title('Organisations')
             .defaultOrdering([{ field: 'name', direction: 'asc' }]),
         ),
 
       S.listItem()
-        .title('Uitlegpagina’s')
+        .title('Explainer pages')
         .icon(icon('book'))
         .child(
           S.list()
-            .title('Uitlegpagina’s')
+            .title('Explainer pages')
             .items([
               S.listItem()
-                .title('Nederlands (bron)')
+                .title('Dutch (source)')
                 .child(
                   S.documentList()
-                    .title('Nederlandse uitlegpagina’s')
+                    .title('Dutch explainer pages')
                     .apiVersion('2024-10-01')
                     .filter('_type == "explainerPage" && language == "nl"'),
                 ),
@@ -121,7 +121,7 @@ export const defaultDocumentNode: import('sanity/structure').DefaultDocumentNode
   { schemaType },
 ) => {
   if (schemaType === 'jobListing') {
-    return S.document().views([S.view.form().title('Vacature')])
+    return S.document().views([S.view.form().title('Job listing')])
   }
   return S.document().views([S.view.form()])
 }

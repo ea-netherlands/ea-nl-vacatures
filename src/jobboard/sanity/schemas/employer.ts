@@ -13,17 +13,17 @@ import { causeAreaOptions } from '../../taxonomy'
 
 export const employer = defineType({
   name: 'employer',
-  title: 'Organisatie',
+  title: 'Organisation',
   type: 'document',
   groups: [
-    { name: 'editorial', title: 'Redactie', default: true },
-    { name: 'gates', title: 'Poorten' },
-    { name: 'technical', title: 'Techniek' },
+    { name: 'editorial', title: 'Editorial', default: true },
+    { name: 'gates', title: 'Gates' },
+    { name: 'technical', title: 'Technical' },
   ],
   fields: [
     defineField({
       name: 'name',
-      title: 'Naam',
+      title: 'Name',
       type: 'string',
       group: 'editorial',
       validation: (r) => r.required(),
@@ -42,7 +42,7 @@ export const employer = defineType({
       type: 'string',
       group: 'technical',
       readOnly: true,
-      description: 'Slug in de Postgres-watchlist. Verbindt beide kanten.',
+      description: 'Slug in the Postgres watchlist. Links both sides.',
     }),
     defineField({
       name: 'website',
@@ -52,24 +52,24 @@ export const employer = defineType({
     }),
     defineField({
       name: 'careersUrl',
-      title: 'Vacaturepagina',
+      title: 'Careers page',
       type: 'url',
       group: 'editorial',
     }),
     defineField({
       name: 'city',
-      title: 'Plaats',
+      title: 'City',
       type: 'string',
       group: 'editorial',
     }),
     defineField({
       name: 'leverageNoteNl',
-      title: 'Waarom deze organisatie ertoe doet',
+      title: 'Why this organisation matters',
       type: 'text',
       rows: 4,
       group: 'editorial',
       description:
-        'Eén alinea. Deze tekst is duurzaam — anders dan de notities per functie — en is wat er in Google gevonden wordt. Schrijf voor iemand die deze organisatie net heeft opgezocht.',
+        'Written in Dutch. One paragraph. Unlike the per-role notes, this text is durable — it is what shows up in Google. Write for someone who just looked this organisation up.',
       validation: (r) => r.max(1200),
     }),
     defineField({
@@ -83,7 +83,7 @@ export const employer = defineType({
     }),
     defineField({
       name: 'causeAreas',
-      title: 'Probleemgebieden',
+      title: 'Cause areas',
       type: 'array',
       of: [{ type: 'string' }],
       group: 'editorial',
@@ -93,21 +93,21 @@ export const employer = defineType({
     // ---- The gate. Mirrored so a curator can see why a label is available. ----
     defineField({
       name: 'e2gAllowlisted',
-      title: 'Toegelaten voor earning to give',
+      title: 'Approved for earning to give',
       type: 'boolean',
       group: 'gates',
       initialValue: false,
       readOnly: true,
-      description: 'Poort voor de earning-to-give-sectie (§5.3), met een salarisdrempel.',
+      description: 'Gate for the earning-to-give section (§5.3), with a salary threshold.',
     }),
     defineField({
       name: 'notEndorsement',
-      title: 'Vermelding is expliciet geen aanbeveling',
+      title: 'Listing is explicitly not an endorsement',
       type: 'boolean',
       group: 'gates',
       initialValue: false,
       description:
-        'Zet dit aan voor earning-to-give-werkgevers. De pagina zegt dit dan met zoveel woorden.',
+        'Turn this on for earning-to-give employers. The page will then say so explicitly.',
     }),
 
     defineField({
@@ -119,12 +119,12 @@ export const employer = defineType({
     }),
     defineField({
       name: 'onEaBoards',
-      title: 'Staat ook op 80.000 Hours of Probably Good',
+      title: 'Also listed on 80,000 Hours or Probably Good',
       type: 'boolean',
       group: 'technical',
       initialValue: false,
       description:
-        'Voor de kwaliteitsmeting: minstens 60% van de vacatures moet bij organisaties staan die op géén van beide boards staan (§3).',
+        'For the quality metric: at least 60% of listings must be at organisations that appear on neither board (§3).',
     }),
   ],
   preview: {

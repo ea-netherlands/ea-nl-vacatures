@@ -20,7 +20,7 @@ import { defaultDocumentNode, structure } from './src/jobboard/sanity/structure'
 
 export default defineConfig({
   name: 'ea-nl-vacatures',
-  title: 'EA Nederland — Vacatures',
+  title: 'EA Netherlands — Jobs',
   basePath: '/studio',
   projectId,
   dataset,

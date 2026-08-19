@@ -19,18 +19,18 @@ import {
 
 export const jobListing = defineType({
   name: 'jobListing',
-  title: 'Vacature',
+  title: 'Job listing',
   type: 'document',
   groups: [
-    { name: 'editorial', title: 'Redactie', default: true },
-    { name: 'taxonomy', title: 'Indeling' },
-    { name: 'practical', title: 'Voorwaarden' },
-    { name: 'provenance', title: 'Herkomst' },
+    { name: 'editorial', title: 'Editorial', default: true },
+    { name: 'taxonomy', title: 'Taxonomy' },
+    { name: 'practical', title: 'Practical details' },
+    { name: 'provenance', title: 'Provenance' },
   ],
   fields: [
     defineField({
       name: 'title',
-      title: 'Functietitel',
+      title: 'Job title',
       type: 'string',
       group: 'editorial',
       validation: (r) => r.required(),
@@ -49,7 +49,7 @@ export const jobListing = defineType({
     }),
     defineField({
       name: 'employer',
-      title: 'Werkgever',
+      title: 'Employer',
       type: 'reference',
       to: [{ type: 'employer' }],
       group: 'editorial',
@@ -57,22 +57,22 @@ export const jobListing = defineType({
     }),
     defineField({
       name: 'applyUrl',
-      title: 'Link naar de vacature',
+      title: 'Link to the listing',
       type: 'url',
       group: 'editorial',
-      description: 'Waar de lezer naartoe gaat. We tellen deze klik server-side.',
+      description: 'Where the reader goes. We count this click server-side.',
       validation: (r) => r.required(),
     }),
 
     // ---- THE editorial field. Everything else is supporting cast. ----
     defineField({
       name: 'whyThisMattersNl',
-      title: 'Waarom staat dit op het bord',
+      title: 'Why this is on the board',
       type: 'text',
       rows: 3,
       group: 'editorial',
       description:
-        'Eén of twee zinnen over de hefboom. Ga ervan uit dat de lezer nog nooit van deze werkgever heeft gehoord en niet weet waarom dit ertoe doet. Dit is de enige reden dat iemand hier kijkt in plaats van op LinkedIn. Vermijd "impactvol", "betekenisvol" en "het verschil maken".',
+        'Written in Dutch — this is what readers see. One or two sentences on the leverage. Assume the reader has never heard of this employer and doesn’t know why it matters. This is the only reason someone looks here instead of on LinkedIn. Avoid "impactvol", "betekenisvol" and "het verschil maken".',
       // The minimum length is deliberate: it stops a rushed curator publishing
       // with an empty or one-word note, which would quietly turn the board into
       // a generic aggregator over a few months. Enforcing it in the schema is
@@ -91,19 +91,19 @@ export const jobListing = defineType({
     }),
     defineField({
       name: 'excerpt',
-      title: 'Korte samenvatting van de functie',
+      title: 'Short summary of the role',
       type: 'text',
       rows: 4,
       group: 'editorial',
       description:
-        'Neutraal en feitelijk. Het argument hoort in "Waarom staat dit op het bord". Neem hier niet de hele vacaturetekst over.',
+        'Neutral and factual. The argument belongs in "Why this is on the board". Don’t copy the whole job ad text here.',
       validation: (r) => r.max(1200),
     }),
 
     // ---- Taxonomy ----
     defineField({
       name: 'primaryCause',
-      title: 'Primair probleemgebied',
+      title: 'Primary cause area',
       type: 'string',
       group: 'taxonomy',
       options: { list: causeAreaOptions() },
@@ -111,7 +111,7 @@ export const jobListing = defineType({
     }),
     defineField({
       name: 'secondaryCauses',
-      title: 'Secundaire probleemgebieden',
+      title: 'Secondary cause areas',
       type: 'array',
       of: [{ type: 'string' }],
       group: 'taxonomy',
@@ -119,7 +119,7 @@ export const jobListing = defineType({
     }),
     defineField({
       name: 'leverage',
-      title: 'Soort hefboom',
+      title: 'Type of leverage',
       type: 'string',
       group: 'taxonomy',
       options: { list: leverageOptions() },
@@ -129,81 +129,81 @@ export const jobListing = defineType({
     // ---- Practical eligibility (§5.4) ----
     defineField({
       name: 'locationCity',
-      title: 'Plaats',
+      title: 'City',
       type: 'string',
       group: 'practical',
     }),
     defineField({
       name: 'locationMode',
-      title: 'Werkplek',
+      title: 'Work location type',
       type: 'string',
       group: 'practical',
       options: { list: plainOptions(LOCATION_MODES) },
     }),
     defineField({
       name: 'seniority',
-      title: 'Niveau',
+      title: 'Seniority',
       type: 'string',
       group: 'practical',
       options: { list: plainOptions(SENIORITIES) },
     }),
     defineField({
       name: 'languageRequirement',
-      title: 'Taaleis',
+      title: 'Language requirement',
       type: 'string',
       group: 'practical',
       description:
-        'Het filter dat geen ander bord biedt, en dat het internationale deel van het publiek de meeste verspilde klikken scheelt.',
+        'The filter no other board offers, and what saves the international part of the audience the most wasted clicks.',
       options: { list: plainOptions(LANGUAGE_REQUIREMENTS) },
     }),
     defineField({
       name: 'workAuthorisation',
-      title: 'Werkvergunning',
+      title: 'Work authorisation',
       type: 'string',
       group: 'practical',
       options: { list: plainOptions(WORK_AUTHORISATIONS) },
     }),
     defineField({
       name: 'securityScreening',
-      title: 'VOG of veiligheidsonderzoek vereist',
+      title: 'VOG or security screening required',
       type: 'boolean',
       group: 'practical',
       initialValue: false,
     }),
     defineField({
       name: 'securityNote',
-      title: 'Toelichting op de screening',
+      title: 'Note on the screening',
       type: 'string',
       group: 'practical',
       hidden: ({ document }) => !document?.securityScreening,
     }),
     defineField({
       name: 'salaryText',
-      title: 'Salaris zoals vermeld',
+      title: 'Salary as stated',
       type: 'string',
       group: 'practical',
-      description: 'Letterlijk overnemen. Reken niets om en beloof niets.',
+      description: 'Copy verbatim. Don’t convert or promise anything.',
     }),
     defineField({
       name: 'mentions30PercentRuling',
-      title: 'Vacature vermeldt de 30%-regeling',
+      title: 'Listing mentions the 30% ruling',
       type: 'boolean',
       group: 'practical',
       initialValue: false,
       description:
-        'Alleen een vlag. De regeling gaat vanaf 2027 naar 27% en de voorwaarden veranderen regelmatig — reken hier nooit iets voor de lezer uit.',
+        'Just a flag. The ruling drops to 27% from 2027 and the conditions change regularly — never calculate anything here for the reader.',
     }),
 
     // ---- Dates ----
-    defineField({ name: 'postedAt', title: 'Geplaatst op', type: 'datetime', group: 'practical' }),
-    defineField({ name: 'deadlineAt', title: 'Sluit op', type: 'datetime', group: 'practical' }),
+    defineField({ name: 'postedAt', title: 'Posted on', type: 'datetime', group: 'practical' }),
+    defineField({ name: 'deadlineAt', title: 'Closes on', type: 'datetime', group: 'practical' }),
     defineField({
       name: 'expiresAt',
-      title: 'Automatisch offline op',
+      title: 'Automatically taken offline on',
       type: 'datetime',
       group: 'practical',
       description:
-        'Wordt na deze datum automatisch gedepubliceerd. Standaard de sluitingsdatum, of 60 dagen na plaatsing.',
+        'Automatically unpublished after this date. Defaults to the closing date, or 60 days after posting.',
     }),
 
     // ---- Provenance: read-only, written by the pipeline ----
@@ -216,35 +216,35 @@ export const jobListing = defineType({
     }),
     defineField({
       name: 'sourceId',
-      title: 'Bron',
+      title: 'Source',
       type: 'string',
       group: 'provenance',
       readOnly: true,
     }),
     defineField({
       name: 'llmScore',
-      title: 'Score van de classifier',
+      title: 'Classifier score',
       type: 'number',
       group: 'provenance',
       readOnly: true,
     }),
     defineField({
       name: 'llmReasoning',
-      title: 'Waarom de classifier dit doorliet',
+      title: 'Why the classifier passed this through',
       type: 'text',
       group: 'provenance',
       readOnly: true,
-      description: 'Context voor de curator. Wordt nooit publiek getoond.',
+      description: 'Context for the curator. Never shown publicly.',
     }),
   ],
   orderings: [
     {
-      title: 'Score (hoog naar laag)',
+      title: 'Score (high to low)',
       name: 'scoreDesc',
       by: [{ field: 'llmScore', direction: 'desc' }],
     },
     {
-      title: 'Sluit binnenkort',
+      title: 'Closing soon',
       name: 'expiresAsc',
       by: [{ field: 'expiresAt', direction: 'asc' }],
     },
@@ -259,7 +259,7 @@ export const jobListing = defineType({
     },
     prepare({ title, employer, score, cause, note }) {
       return {
-        title: `${title ?? '(zonder titel)'}`,
+        title: `${title ?? '(untitled)'}`,
         subtitle: [employer, cause, score != null ? `score ${score}` : null]
           .filter(Boolean)
           .join(' · '),

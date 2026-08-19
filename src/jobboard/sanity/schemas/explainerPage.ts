@@ -15,42 +15,42 @@ import { defineField, defineType } from 'sanity'
 import { causeAreaOptions } from '../../taxonomy'
 
 export const EXPLAINER_KINDS = [
-  { value: 'method', title: 'Methodepagina — waarom deze banen' },
-  { value: 'cause', title: 'Probleemgebied' },
+  { value: 'method', title: 'Method page — why these jobs' },
+  { value: 'cause', title: 'Cause area' },
   { value: 'earning-to-give', title: 'Earning to give' },
 ] as const
 
 export const explainerPage = defineType({
   name: 'explainerPage',
-  title: 'Uitlegpagina',
+  title: 'Explainer page',
   type: 'document',
   fields: [
     defineField({
       name: 'language',
-      title: 'Taal',
+      title: 'Language',
       type: 'string',
       readOnly: true,
       hidden: true,
-      description: 'Beheerd door de document-internationalization-plugin. Nederlands is de basis.',
+      description: 'Managed by the document-internationalization plugin. Dutch is the base language.',
     }),
     defineField({
       name: 'kind',
-      title: 'Soort pagina',
+      title: 'Page type',
       type: 'string',
       options: { list: [...EXPLAINER_KINDS] },
       validation: (r) => r.required(),
     }),
     defineField({
       name: 'causeArea',
-      title: 'Bij welk probleemgebied hoort deze pagina',
+      title: 'Which cause area this page belongs to',
       type: 'string',
       options: { list: causeAreaOptions() },
       hidden: ({ document }) => document?.kind !== 'cause',
-      description: 'Verbindt de pagina met elk cause-label op het bord.',
+      description: 'Links the page to each cause label on the board.',
     }),
     defineField({
       name: 'title',
-      title: 'Titel',
+      title: 'Title',
       type: 'string',
       validation: (r) => r.required(),
     }),
@@ -63,34 +63,34 @@ export const explainerPage = defineType({
     }),
     defineField({
       name: 'summary',
-      title: 'Samenvatting',
+      title: 'Summary',
       type: 'text',
       rows: 3,
       description:
-        'Twee of drie zinnen. Wordt gebruikt als meta-description en boven de vacatures op de probleempagina.',
+        'Two or three sentences. Used as the meta description and above the listings on the cause page.',
       validation: (r) => r.required().max(400),
     }),
     defineField({
       name: 'body',
-      title: 'Tekst',
+      title: 'Body',
       type: 'array',
       of: [
         {
           type: 'block',
           styles: [
-            { title: 'Alinea', value: 'normal' },
-            { title: 'Kop 2', value: 'h2' },
-            { title: 'Kop 3', value: 'h3' },
-            { title: 'Citaat', value: 'blockquote' },
+            { title: 'Paragraph', value: 'normal' },
+            { title: 'Heading 2', value: 'h2' },
+            { title: 'Heading 3', value: 'h3' },
+            { title: 'Quote', value: 'blockquote' },
           ],
           lists: [
-            { title: 'Opsomming', value: 'bullet' },
-            { title: 'Nummers', value: 'number' },
+            { title: 'Bullet list', value: 'bullet' },
+            { title: 'Numbered list', value: 'number' },
           ],
           marks: {
             decorators: [
-              { title: 'Nadruk', value: 'strong' },
-              { title: 'Cursief', value: 'em' },
+              { title: 'Strong', value: 'strong' },
+              { title: 'Italic', value: 'em' },
             ],
             annotations: [
               {
@@ -104,33 +104,33 @@ export const explainerPage = defineType({
         },
       ],
       description:
-        'Ongeveer 400–600 woorden voor een probleempagina. Schrijf voor iemand die intelligent is, sceptisch, en hier nog nooit van heeft gehoord. Neem de tegenargumenten op.',
+        'About 400–600 words for a cause page. Write for someone who is intelligent, skeptical, and has never heard of this before. Include the counterarguments.',
       validation: (r) => r.required(),
     }),
     defineField({
       name: 'uncertainties',
-      title: 'Wat we niet zeker weten',
+      title: 'What we’re not sure about',
       type: 'text',
       rows: 4,
       description:
-        'Niet optioneel. De geloofwaardigheid van een samengesteld bord hangt erop dat de lezer denkt dat de curator eerlijk is; een pagina die één kant kiest bereikt het tegenovergestelde van wat hij moet doen.',
+        'Not optional. A curated board’s credibility rests on the reader trusting the curator is being honest; a page that picks one side achieves the opposite of what it should.',
       validation: (r) => r.required().min(80),
     }),
     defineField({
       name: 'reviewedByHuman',
-      title: 'Door een Nederlandstalige gelezen',
+      title: 'Read by a Dutch speaker',
       type: 'boolean',
       initialValue: false,
       description:
-        'Deze pagina’s worden zonder menselijke schrijver gegenereerd (§9.5). Heeft iemand die vloeiend Nederlands leest hem hardop voorgelezen? Zet dit dan aan. Een aanbod, geen voorwaarde.',
+        'These pages are generated without a human writer (§9.5). Has someone who reads Dutch fluently read it aloud? Turn this on if so. An offer, not a requirement.',
     }),
     defineField({
       name: 'critiquePasses',
-      title: 'Aantal anti-vertaalslag-rondes',
+      title: 'Number of anti-translationese passes',
       type: 'number',
       readOnly: true,
       description:
-        'Hoeveel rondes de vijandige eindredacteur nodig had voordat er geen bevindingen meer waren.',
+        'How many rounds the adversarial editor needed before finding nothing left.',
     }),
   ],
   preview: {
@@ -138,7 +138,7 @@ export const explainerPage = defineType({
     prepare({ title, kind, language, reviewed }) {
       return {
         title,
-        subtitle: [language?.toUpperCase(), kind, reviewed ? 'gelezen' : 'niet gelezen']
+        subtitle: [language?.toUpperCase(), kind, reviewed ? 'reviewed' : 'not reviewed']
           .filter(Boolean)
           .join(' · '),
       }
