@@ -5,7 +5,7 @@ import type { ReactNode } from 'react'
  * chrome or theme.
  */
 export const metadata = {
-  title: 'Vacaturebord — redactie',
+  title: 'Job board — editorial',
   robots: { index: false, follow: false },
 }
 
