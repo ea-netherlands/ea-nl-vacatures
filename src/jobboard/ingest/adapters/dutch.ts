@@ -514,24 +514,40 @@ export const euraxess: SourceAdapter = {
  * a Partos listing dedups against the same role arriving from that employer's
  * own feed (§7.7).
  */
-function partosFacts(html: string): {
+export function partosFacts(html: string): {
   applyUrl: string | null
   employerHost: string | null
   employerNameHint: string | null
   deadline: Date | null
   location: string | null
 } {
+  // Every Partos page carries the same header/footer social icons (Bluesky,
+  // LinkedIn, Instagram...) outside the vacancy body itself. Scanning the
+  // whole page for "the first outbound link" picks those up as the employer
+  // whenever a vacancy has no genuine outbound link (e.g. a vacancy at
+  // Partos itself, not a member organisation) — that's how listing id 65
+  // got "employerHost: bsky.app". Restrict the scan to `<main id="main">`,
+  // which holds only the vacancy content and excludes the shared chrome.
+  const main = html.match(/<main id="main"[^>]*>([\s\S]*?)<\/main>/i)?.[1] ?? html
+
   // Walk the outbound links once, keeping the best candidate of each kind:
   // a vacancy link is worth using as apply_url, while a bare homepage link
   // still identifies the employer even though it is not where you apply.
   let applyUrl: string | null = null
   let employerHost: string | null = null
-  for (const m of html.matchAll(/<a[^>]+href="(https?:\/\/[^"]+)"/gi)) {
+  for (const m of main.matchAll(/<a[^>]+href="(https?:\/\/[^"]+)"/gi)) {
     try {
       const url = new URL(m[1])
       const host = url.hostname.replace(/^www\./, '')
       if (/partos\.nl$/.test(host)) continue
-      if (/(facebook|twitter|linkedin|instagram|youtube|whatsapp|google|mailto)/.test(host)) continue
+      // Defense in depth: even inside the vacancy body, don't let a share
+      // button or embedded social link stand in for the employer's site.
+      if (
+        /(facebook|twitter|^x\.com$|linkedin|instagram|youtube|whatsapp|google|mailto|bsky\.app|threads\.net|tiktok\.com|pinterest)/.test(
+          host,
+        )
+      )
+        continue
       employerHost ??= host
       if (/vacature|vacancy|job|career|werken|sollicit/i.test(url.pathname)) {
         applyUrl = url.toString()

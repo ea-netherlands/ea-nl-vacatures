@@ -34,7 +34,7 @@ import {
 } from './lib/text'
 import { splitStatements } from './db/migrate'
 import { detectAts } from './ingest/adapters/ea-boards'
-import { orgCodeFromUrl, extractWvnBody } from './ingest/adapters/dutch'
+import { orgCodeFromUrl, extractWvnBody, partosFacts } from './ingest/adapters/dutch'
 import { extractJsonLd, findJobPosting } from './ingest/adapters/jsonld'
 import { SEED_EMPLOYERS } from './seed/employers'
 import {
@@ -621,6 +621,60 @@ test('werkenvoornederland body extraction keeps signal and drops the tail', () =
   assert.match(body, /VOG is vereist/)
   assert.doesNotMatch(body, /Radjes Mangroe/, 'contact block is furniture')
   assert.doesNotMatch(body, /Andere baan/, 'related vacancies are furniture')
+})
+
+test('Partos employer detection ignores the site chrome around the vacancy', () => {
+  /*
+    Partos has no JSON-LD, so the employer is resolved from the first outbound
+    link on the page. Every Partos page wraps the vacancy in shared header and
+    footer chrome carrying social icons — and a vacancy at Partos itself has no
+    genuine outbound link, so a whole-page scan reached the footer and reported
+    bsky.app as the employer (that is what happened to listing 65).
+
+    Two things stop it, and this covers both: the scan is confined to
+    `<main id="main">`, and the social-host denylist now includes the networks
+    that postdate the original list.
+  */
+  const page = `
+    <html><body>
+      <header><a href="https://bsky.app/profile/partos.nl">Bluesky</a></header>
+      <main id="main">
+        <h1>Programmamedewerker</h1>
+        <h2>Over Dorcas</h2>
+        <p>Locatie: Almere</p>
+        <p>Solliciteren voor: 12-09-2026</p>
+        <a href="https://www.dorcas.nl/vacatures/programmamedewerker">Solliciteer</a>
+      </main>
+      <footer><a href="https://www.linkedin.com/company/partos">LinkedIn</a></footer>
+    </body></html>`
+
+  const facts = partosFacts(page)
+  assert.equal(facts.employerHost, 'dorcas.nl')
+  assert.equal(facts.applyUrl, 'https://www.dorcas.nl/vacatures/programmamedewerker')
+  assert.equal(facts.employerNameHint, 'Dorcas')
+  assert.equal(facts.location, 'Almere')
+  assert.equal(facts.deadline?.toISOString().slice(0, 10), '2026-09-12')
+})
+
+test('a Partos vacancy with no outbound link reports no employer, not a social host', () => {
+  // The failing case in its purest form: a vacancy at Partos itself. The right
+  // answer is "we do not know", because a wrong employer is worse than none —
+  // it breaks dedup against that employer's own feed and mislabels the card.
+  const page = `
+    <html><body>
+      <header><a href="https://bsky.app/profile/partos.nl">Bluesky</a></header>
+      <main id="main">
+        <h1>Beleidsadviseur</h1>
+        <p>Locatie: Amsterdam</p>
+      </main>
+      <footer>
+        <a href="https://www.instagram.com/partos">Instagram</a>
+        <a href="https://x.com/partos">X</a>
+      </footer>
+    </body></html>`
+
+  assert.equal(partosFacts(page).employerHost, null)
+  assert.equal(partosFacts(page).applyUrl, null)
 })
 
 test('JSON-LD extraction finds a JobPosting nested under mainEntity', () => {
