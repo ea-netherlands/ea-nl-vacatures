@@ -14,6 +14,25 @@
 import type { StructureResolver } from 'sanity/structure'
 import { icon } from '../components/Icon'
 
+/*
+  Drafts are matched on `_originalId`, never on `_id`.
+
+  Studio 6 runs its document lists under the `drafts` perspective, which folds
+  each draft over its published version and normalises the id — the `drafts.`
+  prefix is gone by the time a filter sees it. So `_id in path("drafts.**")`
+  matches nothing in the Studio while matching correctly in a raw API query,
+  which is exactly how the review queue came to read "No documents of this
+  type" over twelve waiting listings.
+
+  `_originalId` keeps the prefix under that perspective, so it is the field
+  that actually answers "is this a draft". The inverse matters just as much:
+  negating the `_id` form is always true under this perspective, so every list
+  below was silently including drafts — the Live list was showing unreviewed
+  draft content under the heading "Live on the board".
+*/
+const IS_DRAFT = '_originalId in path("drafts.**")'
+const IS_PUBLISHED = `!(${IS_DRAFT})`
+
 export const structure: StructureResolver = (S) =>
   S.list()
     .title('Job board')
@@ -27,7 +46,7 @@ export const structure: StructureResolver = (S) =>
           S.documentList()
             .title('Awaiting review')
             .apiVersion('2024-10-01')
-            .filter('_type == "jobListing" && _id in path("drafts.**")')
+            .filter(`_type == "jobListing" && ${IS_DRAFT}`)
             .defaultOrdering([{ field: 'llmScore', direction: 'desc' }])
             .menuItemGroups([{ id: 'sort', title: 'Sort' }]),
         ),
@@ -40,7 +59,7 @@ export const structure: StructureResolver = (S) =>
             .title('Live on the board')
             .apiVersion('2024-10-01')
             .filter(
-              '_type == "jobListing" && !(_id in path("drafts.**")) && (!defined(expiresAt) || expiresAt > now())',
+              `_type == "jobListing" && ${IS_PUBLISHED} && (!defined(expiresAt) || expiresAt > now())`,
             )
             .defaultOrdering([{ field: 'postedAt', direction: 'desc' }]),
         ),
@@ -55,7 +74,7 @@ export const structure: StructureResolver = (S) =>
             .title('Expiring within seven days')
             .apiVersion('2024-10-01')
             .filter(
-              '_type == "jobListing" && !(_id in path("drafts.**")) && defined(expiresAt) && expiresAt > now() && expiresAt < $weekOut',
+              `_type == "jobListing" && ${IS_PUBLISHED} && defined(expiresAt) && expiresAt > now() && expiresAt < $weekOut`,
             )
             .params({ weekOut: new Date(Date.now() + 7 * 864e5).toISOString() })
             .defaultOrdering([{ field: 'expiresAt', direction: 'asc' }]),
@@ -69,7 +88,7 @@ export const structure: StructureResolver = (S) =>
             .title('Expired or closed')
             .apiVersion('2024-10-01')
             .filter(
-              '_type == "jobListing" && !(_id in path("drafts.**")) && defined(expiresAt) && expiresAt <= now()',
+              `_type == "jobListing" && ${IS_PUBLISHED} && defined(expiresAt) && expiresAt <= now()`,
             )
             .defaultOrdering([{ field: 'expiresAt', direction: 'desc' }]),
         ),
