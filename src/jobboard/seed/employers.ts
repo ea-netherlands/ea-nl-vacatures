@@ -1697,6 +1697,20 @@ export const SEED_SOURCES: SeedSource[] = [
     returnsCompleteSet: true,
     config: { company: 'new-incentives' },
   },
+  /*
+    The one organisation from the August 2026 sweep with a feed the pipeline can
+    read. Seeding the employer is not enough on its own — an employer with no
+    `source` row is never polled, which is how nine new entries can sit in the
+    watchlist looking like coverage while nothing reaches the board.
+  */
+  {
+    id: 'personio:war-child-alliance',
+    kind: 'ats',
+    adapter: 'personio',
+    employerId: 'war-child',
+    returnsCompleteSet: true,
+    config: { tenant: 'war-child-alliance', tld: 'com' },
+  },
   {
     id: 'personio:observatoriodebienestaranimal',
     kind: 'ats',
