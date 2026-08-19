@@ -988,6 +988,28 @@ export const SEED_EMPLOYERS: SeedEmployer[] = [
     verify: true,
     notes: 'No careers page and no feed as of August 2026.',
   },
+
+  {
+    /*
+      No separate careers presence and no org code of its own: the council's
+      secretariat is staffed by BZK civil servants, so its vacancies appear on
+      werkenvoornederland under a ministry rather than under the ROB. Seeded so
+      a curator recognises one when it surfaces and knows why it belongs — the
+      democracy vocabulary added to WVN_KEYWORDS is what will actually surface
+      it. Deliberately not given a source it cannot have.
+    */
+    id: 'raad-openbaar-bestuur',
+    name: 'Raad voor het Openbaar Bestuur',
+    website: 'https://www.raadopenbaarbestuur.nl',
+    city: 'Den Haag',
+    ats: null,
+    causeAreas: ['better-futures'],
+    leverageNote:
+      'Adviseert regering en parlement gevraagd en ongevraagd over het functioneren van het openbaar bestuur en de democratie — een klein secretariaat met een directe lijn naar wetgeving.',
+    watchlistTier: 3,
+    verify: true,
+    notes: 'Posts via BZK/AZ on werkenvoornederland; no careers page of its own.',
+  },
   {
     id: 'turing-foundation',
     name: 'Turing Foundation',
@@ -1676,6 +1698,30 @@ const WVN_KEYWORDS = [
   // in government surface too.
   'straling',
   'stralingsbescherming',
+  /*
+    Democratic institutions, added August 2026.
+
+    `better-futures` has carried a `democratic-institutions` sub-area from the
+    start and the government crawl had no vocabulary for it whatsoever — not
+    one term. The gate matches on the vacancy slug, so these are the words that
+    appear in Dutch job titles rather than in policy documents. The role that
+    exposed the gap: `raadadviseur-staatsrecht-en-bestuur` at Algemene Zaken,
+    a constitutional-law adviser in the Prime Minister's own ministry, sitting
+    in the sitemap where nothing could reach it.
+
+    `integriteit` is deliberately absent despite matching five vacancies: in
+    Dutch job titles it means HR and compliance work, not the integrity of
+    democratic institutions.
+  */
+  'democrat',
+  'staatsrecht',
+  'rechtsstaat',
+  'grondrecht',
+  'openbaar bestuur',
+  'verkiezing',
+  'kiesraad',
+  'desinformatie',
+  'burgerschap',
 ]
 
 export const SEED_SOURCES: SeedSource[] = [
