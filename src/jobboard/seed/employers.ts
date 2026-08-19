@@ -878,6 +878,116 @@ export const SEED_EMPLOYERS: SeedEmployer[] = [
     watchlistTier: 3,
     verify: true,
   },
+
+  // ===========================================================================
+  // Party research bureaus (wetenschappelijke bureaus)
+  //
+  // Seeded as a curator's quarterly round, deliberately not as scrapers. The
+  // evidence, gathered August 2026 so nobody has to gather it again:
+  //
+  //   Van Mierlo (D66)   RSS feed exists and works. Ten items spanning October
+  //                      2023 to July 2026 — about four postings a year, mostly
+  //                      internships and board seats, with no closing dates in
+  //                      the feed at all.
+  //   Wiardi Beckman     No careers page and no feed. Vacancies are published
+  //                      as ordinary news articles (Drupal nodes) with no
+  //                      structured data.
+  //   WI voor het CDA    A real careers page, shared with the party office, so
+  //                      most of what appears there is party-bureau work rather
+  //                      than the research institute.
+  //   Telders, Bureau de Helling, WI ChristenUnie
+  //                      Nothing at all: no careers page, no feed, no vacancy
+  //                      links from the homepage.
+  //
+  // Six organisations producing something like five to ten postings a year
+  // between them cannot justify six scrapers, and the one feed that does exist
+  // would need staleness handling before it could be trusted — it still carries
+  // 2023 internships as current items. A curator opening six URLs once a
+  // quarter is faster to build, faster to run, and will not publish a dead
+  // link. The suggestion form covers the rest: people inside these parties know
+  // about a vacancy long before it reaches a website.
+  //
+  // Worth the entries anyway. When these do post, it is a directeur or a senior
+  // wetenschappelijk medewerker at the body that writes a governing party's
+  // policy programme — very few roles, disproportionate leverage each.
+  // ===========================================================================
+  {
+    id: 'van-mierlo-stichting',
+    name: 'Mr. Hans van Mierlo Stichting (D66)',
+    website: 'https://d66.nl/vanmierlostichting/',
+    careersUrl: 'https://d66.nl/vanmierlostichting/vacatures/',
+    city: 'Den Haag',
+    ats: null,
+    causeAreas: ['better-futures'],
+    leverageNote:
+      'Het wetenschappelijk bureau van D66. Schrijft de onderbouwing waar het verkiezingsprogramma en de inzet in kabinetsformaties op rusten.',
+    watchlistTier: 3,
+    verify: true,
+    notes:
+      'RSS at /vacatures/feed/ works but carries items back to 2023 with no closing dates. Check by hand; do not ingest without expiry handling.',
+  },
+  {
+    id: 'wiardi-beckman-stichting',
+    name: 'Wiardi Beckman Stichting (PvdA)',
+    website: 'https://wbs.nl',
+    careersUrl: 'https://wbs.nl/nieuws',
+    city: 'Amsterdam',
+    ats: null,
+    causeAreas: ['better-futures'],
+    leverageNote: 'Het wetenschappelijk bureau van de PvdA.',
+    watchlistTier: 3,
+    verify: true,
+    notes: 'Publishes vacancies as news articles, not on a careers page. No feed. Manual only.',
+  },
+  {
+    id: 'wi-cda',
+    name: 'Wetenschappelijk Instituut voor het CDA',
+    website: 'https://www.cda.nl',
+    careersUrl: 'https://www.cda.nl/werken-bij-het-cda/',
+    city: 'Den Haag',
+    ats: null,
+    causeAreas: ['better-futures'],
+    leverageNote: 'Het wetenschappelijk bureau van het CDA.',
+    watchlistTier: 3,
+    verify: true,
+    notes: 'Careers page is shared with the party office; most postings are not the institute.',
+  },
+  {
+    id: 'teldersstichting',
+    name: 'TeldersStichting (VVD)',
+    website: 'https://www.teldersstichting.nl',
+    city: 'Den Haag',
+    ats: null,
+    causeAreas: ['better-futures'],
+    leverageNote: 'Het wetenschappelijk bureau van de VVD.',
+    watchlistTier: 3,
+    verify: true,
+    notes: 'No careers page, no feed, no vacancy links from the homepage as of August 2026.',
+  },
+  {
+    id: 'bureau-de-helling',
+    name: 'Bureau de Helling (GroenLinks)',
+    website: 'https://bureaudehelling.nl',
+    city: 'Utrecht',
+    ats: null,
+    causeAreas: ['better-futures'],
+    leverageNote: 'Het wetenschappelijk bureau van GroenLinks.',
+    watchlistTier: 3,
+    verify: true,
+    notes: 'No careers page and no feed as of August 2026.',
+  },
+  {
+    id: 'wi-christenunie',
+    name: 'Wetenschappelijk Instituut ChristenUnie',
+    website: 'https://wi.christenunie.nl',
+    city: 'Amersfoort',
+    ats: null,
+    causeAreas: ['better-futures'],
+    leverageNote: 'Het wetenschappelijk bureau van de ChristenUnie.',
+    watchlistTier: 3,
+    verify: true,
+    notes: 'No careers page and no feed as of August 2026.',
+  },
   {
     id: 'turing-foundation',
     name: 'Turing Foundation',
