@@ -117,6 +117,27 @@ export const explainerPage = defineType({
       validation: (r) => r.required().min(80),
     }),
     defineField({
+      name: 'sources',
+      title: 'What this page is based on',
+      type: 'array',
+      of: [
+        {
+          type: 'object',
+          name: 'explainerSource',
+          fields: [
+            { name: 'org', type: 'string', title: 'Organisation' },
+            { name: 'title', type: 'string', title: 'Title of the piece' },
+            { name: 'url', type: 'url', title: 'Link' },
+          ],
+          preview: {
+            select: { title: 'title', subtitle: 'org' },
+          },
+        },
+      ],
+      description:
+        'The published work this page summarises, credited at the top of the page and linked out. These organisations reserve their rights and two of them prohibit republication in their terms — so this list is a citation, not a licence. Nothing here may be reproduced verbatim beyond a single short quotation.',
+    }),
+    defineField({
       name: 'reviewedByHuman',
       title: 'Read by a Dutch speaker',
       type: 'boolean',

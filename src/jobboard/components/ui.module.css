@@ -978,3 +978,49 @@
   gap: var(--space-1-5);
   font-weight: var(--fw-medium);
 }
+
+/*
+  The source attribution above an explainer body.
+
+  A quiet aside rather than a callout: it is not a warning and not a boast, it
+  is a pointer to somebody who knows more. The dashed left rule is the device
+  the rest of the board uses for "adjacent to the argument, not part of it".
+*/
+.sourceNote {
+  margin-bottom: var(--space-8);
+  padding-left: var(--space-5);
+  border-left: var(--rule-dashed);
+}
+
+.sourceNoteLead {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--fg-muted);
+}
+
+.sourceNoteLead svg {
+  flex: none;
+  margin-top: 0.15em;
+  color: var(--primary-fg);
+  font-size: var(--text-lg);
+}
+
+.sourceNoteList {
+  margin-top: var(--space-2);
+  padding-left: calc(var(--text-lg) + var(--space-3));
+  list-style: none;
+  font-size: var(--text-sm);
+}
+
+.sourceNoteList li + li {
+  margin-top: var(--space-1);
+}
+
+.sourceNoteList a {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1-5);
+  font-weight: var(--fw-medium);
+}

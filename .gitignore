@@ -7,3 +7,8 @@ node_modules
 *.tsbuildinfo
 next-env.d.ts
 grading*.csv
+
+# macOS/iCloud duplicates ("Foo 2.ts"). These appeared in .next and in src/
+# during editing and are never intentional; committing one ships a stale copy
+# of a real file that TypeScript then compiles alongside the original.
+*\ [0-9].*

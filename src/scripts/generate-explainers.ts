@@ -28,7 +28,7 @@
  * of argument does not" (§12).
  */
 
-import { mkdir, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { ANTI_TRANSLATIONESE_SYSTEM } from '../jobboard/classify/prompt'
 import { CRITIQUE_SCHEMA, type Critique } from '../jobboard/classify/schema'
@@ -49,10 +49,49 @@ import {
   type CauseArea,
 } from '../jobboard/taxonomy'
 import { t as translationsFor } from '../jobboard/content/i18n'
+import { CAUSE_SOURCES, PAGE_SOURCES, sourceRules, type Source } from '../jobboard/content/sources'
+import { fetchText } from '../jobboard/lib/http'
+import { htmlToText, truncateWords } from '../jobboard/lib/text'
 import { slugify } from '../jobboard/lib/text'
 import { log, main, num, parseArgs, printReport } from './_cli'
 
 const OUT_DIR = path.resolve(process.cwd(), 'src/jobboard/content/explainers')
+
+/**
+ * How much of each source to put in front of the model.
+ *
+ * Enough that it is summarising the actual argument rather than a headline;
+ * short enough that a three-source page stays inside a sensible prompt. The
+ * cap is per source, so `global-catastrophic-risks` still gets its full three.
+ */
+const SOURCE_WORD_CAP = 3500
+
+/**
+ * Fetches the pieces a page is based on.
+ *
+ * A source that will not load is reported and skipped rather than failing the
+ * run: a page written from two of its three sources is worth having, and a
+ * silent substitution of the model's own knowledge for the source is exactly
+ * what the attribution would then be lying about — hence the log line.
+ */
+async function loadSources(sources: readonly Source[]): Promise<{ source: Source; text: string }[]> {
+  const loaded: { source: Source; text: string }[] = []
+  for (const source of sources) {
+    try {
+      const html = await fetchText(source.url)
+      const text = truncateWords(htmlToText(html), SOURCE_WORD_CAP)
+      if (text.length < 500) {
+        log(`  ! ${source.url} returned almost no text; skipping`)
+        continue
+      }
+      loaded.push({ source, text })
+      log(`  read ${source.org} — ${source.title}`)
+    } catch (error) {
+      log(`  ! could not read ${source.url}: ${(error as Error).message}`)
+    }
+  }
+  return loaded
+}
 
 type PageSpec = {
   key: string
@@ -64,6 +103,8 @@ type PageSpec = {
   slugEn: string
   brief: string
   words: [number, number]
+  /** The published work this page summarises. Empty for pages that are ours. */
+  sources?: readonly Source[]
 }
 
 /** Dutch-language search terms with real volume and almost no good answer (§9.8). */
@@ -100,9 +141,10 @@ Structure the page on the ${framework.name} exactly as EA NL's own glossary defi
 Using the site's established vocabulary does double duty: it explains the board, and it teaches the single most useful idea a newcomer could take away, in words consistent with the rest of the site.
 
 Then cover, concretely:
+- that the board covers five problem areas: global health and wellbeing, farmed animal welfare, global catastrophic risks, better futures, and building the movement. The fifth is the newest and the one needing a line of explanation: it covers cause-general community building and public-facing effective giving — the organisations whose product is the movement itself rather than work on one problem. Field building aimed at a single problem (an AI-safety fellowship, say) belongs to that problem, not here.
 - that most listings are at employers who would not describe themselves as impact-focused, and why that is the point rather than a compromise
 - FIRST, before anything about our own method: that someone genuinely optimising for impact should look at 80,000 Hours, Probably Good and the EA Opportunities board before looking here, because most of the strongest roles are not in the Netherlands. Then that this board is for people who cannot or will not relocate — a partner's job, children in school, caring responsibilities, a residence permit, or simply not wanting to leave — and that this is a reasonable trade-off rather than a lack of commitment. Do not soften this into a marketing line; the reader who can move should be able to act on it and leave.
-- why climate is not one of the four problem areas. The reason is neglectedness, not importance: climate already attracts a great deal of Dutch money, talent and political attention, and the problems on this board do not. Say that the question of which climate work is underrated is a good and separate one, and refer the reader to Effective Environmentalism (effectiveenvironmentalism.org). Do not imply the board has a view on which climate charities are effective — it deliberately does not.
+- why climate is not one of the five problem areas. The reason is neglectedness, not importance: climate already attracts a great deal of Dutch money, talent and political attention, and the problems on this board do not. Say that the question of which climate work is underrated is a good and separate one, and refer the reader to Effective Environmentalism (effectiveenvironmentalism.org). Do not imply the board has a view on which climate charities are effective — it deliberately does not.
 - that one category works differently and is gated by an allowlist rather than judgement: earning to give (a named employer list plus a salary floor). Say why: there are thousands of well-paid Amsterdam jobs, and a category that let everything in would drag down trust in the whole board.
 - that the board is deliberately small, and that 25 good listings beat 200 mediocre ones
 - that a piece of software drafts a first version of each note and a person edits and publishes it
@@ -119,6 +161,7 @@ In "uncertainties": be specific and self-critical. Name the real weaknesses — 
     slugNl: 'earning-to-give',
     slugEn: 'earning-to-give',
     words: [700, 900],
+    sources: PAGE_SOURCES['earning-to-give'],
     brief: `Explain earning to give, and make the Dutch-specific case — no existing EA resource does.
 
 The Dutch case is unusually strong and concrete. Amsterdam is one of Europe's largest proprietary trading hubs: Optiver, IMC, Flow Traders and Da Vinci are all headquartered there, with other quantitative firms holding Amsterdam offices. They are among the highest-paying graduate employers in continental Europe and recruit heavily from Dutch technical universities. A Dutch maths or physics graduate weighing Optiver against a research post is making exactly the decision this idea exists to inform, and right now nothing in the Dutch ecosystem meets them at that moment. Beyond trading: senior software engineering, strategy consulting, corporate law and medicine all clear the bar.
@@ -140,6 +183,7 @@ In "uncertainties": this is the honest case AGAINST, and it must be strong. Earn
     slugNl: cause,
     slugEn: cause,
     words: [400, 600],
+    sources: CAUSE_SOURCES[cause],
     brief: `Write the explainer for the problem area \`${cause}\`.
 
 Our internal definition: ${CAUSE_AREA_DEFINITIONS[cause]}
@@ -158,7 +202,7 @@ ${
         : ''
     }${
       cause === 'better-futures'
-        ? 'This is the least familiar of the four and the page carries the most explanatory load. The core idea: humanity could survive the century and still end up somewhere far worse than it had to be — power concentrated in very few hands, bad values locked in and made permanent by technology that makes them hard to reverse, or vast numbers of beings whose interests nobody counts. Distinguish it from global catastrophic risks explicitly: that area is about whether we make it through, this one is about whether what comes after is any good. Avoid science-fiction register; the Dutch reader most likely to bounce off this page is a serious person who suspects it is speculation.\n\n'
+        ? 'This is the least familiar of the five and the page carries the most explanatory load. The core idea: humanity could survive the century and still end up somewhere far worse than it had to be — power concentrated in very few hands, bad values locked in and made permanent by technology that makes them hard to reverse, or vast numbers of beings whose interests nobody counts. Distinguish it from global catastrophic risks explicitly: that area is about whether we make it through, this one is about whether what comes after is any good. Avoid science-fiction register; the Dutch reader most likely to bounce off this page is a serious person who suspects it is speculation.\n\n'
         : ''
     }${
       cause === 'farmed-animal-welfare'
@@ -190,6 +234,7 @@ async function generate(
   spec: PageSpec,
   language: 'nl' | 'en',
   maxPasses: number,
+  sourceTexts: { source: Source; text: string }[] = [],
 ): Promise<Generated> {
   const [styleGuide, glossary, glossaryPrompt, checks] = await Promise.all([
     loadStyleGuide(),
@@ -257,7 +302,25 @@ Reply with exactly these four blocks, in this order, with these markers and noth
 ===UNCERTAINTIES===
 (what we are not sure about — at least 80 characters, and honest)`
 
-  let text = await proseCall({ model: PROSE_MODEL, system, user: spec.brief, maxTokens: 8000 })
+  /*
+    The source material goes in the user turn, after the brief and after the
+    rules that govern it. Order matters: the model reads the constraint before
+    it reads the text it is constrained about, which is measurably better than
+    handing it several thousand words and appending "don't copy that".
+  */
+  const user = sourceTexts.length
+    ? [
+        spec.brief,
+        sourceRules(spec.words),
+        '## The sources themselves',
+        ...sourceTexts.map(
+          ({ source, text: body }) =>
+            `### ${source.org} — "${source.title}"\n${source.url}\nLeaned on for: ${source.covers}\n\n${body}`,
+        ),
+      ].join('\n\n')
+    : spec.brief
+
+  let text = await proseCall({ model: PROSE_MODEL, system, user, maxTokens: 8000 })
   let parsed = parseBlocks(text)
 
   // The adversarial pass. Only Dutch: it exists to catch translationese, and the
@@ -347,6 +410,119 @@ function parseBlocks(text: string): Omit<Generated, 'critiquePasses'> {
  * Markdown → Portable Text. Deliberately minimal: the explainer schema allows
  * headings, paragraphs, lists, blockquotes and links, and nothing else.
  */
+/**
+ * Reads one generated Markdown file back into the shape Sanity wants.
+ *
+ * The file is the reviewable artefact, so it has to be round-trippable: what a
+ * person read on disk is exactly what gets published. Parsing our own output
+ * rather than keeping a parallel JSON copy means the two cannot drift.
+ */
+function parseGeneratedFile(raw: string): {
+  key: string
+  kind: string
+  causeArea: string | null
+  language: 'nl' | 'en'
+  title: string
+  slug: string
+  critiquePasses: number
+  sources: { org: string; title: string; url: string }[]
+  summary: string
+  body: string
+  uncertainties: string
+} | null {
+  const match = raw.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/)
+  if (!match) return null
+  const [, front, rest] = match
+
+  const field = (name: string) =>
+    front.match(new RegExp(`^${name}:\\s*(.+)$`, 'm'))?.[1]?.trim() ?? null
+  const unquote = (v: string | null) =>
+    v && v.startsWith('"') ? (JSON.parse(v) as string) : (v ?? '')
+
+  // `  - "Org — Title": https://…`
+  const sources = [...front.matchAll(/^ {2}- "(.+?) — (.+?)":\s*(\S+)$/gm)].map((m) => ({
+    org: m[1],
+    title: m[2],
+    url: m[3],
+  }))
+
+  // The body is written as: blockquote summary, prose, then the uncertainties
+  // heading. Split on that heading rather than on position — the heading text
+  // differs by language and the prose above it contains headings of its own.
+  const uncertaintyHeading = /\n## (?:Wat we niet zeker weten|What we are not sure about)\n/
+  const split = rest.split(uncertaintyHeading)
+  const beforeUncertainties = split[0] ?? ''
+  const uncertainties = (split[1] ?? '').trim()
+
+  const summary = (beforeUncertainties.match(/^> (.+)$/m)?.[1] ?? '').trim()
+  const body = beforeUncertainties.replace(/^> .+$/m, '').trim()
+
+  const language = field('language') === 'en' ? 'en' : 'nl'
+  return {
+    key: unquote(field('key')),
+    kind: unquote(field('kind')),
+    causeArea: field('causeArea'),
+    language,
+    title: unquote(field('title')),
+    slug: unquote(field('slug')),
+    critiquePasses: Number(field('critiquePasses') ?? 0),
+    sources,
+    summary,
+    body,
+    uncertainties,
+  }
+}
+
+/** Publishes every generated Markdown file in OUT_DIR, unchanged. */
+async function publishFromDisk(
+  specs: PageSpec[],
+  client: ReturnType<typeof writeClient>,
+): Promise<void> {
+  const files = (await readdir(OUT_DIR)).filter((f) => f.endsWith('.md')).sort()
+  const published: string[] = []
+  const skipped: string[] = []
+
+  for (const file of files) {
+    const parsed = parseGeneratedFile(await readFile(path.join(OUT_DIR, file), 'utf8'))
+    if (!parsed || !parsed.title || !parsed.body || !parsed.summary) {
+      skipped.push(`${file} — could not parse`)
+      continue
+    }
+    // A page whose key no longer exists in the taxonomy is a leftover from a
+    // previous vocabulary. Publishing it would resurrect a retired category.
+    if (!specs.some((s) => s.key === parsed.key)) {
+      skipped.push(`${file} — "${parsed.key}" is not a current page`)
+      continue
+    }
+
+    const docId = `explainer-${parsed.key}-${parsed.language}`
+    await client.createOrReplace({
+      _id: docId,
+      _type: 'explainerPage',
+      language: parsed.language,
+      kind: parsed.kind,
+      causeArea: parsed.causeArea,
+      title: parsed.title,
+      slug: { _type: 'slug', current: slugify(parsed.slug) },
+      summary: parsed.summary.slice(0, 400),
+      body: toPortableText(parsed.body),
+      uncertainties: parsed.uncertainties,
+      reviewedByHuman: false,
+      critiquePasses: parsed.critiquePasses,
+      sources: parsed.sources.map((source) => ({
+        _key: source.url.replace(/[^a-z0-9]+/gi, '-').slice(0, 40),
+        _type: 'explainerSource',
+        org: source.org,
+        title: source.title,
+        url: source.url,
+      })),
+    })
+    published.push(`${docId}${parsed.sources.length ? ` (${parsed.sources.length} source(s))` : ''}`)
+  }
+
+  printReport('Published from disk', { published, skipped })
+}
+
 function toPortableText(markdown: string): Record<string, unknown>[] {
   const blocks: Record<string, unknown>[] = []
   let listBuffer: { style: 'bullet' | 'number'; text: string }[] = []
@@ -425,6 +601,17 @@ void main(async () => {
   const args = parseArgs()
   const specs = await buildSpecs()
 
+  // Before the usage text below: `--publish-only` names no page, because it
+  // publishes whatever is already on disk, and would otherwise be answered
+  // with "you didn't pick a page".
+  if (args.flags.has('publish-only')) {
+    if (!isSanityConfigured) {
+      throw new Error('cannot publish: NEXT_PUBLIC_SANITY_PROJECT_ID is not set')
+    }
+    await publishFromDisk(specs, writeClient())
+    return
+  }
+
   if (args.flags.has('list') || (!args.flags.has('all') && !args.values.get('page'))) {
     console.log('\nExplainer pages (spec §9.5, M5b):\n')
     for (const s of specs) {
@@ -441,9 +628,23 @@ void main(async () => {
     return
   }
 
-  const wanted = args.flags.has('all')
-    ? specs
-    : specs.filter((s) => s.key === args.values.get('page'))
+  /*
+    `--publish-only` pushes the Markdown already on disk into Sanity without
+    regenerating anything.
+
+    Without it, publishing means running the model again, and the pages that
+    reach readers are then not the pages anyone reviewed — every generation
+    produces different prose, so a careful read of the files followed by
+    `--publish` would be checking one thing and shipping another. Reviewing and
+    publishing have to be able to act on the same bytes.
+  */
+  // `--page` takes a comma-separated list, so a partial rerun after a taxonomy
+  // or source change does not mean either one page at a time or all of them.
+  const requested = (args.values.get('page') ?? '')
+    .split(',')
+    .map((k) => k.trim())
+    .filter(Boolean)
+  const wanted = args.flags.has('all') ? specs : specs.filter((s) => requested.includes(s.key))
   if (wanted.length === 0) throw new Error(`unknown page "${args.values.get('page')}"`)
 
   const languages: ('nl' | 'en')[] = args.flags.has('en') ? ['nl', 'en'] : ['nl']
@@ -454,13 +655,55 @@ void main(async () => {
   }
   const client = publish ? writeClient() : null
 
+  /*
+    Pages are generated concurrently.
+
+    They are completely independent — different sources, different prose, no
+    shared state beyond the output directory — but the loop used to run them one
+    after another, so a seven-page run cost seven times a single page. Each page
+    is a generation call plus up to four sequential critique passes, which is
+    around ten minutes of mostly waiting on the API; done in sequence that is
+    over an hour of wall clock for work that has no ordering constraint.
+
+    The cap exists because the passes inside a page are themselves serial and
+    each page holds an Opus request open the whole time. Four at once keeps the
+    run comfortably inside rate limits while turning an hour into a quarter of
+    one; raise it with --concurrency if your limits allow.
+  */
+  const concurrency = Math.max(1, num(args, 'concurrency', 4))
+
   await mkdir(OUT_DIR, { recursive: true })
   const written: string[] = []
 
-  for (const spec of wanted) {
+  const queue = [...wanted]
+  const failures: string[] = []
+
+  const worker = async () => {
+    for (;;) {
+      const spec = queue.shift()
+      if (!spec) return
+      try {
+        await generateOne(spec)
+      } catch (error) {
+        // One page failing must not lose the other six. Report and continue.
+        failures.push(`${spec.key} — ${(error as Error).message}`)
+        log(`  ! ${spec.key} failed: ${(error as Error).message}`)
+      }
+    }
+  }
+
+  async function generateOne(spec: PageSpec) {
+    // Fetched once per page rather than once per language: the sources are the
+    // same English pieces either way, so re-fetching for the English run would
+    // be a second hit on someone else's server for no gain.
+    const sourceTexts = spec.sources?.length ? await loadSources(spec.sources) : []
+    if (spec.sources?.length && sourceTexts.length < spec.sources.length) {
+      log(`  ! ${spec.key}: ${sourceTexts.length}/${spec.sources.length} sources loaded`)
+    }
+
     for (const language of languages) {
       log(`generating ${spec.key} [${language}]…`)
-      const page = await generate(spec, language, maxPasses)
+      const page = await generate(spec, language, maxPasses, sourceTexts)
 
       // Always write the Markdown to disk, whether or not we publish. It is the
       // reviewable artefact: read the method page aloud before trusting it.
@@ -478,6 +721,15 @@ void main(async () => {
           `critiquePasses: ${page.critiquePasses}`,
           `generatedWith: ${PROSE_MODEL}`,
           'reviewedByHuman: false',
+          ...(sourceTexts.length
+            ? [
+                'sources:',
+                ...sourceTexts.map(
+                  ({ source }) =>
+                    `  - ${JSON.stringify(`${source.org} — ${source.title}`)}: ${source.url}`,
+                ),
+              ]
+            : []),
           '---',
           '',
           `> ${page.summary}`,
@@ -513,18 +765,35 @@ void main(async () => {
           uncertainties: page.uncertainties,
           reviewedByHuman: false,
           critiquePasses: page.critiquePasses,
+          // The attribution travels with the document rather than being
+          // rebuilt from the taxonomy at render time, so a page published
+          // today keeps naming the sources it was actually written from even
+          // if this module's list changes later.
+          sources: sourceTexts.map(({ source }) => ({
+            _key: source.url.replace(/[^a-z0-9]+/gi, '-').slice(0, 40),
+            _type: 'explainerSource',
+            org: source.org,
+            title: source.title,
+            url: source.url,
+          })),
         })
         log(`  published ${docId}`)
       }
     }
   }
 
+  log(
+    `generating ${wanted.length} page(s), ${Math.min(concurrency, wanted.length)} at a time…`,
+  )
+  await Promise.all(Array.from({ length: Math.min(concurrency, wanted.length) }, worker))
+
   printReport('Explainers generated', {
-    pages: wanted.length,
+    pages: wanted.length - failures.length,
     languages: languages.join(', '),
     model: PROSE_MODEL,
     published: publish ? 'yes' : 'no (use --publish)',
-    files: written,
+    files: written.sort(),
+    failed: failures,
   })
 
   console.log(

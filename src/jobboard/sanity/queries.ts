@@ -118,6 +118,11 @@ export type ExplainerView = {
   summary: string
   body: unknown[]
   uncertainties: string
+  /**
+   * The published work this page summarises. A citation, not a licence — see
+   * ../content/sources for why nothing here may be reproduced verbatim.
+   */
+  sources: { org: string; title: string; url: string }[]
   reviewedByHuman: boolean | null
   language: string
 }
@@ -249,7 +254,8 @@ export async function getExplainer(
   return fetchOrEmpty<ExplainerView | null>(
     `*[_type == "explainerPage" && kind == $kind && language == $language${causeClause}][0]{
       "id": _id, kind, causeArea, title, "slug": slug.current, summary, body,
-      uncertainties, reviewedByHuman, language
+      uncertainties, "sources": coalesce(sources[]{org, title, url}, []),
+      reviewedByHuman, language
     }`,
     { kind, language, causeArea: causeArea ?? null },
     null,

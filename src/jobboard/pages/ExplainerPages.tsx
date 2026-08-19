@@ -24,7 +24,7 @@ import {
 } from '../components/Chrome'
 import { Icon } from '../components/Icon'
 import { EarningToGiveCard, ListingCard } from '../components/ListingCard'
-import { Callout, RichText, Uncertainties } from '../components/Prose'
+import { Callout, RichText, SourceAttribution, Uncertainties } from '../components/Prose'
 import { loadFramework } from '../content/style'
 import { ONWARD_LINKS, routes, t, type Locale } from '../content/i18n'
 import {
@@ -87,7 +87,10 @@ export async function CausePage({ locale, slug }: { locale: Locale; slug: string
 
         <Section>
           {explainer ? (
-            <RichText value={explainer.body} />
+            <>
+              <SourceAttribution sources={explainer.sources ?? []} locale={locale} />
+              <RichText value={explainer.body} />
+            </>
           ) : (
             // The explainer layer is M5b and "not optional, not deferrable".
             // Until the page exists the route still resolves and still lists
