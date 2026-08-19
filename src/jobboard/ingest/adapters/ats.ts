@@ -16,6 +16,7 @@ import {
   mentions30PercentRuling,
   parseSalaryText,
 } from '../../lib/text'
+import { outOfTime } from '../types'
 import type { AdapterContext, NormalisedListing, RawListing, SourceAdapter } from '../types'
 
 type Cfg = Record<string, unknown>
@@ -640,6 +641,159 @@ export const bamboohr: SourceAdapter = {
   },
 }
 
+
+// ---------------------------------------------------------------------------
+// SAP SuccessFactors Career Site Builder — LIVE-VERIFIED against FMO
+// ---------------------------------------------------------------------------
+
+/**
+ * The `*.jobs.hr.cloud.sap` career sites.
+ *
+ * Worth having beyond the one employer that prompted it: SuccessFactors is what
+ * large regulated Dutch institutions run — development banks, insurers, parts of
+ * the semiconductor supply chain — which is exactly the population this board
+ * needs and the population least likely to publish a tidy JSON feed.
+ *
+ * Two things cost time here and are handled:
+ *
+ * 1. **The job list is a POST, not a GET.** The search page renders client-side
+ *    and the static HTML contains no listings at all, so a fetch-and-parse
+ *    adapter sees an empty board and reports success. The data comes from
+ *    `POST /services/recruiting/v1/jobs`, which needs no authentication.
+ * 2. **The description is NOT in that response.** The API returns titles,
+ *    locations and dates only. It is, however, server-rendered into each
+ *    detail page — so the body has to be fetched per job. Without it every
+ *    listing dies at stage 1 as "description too short to classify".
+ *
+ * Dates come back as dd/MM/yyyy, which `new Date()` misreads as US order.
+ */
+export const successfactors: SourceAdapter = {
+  id: 'successfactors',
+  async *fetch(config, ctx) {
+    const host = str(config, 'host')
+    const locale = optStr(config, 'locale') ?? 'en_GB'
+    const perPage = 50
+
+    for (let page = 0; page < 20; page++) {
+      if (outOfTime(ctx)) {
+        ctx.log(`successfactors: out of time at page ${page}`)
+        return
+      }
+      const res = await httpFetch(`https://${host}/services/recruiting/v1/jobs`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', accept: 'application/json' },
+        body: JSON.stringify({
+          searchResultView: 'LIST',
+          pageNumber: page,
+          resultsPerPage: perPage,
+          locale,
+        }),
+      })
+      const data = (await res.json()) as {
+        jobSearchResult?: { response?: Record<string, unknown> }[]
+        totalJobs?: number
+      }
+      const rows = (data.jobSearchResult ?? []).map((r) => r.response).filter(Boolean)
+      if (rows.length === 0) return
+
+      for (const job of rows as Record<string, any>[]) {
+        const id = String(job.id ?? '')
+        const slug = String(job.unifiedUrlTitle ?? job.urlTitle ?? '')
+        if (!id || !slug) continue
+        const url = `https://${host}/job/${slug}/${id}-${locale}`
+
+        // The body is the whole reason for the second request. A job we cannot
+        // read is worse than one we never saw: it occupies a row and fails
+        // classification for a reason that looks like the employer's fault.
+        let descriptionHtml: string | null = null
+        try {
+          descriptionHtml = extractSuccessfactorsBody(await fetchText(url))
+        } catch (err) {
+          ctx.log(`successfactors: no body for ${url}: ${(err as Error).message}`)
+        }
+
+        yield { externalId: `${host}:${id}`, payload: { job, url, descriptionHtml } }
+      }
+
+      if (typeof data.totalJobs === 'number' && (page + 1) * perPage >= data.totalJobs) return
+    }
+  },
+  normalise(raw, config) {
+    const { job, url, descriptionHtml } = raw.payload as {
+      job: Record<string, any>
+      url: string
+      descriptionHtml: string | null
+    }
+    const title = String(job.unifiedStandardTitle ?? job.jobTitle ?? '').trim()
+    if (!title) return null
+
+    // "Den Haag, NLD, 2593 HW<br/>" — strip the markup the API leaves in.
+    const location = Array.isArray(job.jobLocationShort)
+      ? htmlToText(String(job.jobLocationShort[0] ?? '')).trim() || null
+      : null
+
+    return finish(
+      {
+        externalId: raw.externalId,
+        employerId: optStr(config, 'employerId'),
+        employerName: optStr(config, 'employerName') ?? String(job.employerName ?? ''),
+        title,
+        applyUrl: url,
+        description: descriptionHtml ? htmlToText(descriptionHtml) : null,
+        descriptionHtml,
+        locationRaw: location,
+        country: /\bNLD\b|\bNetherlands\b/i.test(location ?? '') ? 'NL' : null,
+        postedAt: parseDmy(job.unifiedStandardStart),
+        deadlineAt: parseDmy(job.unifiedStandardEnd),
+      },
+      null,
+    )
+  },
+}
+
+/** dd/MM/yyyy. `new Date("28/08/2026")` is Invalid Date; the US order is wrong. */
+function parseDmy(value: unknown): Date | null {
+  const m = typeof value === 'string' ? value.match(/^(\d{2})\/(\d{2})\/(\d{4})$/) : null
+  if (!m) return null
+  const d = new Date(Date.UTC(Number(m[3]), Number(m[2]) - 1, Number(m[1])))
+  return Number.isNaN(d.getTime()) ? null : d
+}
+
+/**
+ * Pulls the ad body out of a SuccessFactors detail page.
+ *
+ * The page carries no JSON-LD and no single description container. The text is
+ * spread across `joblayouttoken` blocks the site builder emits per field, and
+ * those blocks nest — so matching one with a non-greedy `</div>` stops at the
+ * first inner close and yields a few dozen characters. The first version of
+ * this did exactly that: every FMO listing arrived with a null description and
+ * would have died at stage 1 as "too short to classify", which reads like the
+ * employer's fault rather than ours.
+ *
+ * Slicing from the first block to the footer avoids parsing nesting at all.
+ * The footer is where the boilerplate "About FMO" section starts, which is
+ * worth excluding: it is identical on every listing and would otherwise
+ * dominate a short vacancy and skew the classifier toward the employer's
+ * mission statement rather than the role.
+ */
+export function extractSuccessfactorsBody(html: string): string | null {
+  const first = html.indexOf('joblayouttoken')
+  if (first < 0) return null
+  // Start after the opening tag so the class attribute is not part of the body.
+  const bodyStart = html.indexOf('>', first)
+  if (bodyStart < 0) return null
+
+  // `unifyJobFooter` is the shared About-the-employer block. Fall back to the
+  // end of the document for tenants that theme it differently.
+  const footer = html.indexOf('unifyJobFooter', bodyStart)
+  const segment = html.slice(bodyStart + 1, footer > bodyStart ? footer : undefined)
+
+  const cleaned = segment
+    .replace(/<script[\s\S]*?<\/script>/gi, '')
+    .replace(/<style[\s\S]*?<\/style>/gi, '')
+  return htmlToText(cleaned).trim().length < 200 ? null : cleaned
+}
+
 export const ATS_ADAPTERS = [
   greenhouse,
   ashby,
@@ -652,4 +806,5 @@ export const ATS_ADAPTERS = [
   breezy,
   workday,
   bamboohr,
+  successfactors,
 ]

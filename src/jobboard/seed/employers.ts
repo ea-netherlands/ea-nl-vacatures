@@ -488,8 +488,9 @@ export const SEED_EMPLOYERS: SeedEmployer[] = [
     name: 'FMO',
     city: 'Den Haag',
     website: 'https://www.fmo.nl',
-    careersUrl: 'https://www.fmo.nl/careers',
-    ats: null,
+    careersUrl: 'https://fmo.jobs.hr.cloud.sap/fmo.jobs.hr.cloud.sap/search?searchResultView=LIST',
+    ats: 'successfactors',
+    atsToken: 'fmo.jobs.hr.cloud.sap',
     causeAreas: ['global-health-wellbeing'],
     leverageNote:
       'De Nederlandse ontwikkelingsbank. Zet kapitaal in op een schaal die ngo’s met giften niet benaderen. Sterke match voor wie financieel geschoold is.',
@@ -1843,6 +1844,17 @@ export const SEED_SOURCES: SeedSource[] = [
     `source` row is never polled, which is how nine new entries can sit in the
     watchlist looking like coverage while nothing reaches the board.
   */
+  {
+    // FMO runs SAP SuccessFactors. The employer was seeded from the start and
+    // had no source for months, so the Dutch development bank — one of the
+    // clearest capital-allocation employers in the country — was never polled.
+    id: 'successfactors:fmo',
+    kind: 'ats',
+    adapter: 'successfactors',
+    employerId: 'fmo',
+    returnsCompleteSet: true,
+    config: { host: 'fmo.jobs.hr.cloud.sap', locale: 'en_GB', employerName: 'FMO' },
+  },
   {
     id: 'personio:war-child-alliance',
     kind: 'ats',

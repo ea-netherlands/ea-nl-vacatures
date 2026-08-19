@@ -64,6 +64,8 @@ export function detectAts(applyUrl: string): { ats: string; token: string } | nu
   if (/myworkdayjobs\.com$/.test(host)) return { ats: 'workday', token: host.split('.')[0] }
   if (host.endsWith('.bamboohr.com')) return { ats: 'bamboohr', token: host.split('.')[0] }
   if (/(^|\.)homerun\.co$/.test(host)) return { ats: 'homerun', token: host }
+  // SAP SuccessFactors career sites: the tenant is the whole hostname.
+  if (/\.jobs\.hr\.cloud\.sap$/.test(host)) return { ats: 'successfactors', token: host }
   return null
 }
 

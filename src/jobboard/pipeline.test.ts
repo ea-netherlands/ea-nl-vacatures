@@ -34,6 +34,7 @@ import {
 } from './lib/text'
 import { splitStatements } from './db/migrate'
 import { detectAts } from './ingest/adapters/ea-boards'
+import { extractSuccessfactorsBody } from './ingest/adapters/ats'
 import { orgCodeFromUrl, extractWvnBody, partosFacts } from './ingest/adapters/dutch'
 import { extractJsonLd, findJobPosting } from './ingest/adapters/jsonld'
 import { SEED_EMPLOYERS } from './seed/employers'
@@ -621,6 +622,39 @@ test('werkenvoornederland body extraction keeps signal and drops the tail', () =
   assert.match(body, /VOG is vereist/)
   assert.doesNotMatch(body, /Radjes Mangroe/, 'contact block is furniture')
   assert.doesNotMatch(body, /Andere baan/, 'related vacancies are furniture')
+})
+
+test('SuccessFactors body survives nested joblayouttoken divs', () => {
+  /*
+    The blocks nest, so a non-greedy `</div>` match stops at the first inner
+    close and returns a few dozen characters. That is how every FMO listing
+    first arrived with a null description — which then dies at stage 1 as "too
+    short to classify" and reads like the employer published nothing.
+  */
+  const page = `
+    <html><body>
+      <nav>Cookie Preferences</nav>
+      <div class="joblayouttoken displayDTM">
+        <div class="row"><div class="col-xs-12"><span>Associate Private Equity</span></div></div>
+        <div class="row"><div class="inner">
+          ${'Your Role. You work with Investment Officers to grow a portfolio of investments in emerging markets and build relationships with investees. '.repeat(4)}
+        </div></div>
+      </div>
+      <div class="unifyJobFooter">About FMO. FMO delivers economic development worldwide.</div>
+    </body></html>`
+
+  const body = extractSuccessfactorsBody(page)
+  assert.ok(body, 'a real ad body must not come back null')
+  assert.ok(body!.length > 200, 'the nested divs must not truncate the body')
+  assert.match(body!, /Investment Officers/)
+  // The boilerplate About block is identical on every listing and would
+  // dominate a short vacancy, so it stays out.
+  assert.doesNotMatch(body!, /delivers economic development worldwide/)
+})
+
+test('a SuccessFactors page with no job body returns null rather than chrome', () => {
+  const page = '<html><body><nav>Cookie Preferences</nav><p>No results</p></body></html>'
+  assert.equal(extractSuccessfactorsBody(page), null)
 })
 
 test('Partos employer detection ignores the site chrome around the vacancy', () => {

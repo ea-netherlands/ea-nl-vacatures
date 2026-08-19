@@ -18,6 +18,7 @@
  */
 
 import { detectAts } from '../jobboard/ingest/adapters/ea-boards'
+import { CORRECTIONS } from '../jobboard/seed/employers'
 import { findJobPosting } from '../jobboard/ingest/adapters/jsonld'
 import { fetchText } from '../jobboard/lib/http'
 import { log, main, parseArgs, printReport } from './_cli'
@@ -107,7 +108,15 @@ async function findCareersUrl(home: string): Promise<string | null> {
 
 /**
  * Candidates found by sweeping the Dutch landscape against the five cause
- * areas. Deliberately includes organisations we may decide not to list: the
+ * areas.
+ *
+ * Check `CORRECTIONS` in ../jobboard/seed/employers.ts before adding to this
+ * list. That constant exists so nobody re-adds a wound-down company, and the
+ * first version of this file did exactly that — Meatable (shut down December
+ * 2025), Simavi (renamed to WaterAid Nederland) and Those Vegan Cowboys
+ * (Ghent, not Dutch) were all already recorded there and all three were
+ * proposed here anyway. The `assertNotCorrected` check below now fails the run
+ * rather than trusting anyone to remember. Deliberately includes organisations we may decide not to list: the
  * point of the probe is to learn what is *pollable*, and the judgement about
  * whether a role there belongs on the board is made per listing by the
  * classifier, not here.
@@ -137,7 +146,6 @@ const CANDIDATES: Candidate[] = [
   { id: 'access-to-medicine', name: 'Access to Medicine Foundation', careersUrl: '', home: 'https://accesstomedicinefoundation.org' },
   { id: 'kncv-tuberculosefonds', name: 'KNCV Tuberculosefonds', careersUrl: '', home: 'https://www.kncvtbc.org' },
   { id: 'wemos', name: 'Wemos', careersUrl: '', home: 'https://www.wemos.org' },
-  { id: 'simavi', name: 'Simavi', careersUrl: '', home: 'https://simavi.org' },
   { id: 'rutgers', name: 'Rutgers', careersUrl: '', home: 'https://rutgers.international' },
   { id: 'amref-nederland', name: 'Amref Flying Doctors Nederland', careersUrl: '', home: 'https://www.amref.nl' },
   { id: 'oxfam-novib', name: 'Oxfam Novib', careersUrl: '', home: 'https://www.oxfamnovib.nl' },
@@ -145,8 +153,6 @@ const CANDIDATES: Candidate[] = [
   { id: 'light-for-the-world', name: 'Light for the World', careersUrl: '', home: 'https://www.light-for-the-world.org' },
 
   // --- farmed animal welfare (20 seeded, missing most Dutch alt-protein) ---
-  { id: 'meatable', name: 'Meatable', careersUrl: '', home: 'https://meatable.com' },
-  { id: 'those-vegan-cowboys', name: 'Those Vegan Cowboys', careersUrl: '', home: 'https://thosevegancowboys.com' },
   { id: 'willicroft', name: 'Willicroft', careersUrl: '', home: 'https://www.willicroft.com' },
   { id: 'farmless', name: 'Farmless', careersUrl: '', home: 'https://www.farmless.bio' },
   { id: 'vivera', name: 'Vivera', careersUrl: '', home: 'https://www.vivera.com' },
@@ -155,12 +161,36 @@ const CANDIDATES: Candidate[] = [
   { id: 'animal-rights-nl', name: 'Animal Rights', careersUrl: '', home: 'https://www.animalrights.nl' },
 ]
 
+/**
+ * Refuses to probe an organisation the watchlist has already ruled out.
+ *
+ * A soft convention would not have helped: the correction was written down and
+ * ignored anyway, because nobody reads a constant in a different file while
+ * assembling a candidate list.
+ */
+function assertNotCorrected(list: Candidate[]): void {
+  const corrections = CORRECTIONS.join(' ').toLowerCase()
+  const offenders = list.filter((c) => {
+    const name = c.name.toLowerCase()
+    return name.length > 4 && corrections.includes(name)
+  })
+  if (offenders.length) {
+    throw new Error(
+      `these candidates are already ruled out in CORRECTIONS: ${offenders
+        .map((o) => o.name)
+        .join(', ')}. Read the correction before re-adding them.`,
+    )
+  }
+}
+
 async function probe() {
   const args = parseArgs()
   const one = args.values.get('url')
   const list: Candidate[] = one
     ? [{ id: 'ad-hoc', name: one, careersUrl: '', home: one }]
     : CANDIDATES
+
+  assertNotCorrected(CANDIDATES)
 
   const pollable: string[] = []
   const jsonLdOnly: string[] = []
