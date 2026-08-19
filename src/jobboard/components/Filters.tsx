@@ -296,6 +296,14 @@ export function EmptyState({
     <div className={u.empty}>
       <h2 className={u.emptyHeading}>{copy.emptyHeading}</h2>
       <p className={u.emptyBody}>{copy.emptyBody}</p>
+      {/*
+        The best moment on the whole board to ask for a tip: the reader looked
+        for something specific and we did not have it, so they already know
+        exactly what is missing.
+      */}
+      <p className={u.emptyBody}>
+        <Link href={routes(locale).suggest}>{copy.suggestNavLabel}</Link>
+      </p>
       {suggestions.length ? (
         <>
           <p className={u.emptyBody}>{copy.emptySuggestion}</p>

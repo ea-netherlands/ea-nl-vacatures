@@ -45,6 +45,7 @@ export const ROUTES = {
     cause: (slug: string) => `/vacatures/probleemgebieden/${slug}`,
     method: '/vacatures/waarom-deze-banen',
     earningToGive: '/vacatures/earning-to-give',
+    suggest: '/vacatures/tip',
   },
   en: {
     index: '/en/jobs',
@@ -55,6 +56,7 @@ export const ROUTES = {
     cause: (slug: string) => `/en/jobs/causes/${slug}`,
     method: '/en/jobs/why-these-jobs',
     earningToGive: '/en/jobs/earning-to-give',
+    suggest: '/en/jobs/suggest',
   },
 } as const
 
@@ -141,6 +143,27 @@ type Strings = {
   filteredByCause: (label: string) => string
   filteredBySubArea: (label: string) => string
   filteredBySkill: (label: string) => string
+
+  // Suggestions (August 2026)
+  suggestTitle: string
+  suggestLead: string
+  suggestBody: string[]
+  suggestKindLabel: string
+  suggestKindListing: string
+  suggestKindEmployer: string
+  suggestUrlListing: string
+  suggestUrlEmployer: string
+  suggestOrgLabel: string
+  suggestWhyLabel: string
+  suggestWhyHint: string
+  suggestEmailLabel: string
+  suggestEmailHint: string
+  suggestSubmit: string
+  suggestSending: string
+  suggestError: string
+  suggestThanksHeading: string
+  suggestThanksBody: string
+  suggestNavLabel: string
 
   // Index
   indexTitle: string
@@ -299,6 +322,33 @@ const nl: Strings = {
   filteredByCause: (label) => label,
   filteredBySubArea: (label) => label,
   filteredBySkill: (label) => `Vaardigheid: ${label.toLowerCase()}`,
+
+  suggestTitle: 'Ken je een vacature of organisatie die hier hoort?',
+  suggestLead:
+    'De meeste Nederlandse organisaties publiceren hun vacatures niet op een manier die wij automatisch kunnen volgen. Mensen die in het veld werken weten het vaak eerder dan wij.',
+  suggestBody: [
+    'Van de eenendertig Nederlandse organisaties die we onlangs onderzochten, publiceerde er één een vacaturebestand dat we automatisch kunnen uitlezen. De rest zet vacatures op een gewone webpagina, vaak twee weken lang. Daar komen we alleen achter als iemand het ons vertelt.',
+    'Je tip komt bij een mens terecht, niet direct op het bord. We beoordelen elke vacature zelf en schrijven er zelf bij waarom die er staat — dat is het enige wat dit bord de moeite waard maakt.',
+  ],
+  suggestKindLabel: 'Wat wil je doorgeven?',
+  suggestKindListing: 'Een specifieke vacature',
+  suggestKindEmployer: 'Een organisatie om in de gaten te houden',
+  suggestUrlListing: 'Link naar de vacature',
+  suggestUrlEmployer: 'Link naar de vacaturepagina van de organisatie',
+  suggestOrgLabel: 'Welke organisatie?',
+  suggestWhyLabel: 'Waarom hoort dit hier?',
+  suggestWhyHint:
+    'Niet verplicht, maar dit is het nuttigste veld. Wat zie jij aan deze functie dat wij van buitenaf missen?',
+  suggestEmailLabel: 'Je e-mailadres',
+  suggestEmailHint:
+    'Niet verplicht. Alleen om een vraag te stellen als iets onduidelijk is. We gebruiken het nergens anders voor.',
+  suggestSubmit: 'Verstuur',
+  suggestSending: 'Bezig met versturen',
+  suggestError: 'Er ging iets mis. Probeer het opnieuw, of mail ons.',
+  suggestThanksHeading: 'Dank je wel',
+  suggestThanksBody:
+    'We hebben het binnen. Iemand kijkt ernaar. Je hoort alleen van ons als we een vraag hebben.',
+  suggestNavLabel: 'Tip ons',
 
   indexTitle: 'Vacatures',
   indexIntroHeading: 'Wat staat hier?',
@@ -535,6 +585,33 @@ const en: Strings = {
   filteredByCause: (label) => label,
   filteredBySubArea: (label) => label,
   filteredBySkill: (label) => `Skill: ${label.toLowerCase()}`,
+
+  suggestTitle: 'Know a job or an organisation that belongs here?',
+  suggestLead:
+    'Most Dutch organisations do not publish vacancies in a form we can follow automatically. People working in the field usually know before we do.',
+  suggestBody: [
+    'Of thirty-one Dutch organisations we recently checked, one published a job feed we can read automatically. The rest post vacancies as ordinary web pages, often for two weeks. We only find those if someone tells us.',
+    'Your tip goes to a person, not straight onto the board. We assess every vacancy ourselves and write our own reason for listing it — that is the only thing making this board worth reading.',
+  ],
+  suggestKindLabel: 'What are you telling us about?',
+  suggestKindListing: 'A specific vacancy',
+  suggestKindEmployer: 'An organisation to watch',
+  suggestUrlListing: 'Link to the vacancy',
+  suggestUrlEmployer: 'Link to the organisation’s careers page',
+  suggestOrgLabel: 'Which organisation?',
+  suggestWhyLabel: 'Why does it belong here?',
+  suggestWhyHint:
+    'Optional, but the most useful field. What do you see in this role that we would miss from outside?',
+  suggestEmailLabel: 'Your email address',
+  suggestEmailHint:
+    'Optional. Only so we can ask if something is unclear. We will not use it for anything else.',
+  suggestSubmit: 'Send',
+  suggestSending: 'Sending',
+  suggestError: 'Something went wrong. Try again, or email us.',
+  suggestThanksHeading: 'Thank you',
+  suggestThanksBody:
+    'We have it. Someone will look. You will only hear from us if we have a question.',
+  suggestNavLabel: 'Suggest a job',
 
   indexTitle: 'Jobs',
   indexIntroHeading: 'What is this?',

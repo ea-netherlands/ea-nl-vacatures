@@ -1024,3 +1024,137 @@
   gap: var(--space-1-5);
   font-weight: var(--fw-medium);
 }
+
+/* ===========================================================================
+   THE SUGGESTION FORM
+   ---------------------------------------------------------------------------
+   Wider fields than a filter control and plenty of vertical space: this is
+   someone doing us a favour in their own time, and a cramped form reads as an
+   afterthought. Everything is a token, as everywhere else.
+   =========================================================================== */
+
+.suggestForm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  max-width: var(--container-prose);
+}
+
+.suggestFieldset {
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+
+.suggestRadios {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+
+.suggestRadio {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2-5) var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background: var(--bg);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: border-color var(--transition-common), background var(--transition-common);
+}
+
+.suggestRadio:has(input:checked) {
+  border-color: var(--primary-emphasized);
+  background: var(--primary-subtle);
+  color: var(--primary-fg);
+}
+
+.suggestField {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.suggestHint {
+  font-size: var(--text-sm);
+  color: var(--fg-muted);
+  font-weight: var(--fw-regular);
+}
+
+.suggestInput,
+.suggestTextarea {
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border-emphasized);
+  border-radius: var(--radius-input);
+  background: var(--bg);
+  font-family: var(--font-body);
+  font-size: var(--text-md);
+  color: var(--fg);
+}
+
+.suggestTextarea {
+  resize: vertical;
+  line-height: var(--lh-relaxed);
+}
+
+.suggestInput:focus-visible,
+.suggestTextarea:focus-visible {
+  outline: none;
+  border-color: var(--focus-ring-color);
+  box-shadow: var(--focus-ring);
+}
+
+.suggestActions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+/* The pressable-key shadow, which is the brand's signature on solid buttons. */
+.suggestSubmit {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-6);
+  border: none;
+  border-radius: var(--radius-control);
+  background: var(--primary-solid);
+  color: var(--primary-contrast);
+  font-family: var(--font-body);
+  font-size: var(--text-md);
+  font-weight: var(--fw-medium);
+  cursor: pointer;
+  box-shadow: var(--btn-solid-shadow);
+  transition: box-shadow var(--transition-common);
+}
+
+.suggestSubmit:hover:not(:disabled) {
+  box-shadow: var(--btn-solid-shadow-hover);
+}
+
+.suggestSubmit:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.suggestError {
+  font-size: var(--text-sm);
+  color: var(--fg-error);
+}
+
+/*
+  The honeypot. Off-screen rather than display:none — some scripts skip fields
+  that are explicitly hidden, and the point is that they should fill it in.
+*/
+.honeypot {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}

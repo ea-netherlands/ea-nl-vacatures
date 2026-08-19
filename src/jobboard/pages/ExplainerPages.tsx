@@ -25,6 +25,7 @@ import {
 import { Icon } from '../components/Icon'
 import { EarningToGiveCard, ListingCard } from '../components/ListingCard'
 import { Callout, RichText, SourceAttribution, Uncertainties } from '../components/Prose'
+import { SuggestForm } from '../components/SuggestForm'
 import { loadFramework } from '../content/style'
 import { ONWARD_LINKS, routes, t, type Locale } from '../content/i18n'
 import {
@@ -551,6 +552,47 @@ export async function EarningToGivePage({ locale }: { locale: Locale }) {
               </p>
             </a>
           </div>
+          <p className={u.linkRow}>
+            <Link href={r.index}>{copy.causeAllRoles}</Link>
+            <Link href={r.method}>{copy.indexIntroMethodLink}</Link>
+          </p>
+        </Section>
+      </Container>
+    </>
+  )
+}
+
+/**
+ * The suggestion page.
+ *
+ * Deliberately explains the problem before showing the form. "Tell us about a
+ * job" is a request; "of thirty-one Dutch organisations we checked, one
+ * publishes a feed we can read" is a reason, and the reader who can help is
+ * exactly the reader who will recognise that problem as real.
+ */
+export function SuggestPage({ locale }: { locale: Locale }) {
+  const copy = t(locale)
+  const r = routes(locale)
+
+  return (
+    <>
+      <Hero title={copy.suggestTitle} lead={copy.suggestLead} />
+      <Container>
+        <Section first>
+          <div className={s.prose}>
+            {copy.suggestBody.map((p) => (
+              <p key={p.slice(0, 24)} className={u.introBody}>
+                {p}
+              </p>
+            ))}
+          </div>
+        </Section>
+
+        <Section>
+          <SuggestForm locale={locale} />
+        </Section>
+
+        <Section tight>
           <p className={u.linkRow}>
             <Link href={r.index}>{copy.causeAllRoles}</Link>
             <Link href={r.method}>{copy.indexIntroMethodLink}</Link>

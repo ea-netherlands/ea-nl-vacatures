@@ -121,6 +121,9 @@ function Header({ locale, switchHref }: { locale: Locale; switchHref: string }) 
             <Link href={r.earningToGive} className={s.navLinkDistinct}>
               {copy.e2gTitle}
             </Link>
+            <Link href={r.suggest} className={s.navLink}>
+              {copy.suggestNavLabel}
+            </Link>
             <Link href={switchHref} className={s.navLink} lang={otherLocale(locale)}>
               {copy.languageSwitch}
             </Link>

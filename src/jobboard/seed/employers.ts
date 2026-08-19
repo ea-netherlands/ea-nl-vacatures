@@ -657,6 +657,152 @@ export const SEED_EMPLOYERS: SeedEmployer[] = [
     active: false,
     verify: true,
   },
+
+  // ===========================================================================
+  // Sweep of August 2026 — extending the watchlist against the five cause areas
+  //
+  // Found by working outward from the cause-area guides rather than from who
+  // was already known, which is why the two thinnest areas gained most:
+  // movement building had two entries and better futures seven.
+  //
+  // Careers URLs here were discovered from each organisation's own navigation
+  // and checked to resolve, not guessed from a pattern — an earlier pass that
+  // guessed `/vacatures`, `/careers` and `/jobs` got nineteen 404s out of
+  // thirty-one, and a 404 is indistinguishable from an employer with nothing
+  // open. `src/scripts/probe-employers.ts` does that discovery and reports what
+  // is pollable.
+  //
+  // Almost all of these carry `ats: null`, and that is the honest state rather
+  // than an omission: of thirty-one candidates probed, only War Child publishes
+  // a feed the pipeline can read. Dutch mission-driven organisations mostly
+  // post jobs as ordinary web pages with no structured data — not even
+  // JobPosting markup on the detail pages, which is what the generic
+  // `jsonld-careers` adapter needs. So these are a curator's manual round, and
+  // the reason the suggestion form exists.
+  // ===========================================================================
+
+  {
+    id: 'school-for-moral-ambition',
+    name: 'School for Moral Ambition',
+    website: 'https://www.moralambition.org',
+    careersUrl: 'https://www.moralambition.org/jobs',
+    city: 'Amsterdam',
+    ats: null,
+    causeAreas: ['movement-building'],
+    leverageNote:
+      'Amsterdamse stichting die mensen midden in hun loopbaan naar werk aan verwaarloosde problemen beweegt; plaatste fellows bij organisaties tegen tabak en de bio-industrie.',
+    watchlistTier: 1,
+    verify: true,
+    notes: 'Careers page resolves; no machine-readable feed. Poll by hand.',
+  },
+  {
+    id: 'pax',
+    name: 'PAX voor Vrede',
+    website: 'https://paxvoorvrede.nl',
+    careersUrl: 'https://paxvoorvrede.nl/vacatures/',
+    city: 'Utrecht',
+    ats: null,
+    causeAreas: ['global-catastrophic-risks'],
+    leverageNote:
+      'Nederlandse vredesorganisatie en medeoprichter van ICAN, dat in 2017 de Nobelprijs voor de Vrede kreeg voor het werk aan een kernwapenverbod.',
+    watchlistTier: 2,
+    verify: true,
+    notes: 'The board is thin on nuclear; this is the strongest Dutch employer in it.',
+  },
+  {
+    id: 'asser-instituut',
+    name: 'T.M.C. Asser Instituut',
+    website: 'https://www.asser.nl',
+    careersUrl: 'https://www.asser.nl/jobs-internships/',
+    city: 'Den Haag',
+    ats: null,
+    causeAreas: ['global-catastrophic-risks', 'better-futures'],
+    leverageNote:
+      'Instituut voor internationaal en Europees recht, met sinds 2021 een bijzondere leerstoel wapenbeheersingsrecht.',
+    watchlistTier: 3,
+    verify: true,
+  },
+  {
+    id: 'access-to-medicine',
+    name: 'Access to Medicine Foundation',
+    website: 'https://accesstomedicinefoundation.org',
+    careersUrl: 'https://accesstomedicinefoundation.org/vacancies',
+    city: 'Amsterdam',
+    ats: null,
+    causeAreas: ['global-health-wellbeing'],
+    leverageNote:
+      'Rangschikt farmaceutische bedrijven op de toegankelijkheid van hun medicijnen in arme landen; die ranglijst verschuift bedrijfsbeleid zonder zelf iets te produceren.',
+    watchlistTier: 2,
+    verify: true,
+  },
+  {
+    id: 'kncv-tuberculosefonds',
+    name: 'KNCV Tuberculosefonds',
+    website: 'https://www.kncvtbc.org',
+    careersUrl: 'https://www.kncvtbc.org/vacatures',
+    city: 'Den Haag',
+    ats: null,
+    causeAreas: ['global-health-wellbeing'],
+    leverageNote:
+      'Haags hoofdkantoor van de enige internationale organisatie die zich uitsluitend op tuberculose richt.',
+    watchlistTier: 2,
+    verify: true,
+  },
+  {
+    id: 'wemos',
+    name: 'Wemos',
+    website: 'https://www.wemos.org',
+    careersUrl: 'https://www.wemos.org/werken-bij-wemos/',
+    city: 'Amsterdam',
+    ats: null,
+    causeAreas: ['global-health-wellbeing'],
+    leverageNote:
+      'Beïnvloedt de financiering van gezondheidszorg en de wereldwijde verdeling van zorgpersoneel — beleidswerk, geen uitvoering.',
+    watchlistTier: 3,
+    verify: true,
+  },
+  {
+    id: 'amref-nederland',
+    name: 'Amref Flying Doctors Nederland',
+    website: 'https://www.amref.nl',
+    careersUrl: 'https://www.amref.nl/over-amref/vacatures',
+    city: 'Amsterdam',
+    ats: null,
+    causeAreas: ['global-health-wellbeing'],
+    leverageNote: 'Nederlandse tak van de grootste Afrikaanse gezondheidsorganisatie.',
+    watchlistTier: 3,
+    verify: true,
+  },
+  {
+    id: 'rutgers',
+    name: 'Rutgers',
+    website: 'https://rutgers.international',
+    careersUrl: 'https://vacatures.rutgers.nl/',
+    city: 'Utrecht',
+    ats: null,
+    causeAreas: ['global-health-wellbeing'],
+    leverageNote:
+      'Nederlands kenniscentrum voor seksuele en reproductieve gezondheid, met programma\u2019s in Azië en Afrika.',
+    watchlistTier: 3,
+    verify: true,
+    notes:
+      'Board is Homerun-hosted on a custom domain (vacatures.rutgers.nl). The probe only found Homerun asset hosts, so the real token still needs confirming before switching ats on.',
+  },
+  {
+    id: 'war-child',
+    name: 'War Child',
+    website: 'https://www.warchild.nl',
+    careersUrl: 'https://www.warchild.nl/vacatures/',
+    city: 'Amsterdam',
+    ats: 'personio',
+    atsToken: 'war-child-alliance',
+    causeAreas: ['global-health-wellbeing'],
+    leverageNote:
+      'Werkt aan de psychische gezondheid van kinderen in conflictgebieden, met eigen onderzoek naar wat daarin werkt.',
+    watchlistTier: 2,
+    verify: true,
+    notes: 'The one candidate in the sweep with a readable feed: Personio, token war-child-alliance.',
+  },
   {
     id: 'turing-foundation',
     name: 'Turing Foundation',

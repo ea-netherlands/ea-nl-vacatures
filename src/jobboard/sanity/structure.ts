@@ -85,6 +85,40 @@ export const structure: StructureResolver = (S) =>
             .defaultOrdering([{ field: 'name', direction: 'asc' }]),
         ),
 
+      /*
+        Suggestions sit near the top with the review queue rather than filed
+        under settings: they are the same job — someone else's judgement
+        arriving for yours — and a tip that sits unread for a month is a
+        vacancy that closed.
+      */
+      S.listItem()
+        .title('Suggestions')
+        .icon(icon('info-circle'))
+        .child(
+          S.list()
+            .title('Suggestions')
+            .items([
+              S.listItem()
+                .title('New')
+                .child(
+                  S.documentList()
+                    .title('Awaiting triage')
+                    .apiVersion('2024-10-01')
+                    .filter('_type == "suggestion" && status == "new"')
+                    .defaultOrdering([{ field: 'submittedAt', direction: 'desc' }]),
+                ),
+              S.listItem()
+                .title('All suggestions')
+                .child(
+                  S.documentList()
+                    .title('All suggestions')
+                    .apiVersion('2024-10-01')
+                    .filter('_type == "suggestion"')
+                    .defaultOrdering([{ field: 'submittedAt', direction: 'desc' }]),
+                ),
+            ]),
+        ),
+
       S.listItem()
         .title('Explainer pages')
         .icon(icon('book'))

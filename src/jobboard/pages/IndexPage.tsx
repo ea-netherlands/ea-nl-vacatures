@@ -232,6 +232,7 @@ export async function IndexPage({
             <IntroBand locale={locale} />
             <p className={u.linkRow}>
               <Link href={`${r.index}?view=all`}>{copy.browseShowAll(all.length)}</Link>
+              <Link href={r.suggest}>{copy.suggestNavLabel}</Link>
               <Link href={r.causes}>
                 {locale === 'nl' ? 'Bekijk de probleemgebieden' : 'Browse the problem areas'}
               </Link>
