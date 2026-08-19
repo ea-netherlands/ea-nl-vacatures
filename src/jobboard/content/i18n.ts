@@ -137,11 +137,18 @@ type Strings = {
    * neglectedness and tractability in the first block, leverage in the second,
    * counterfactual impact in the third.
    */
-  whyHeading: string
-  whyLead: string
-  whyPoints: { title: string; body: string }[]
-  whyClose: string
-  /** "36 vacatures · nieuwste van 18 augustus" — the newest listing, not today. */
+  /**
+   * The reasoning, compressed to one line under the hero.
+   *
+   * The long-form version already exists on the method page, built on the ITN
+   * framework from EA NL’s own glossary plus leverage — so a full section on
+   * the index made the same case twice, and the second telling pushed the jobs
+   * themselves off the screen. Names no framework: a reader who knows this
+   * thinking will hear neglectedness, leverage and counterfactual impact; a
+   * reader who does not should hear plain sense.
+   */
+  heroWhy: string
+  heroWhyLink: string
   heroStat: (n: number, newest: string) => string
   heroBrowseCta: string
   browseCauseHeading: string
@@ -318,28 +325,9 @@ const nl: Strings = {
   heroTitle: 'De banen in Nederland waarmee je het meeste goed doet.',
   heroLead:
     'Een korte, met de hand samengestelde lijst. Bij elke vacature schrijven we waarom juist die functie meer verandert dan het werk van één persoon.',
-  whyHeading: 'Waarom wij denken dat dit die banen zijn',
-  whyLead:
-    'Twee mensen kunnen even hard werken en even goed zijn in hun vak, en toch enorm verschillen in hoeveel goed ze doen. Dat verschil zit zelden in hoe goed iemand zijn werk doet. Het zit in drie keuzes die je daarvóór maakt.',
-  whyPoints: [
-    {
-      title: 'Aan welk probleem je werkt',
-      body:
-        'Problemen verschillen enorm in hoe groot ze zijn, hoeveel mensen er al aan werken, en of er überhaupt iets aan te doen valt. Een probleem dat miljoenen mensen raakt en waar bijna niemand aan werkt, heeft ruimte voor één persoon extra op een manier die een druk bezet vakgebied niet heeft. Daarom kiezen we eerst een handvol problemen, en pas daarna functies.',
-    },
-    {
-      title: 'Hoeveel er verandert doordat jij die functie hebt',
-      body:
-        'Sommige banen veranderen precies zoveel als één paar handen aankan. Andere leggen een regel vast, verplaatsen een budget, of bepalen wat een organisatie de komende jaren doet. Dat tweede type is zeldzaam en zit vaak op plekken die er van buiten saai uitzien: een ministerie, een toezichthouder, een bank.',
-    },
-    {
-      title: 'Wat er gebeurt als jij het niet doet',
-      body:
-        'Solliciteren er vijftig even geschikte mensen op dezelfde functie, dan verandert er weinig doordat jij hem krijgt — iemand anders had het ongeveer even goed gedaan. Blijft een plek anders leeg, of gaat hij naar iemand die er minder van maakt, dan telt jouw keuze zwaar. Deze vraag verschuift het antwoord vaker dan mensen verwachten.',
-    },
-  ],
-  whyClose:
-    'Zo komen we bij deze lijst. Hij is kort, en de meeste vacatures staan bij werkgevers die zelf nooit zouden zeggen dat ze aan een wereldprobleem werken. Dat is een oordeel van ons, geen meting — je mag het van ons betwisten, en soms zullen we het mis hebben.',
+  heroWhy:
+    'We kiezen eerst problemen die groot zijn, weinig aandacht krijgen en op te lossen zijn. Daarbinnen zoeken we de zeldzame functies die meer veranderen dan het werk van één persoon — en waarbij het uitmaakt dat jij het doet, en niet iemand die er toch al zat.',
+  heroWhyLink: 'Zo redeneren we',
   heroStat: (n, newest) =>
     `${n === 1 ? '1 vacature' : `${n} vacatures`} · nieuwste van ${newest}`,
   heroBrowseCta: 'Kies een probleemgebied',
@@ -604,28 +592,9 @@ const en: Strings = {
   heroTitle: 'The most socially impactful jobs in the Netherlands.',
   heroLead:
     'A short, hand-picked list. For every vacancy we write down why that particular role changes more than one person’s work.',
-  whyHeading: 'Why we think these are those jobs',
-  whyLead:
-    'Two people can work equally hard and be equally good at their craft, and still differ enormously in how much good they do. That difference is rarely about how well someone does the job. It is about three choices made before it.',
-  whyPoints: [
-    {
-      title: 'Which problem you work on',
-      body:
-        'Problems differ enormously in how large they are, how many people already work on them, and whether anything can actually be done. A problem affecting millions that almost nobody works on has room for one more person in a way a crowded field does not. So we pick a handful of problems first, and roles only after that.',
-    },
-    {
-      title: 'How much changes because you hold the job',
-      body:
-        'Some jobs change exactly as much as one pair of hands can manage. Others set a rule, move a budget, or decide what an organisation does for years. The second kind is rare, and often sits somewhere that looks dull from outside: a ministry, a regulator, a bank.',
-    },
-    {
-      title: 'What happens if you do not take it',
-      body:
-        'If fifty equally suitable people apply for the same role, little changes because you got it — someone else would have done it about as well. If the post would otherwise sit empty, or go to someone who makes less of it, your choice weighs heavily. This question changes the answer more often than people expect.',
-    },
-  ],
-  whyClose:
-    'That is how we arrive at this list. It is short, and most of it sits with employers who would never describe themselves as working on a global problem. That is our judgement rather than a measurement — you are welcome to argue with it, and sometimes we will be wrong.',
+  heroWhy:
+    'We start from problems that are large, neglected and actually solvable. Within those we look for the rare roles that change more than one person’s work — and where it matters that you take it, rather than someone who would have been there anyway.',
+  heroWhyLink: 'How we reason',
   heroStat: (n, newest) => `${n === 1 ? '1 job' : `${n} jobs`} · newest from ${newest}`,
   heroBrowseCta: 'Pick a problem area',
   browseCauseHeading: 'What do you want to work on?',

@@ -263,6 +263,21 @@
 /* --- Hero additions for the browse/filtered split (August 2026) --- */
 
 /*
+  The one-line case for the board, under the lead.
+
+  Set at prose measure and in body colour rather than muted: it is the sentence
+  that answers "says who" about the headline, so it has to read as part of the
+  claim rather than as a caption. The link at its end carries the reader to the
+  full argument on the method page instead of restating it here.
+*/
+.heroWhy {
+  margin-top: var(--space-5);
+  max-width: 58ch;
+  line-height: var(--lh-relaxed);
+  color: var(--fg);
+}
+
+/*
   The stat line under the hero lead. Deliberately the smallest thing in the
   hero: the count is reassurance that the board is alive and maintained, not a
   boast — thirty-six is not a number to set in display type.

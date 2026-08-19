@@ -199,41 +199,30 @@ export async function IndexPage({
     return (
       <>
         <Hero title={copy.heroTitle} lead={copy.heroLead}>
+          {/*
+            The reasoning sits in the hero, not in a section beneath it.
+
+            The headline makes a strong claim — the most socially impactful jobs
+            in the country — and a sceptical reader's first thought is "says
+            who". That deserves an answer in the same breath, but not a lecture:
+            the full argument already exists on the method page, built on the
+            ITN framework from EA NL's own glossary plus leverage, so a section
+            here made the same case twice and pushed the jobs off the screen.
+
+            No framework is named. Someone who knows this thinking will hear
+            neglectedness, leverage and counterfactual impact; someone who does
+            not should just hear plain sense.
+          */}
+          <p className={s.heroWhy}>
+            {copy.heroWhy}{' '}
+            <Link href={r.method}>{copy.heroWhyLink}</Link>
+          </p>
           <p className={s.heroStat}>
             {updated ? copy.heroStat(all.length, updated) : copy.browseRoleCount(all.length)}
           </p>
         </Hero>
 
         <Container>
-          {/*
-            The reasoning, directly under the claim.
-
-            The hero asserts these are the most socially impactful jobs in the
-            Netherlands, which is a strong claim and not self-evidently true —
-            a sceptical reader's first thought is "says who". Answering that
-            immediately is worth more than another row of tiles, and it is the
-            single most useful idea a newcomer could take away even if they
-            never apply for anything here.
-
-            It names no framework. Someone who has never encountered any of
-            this should follow every sentence; someone who has will recognise
-            importance, neglectedness and tractability in the first point,
-            leverage in the second, and counterfactual impact in the third.
-          */}
-          <Section first>
-            <h2 className={u.browseHeading}>{copy.whyHeading}</h2>
-            <p className={u.whyLead}>{copy.whyLead}</p>
-            <ol className={u.whyList}>
-              {copy.whyPoints.map((point) => (
-                <li key={point.title} className={u.whyItem}>
-                  <h3 className={u.whyItemTitle}>{point.title}</h3>
-                  <p className={u.whyItemBody}>{point.body}</p>
-                </li>
-              ))}
-            </ol>
-            <p className={u.whyClose}>{copy.whyClose}</p>
-          </Section>
-
           <Section tight>
             {/*
               Still above the grid. Someone who can relocate should hit the
