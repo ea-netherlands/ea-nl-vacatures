@@ -632,7 +632,10 @@ export const SEED_EMPLOYERS: SeedEmployer[] = [
     city: 'Amsterdam',
     website: 'https://doneereffectief.nl',
     ats: null,
-    causeAreas: ['global-health-wellbeing', 'farmed-animal-welfare'],
+    // The money goes to global health and animal welfare; the work of a job
+    // here is effective giving. Both belong, and `movement-building` first —
+    // it is what someone doing this job would say they do.
+    causeAreas: ['movement-building', 'global-health-wellbeing', 'farmed-animal-welfare'],
     leverageNote:
       '€24,3 mln gefaciliteerd per augustus 2026, met vijf betaalde medewerkers — de hoogste hoeveelheid verplaatst geld per medewerker van alles op deze lijst.',
     watchlistTier: 2,
@@ -645,7 +648,7 @@ export const SEED_EMPLOYERS: SeedEmployer[] = [
     name: 'Tien Procent Club / De Geefrevolutie',
     website: 'https://tienprocentclub.nl',
     ats: null,
-    causeAreas: ['global-health-wellbeing', 'farmed-animal-welfare'],
+    causeAreas: ['movement-building', 'global-health-wellbeing', 'farmed-animal-welfare'],
     leverageNote: 'De Nederlandse gemeenschap rond de geefbelofte.',
     watchlistTier: 3,
     active: false,

@@ -73,7 +73,7 @@ export function jobPostingJsonLd(listing: ListingView, locale: Locale, url: stri
   const note = locale === 'en' ? (listing.whyThisMattersEn ?? listing.whyThisMattersNl) : listing.whyThisMattersNl
   const description = [listing.excerpt, note].filter(Boolean).join('\n\n')
 
-  const remote = listing.locationMode === 'remote-nl' || listing.locationMode === 'remote-eu'
+  const remote = listing.locationMode === 'remote'
 
   return {
     '@context': 'https://schema.org',
@@ -97,7 +97,9 @@ export function jobPostingJsonLd(listing: ListingView, locale: Locale, url: stri
     applicantLocationRequirements: remote
       ? {
           '@type': 'Country',
-          name: listing.locationMode === 'remote-eu' ? 'Europe' : 'Netherlands',
+          // The board's remote roles are listed because someone in the
+          // Netherlands can hold them; that is the requirement to state.
+          name: 'Netherlands',
         }
       : undefined,
     jobLocation: remote

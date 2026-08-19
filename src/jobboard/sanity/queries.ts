@@ -11,6 +11,8 @@ import type {
   LanguageRequirement,
   LocationMode,
   Seniority,
+  Skill,
+  SubArea,
   WorkAuthorisation,
 } from '../taxonomy'
 
@@ -24,6 +26,8 @@ const LISTING_FIELDS = /* groq */ `
   excerpt,
   primaryCause,
   "secondaryCauses": coalesce(secondaryCauses, []),
+  subArea,
+  "skills": coalesce(skills, []),
   leverage,
   locationCity,
   locationMode,
@@ -59,6 +63,12 @@ export type ListingView = {
   excerpt: string | null
   primaryCause: CauseArea | null
   secondaryCauses: CauseArea[]
+  subArea: SubArea | null
+  skills: Skill[]
+  /**
+   * Internal only — classified and scored, never rendered. See the leverage
+   * section of ../taxonomy for why it survives the axis being retired.
+   */
   leverage: LeverageType | null
   locationCity: string | null
   locationMode: LocationMode | null

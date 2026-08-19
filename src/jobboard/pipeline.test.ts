@@ -36,9 +36,18 @@ import { splitStatements } from './db/migrate'
 import { detectAts } from './ingest/adapters/ea-boards'
 import { orgCodeFromUrl, extractWvnBody } from './ingest/adapters/dutch'
 import { extractJsonLd, findJobPosting } from './ingest/adapters/jsonld'
+import { SEED_EMPLOYERS } from './seed/employers'
 import {
   CAUSE_AREAS,
-  CAUSE_SUBAREAS,
+  LEGACY_LOCATION_MODE_MAP,
+  LOCATION_MODES,
+  SKILL_DEFINITIONS,
+  SKILLS,
+  CAUSE_AREA_DEFINITIONS,
+  SUB_AREA_CAUSE,
+  SUB_AREA_DEFINITIONS,
+  SUB_AREAS,
+  SUB_AREAS_BY_CAUSE,
   EXCLUDED_TOPICS,
   GATED_CAUSE_AREAS,
   LEVERAGE_TYPES,
@@ -151,16 +160,29 @@ test('stage1 passes a real Dutch government listing and withholds gated labels',
 // ---------------------------------------------------------------------------
 // The cause vocabulary (§5.1)
 //
-// The board presents exactly four problem areas. These tests exist because the
+// The board presents exactly five problem areas. These tests exist because the
 // vocabulary is duplicated into the Sanity dropdowns, the classifier's schema,
 // the filter UI and both locales' label maps — so the failure mode is drift
 // between layers rather than an outright bug.
+//
+// `movement-building` was added in August 2026, deliberately reversing the
+// earlier decision that meta work is categorised by the problem it serves. The
+// reversal is narrow: it covers community building and public-facing effective
+// giving — organisations whose product *is* the movement — and nothing else. A
+// researcher at GiveWell is still filed under global health. If that boundary
+// slips, the area becomes the drawer every EA-org role falls into.
 // ---------------------------------------------------------------------------
 
-test('there are exactly four cause areas and none of them is gated', () => {
+test('there are exactly five cause areas and none of them is gated', () => {
   assert.deepEqual(
     [...CAUSE_AREAS],
-    ['global-health-wellbeing', 'farmed-animal-welfare', 'global-catastrophic-risks', 'better-futures'],
+    [
+      'global-health-wellbeing',
+      'farmed-animal-welfare',
+      'global-catastrophic-risks',
+      'better-futures',
+      'movement-building',
+    ],
   )
   assert.deepEqual([...GATED_CAUSE_AREAS], [], 'no cause area is gated any more')
   assert.deepEqual([...allowedCauseAreas()].sort(), [...CAUSE_AREAS].sort())
@@ -200,15 +222,113 @@ test('the retired cause labels are gone from the vocabulary entirely', () => {
   assert.ok((LEVERAGE_TYPES as readonly string[]).includes('career-capital'))
 })
 
+test('movement-building excludes field building aimed at a single problem', () => {
+  /*
+    The boundary that took two passes to get right. Kairos is an AI-safety
+    fellowship and talent pipeline: community-shaped work, but the field it
+    grows is AI safety, so it is global-catastrophic-risks. The classifier
+    called it movement-building on two of three listings and not the third —
+    a coin flip, which is why the employer seed now settles it.
+
+    Two things hold that line, and this test guards both.
+  */
+  const definition = CAUSE_AREA_DEFINITIONS['movement-building']
+  assert.match(
+    definition,
+    /field building aimed at ONE problem/,
+    'the definition must exclude single-problem field building',
+  )
+
+  // Kairos must stay seeded to its problem area and away from movement-building,
+  // because the backfill refuses to move a listing into movement-building when
+  // the employer's seed omits it.
+  const kairos = SEED_EMPLOYERS.find((e) => e.id === 'kairos-project')
+  assert.ok(kairos, 'Kairos must stay in the seed')
+  assert.ok(
+    kairos.causeAreas.includes('global-catastrophic-risks'),
+    'Kairos is field building for AI safety',
+  )
+  assert.ok(
+    !kairos.causeAreas.includes('movement-building'),
+    'Kairos must not be eligible for movement-building',
+  )
+
+  // The consumer-facing giving organisations, by contrast, must be eligible —
+  // the same gate that blocks Kairos would otherwise block them too.
+  for (const id of ['doneer-effectief', 'tien-procent-club']) {
+    const org = SEED_EMPLOYERS.find((e) => e.id === id)
+    assert.ok(org, `${id} must stay in the seed`)
+    assert.ok(
+      org.causeAreas.includes('movement-building'),
+      `${id} is consumer-facing effective giving and must be eligible`,
+    )
+  }
+})
+
+test('sub-areas are unique, and each maps back to exactly one cause area', () => {
+  // Sub-area ids appear in URLs and are the label most readers actually click.
+  // A duplicate id across two causes would make SUB_AREA_CAUSE ambiguous and
+  // silently file listings under the wrong tile.
+  assert.equal(new Set(SUB_AREAS).size, SUB_AREAS.length, 'sub-area ids must be unique')
+  for (const sub of SUB_AREAS) {
+    const cause = SUB_AREA_CAUSE[sub]
+    assert.ok(cause, `${sub} must map to a cause area`)
+    assert.ok(
+      (SUB_AREAS_BY_CAUSE[cause] as readonly string[]).includes(sub),
+      `${sub} must appear under the cause it maps to`,
+    )
+    assert.ok(SUB_AREA_DEFINITIONS[sub], `${sub} needs a definition for the classifier`)
+  }
+})
+
+test('the skill axis is Probably Good\u2019s, and every skill is defined', () => {
+  // Adopted rather than invented: a reader who has browsed
+  // jobs.probablygood.org should not have to learn a second vocabulary. If
+  // someone adds a category here, check it against theirs first.
+  assert.deepEqual(
+    [...SKILLS],
+    [
+      'communications',
+      'data',
+      'engineering',
+      'finance',
+      'information-security',
+      'legal',
+      'management',
+      'operations',
+      'policy',
+      'research',
+      'software-engineering',
+    ],
+  )
+  for (const skill of SKILLS) assert.ok(SKILL_DEFINITIONS[skill], `${skill} needs a definition`)
+})
+
+test('where-you-work is three options, and every retired one maps forward', () => {
+  // The four-value vocabulary answered two questions at once. Anything still
+  // emitting an old value must land somewhere rather than falling through to
+  // an unlabelled listing.
+  assert.deepEqual([...LOCATION_MODES], ['remote', 'on-site-nl', 'nl-flexible'])
+  for (const legacy of ['on-site', 'hybrid', 'remote-nl', 'remote-eu']) {
+    const mapped = LEGACY_LOCATION_MODE_MAP[legacy]
+    assert.ok(mapped, `${legacy} must map forward`)
+    assert.ok((LOCATION_MODES as readonly string[]).includes(mapped))
+  }
+})
+
 test('every cause area has sub-areas, and AI work is split across two of them', () => {
   for (const cause of CAUSE_AREAS) {
-    assert.ok(CAUSE_SUBAREAS[cause]?.length, `${cause} needs sub-areas to be browsable`)
+    assert.ok(SUB_AREAS_BY_CAUSE[cause]?.length, `${cause} needs sub-areas to be browsable`)
   }
   // The split is the substance of the revision: catastrophe-shaped AI risk on
   // one side, lock-in and power concentration on the other. If a future edit
   // collapses AI into one area this test is the thing that should complain.
-  const gcr = CAUSE_SUBAREAS['global-catastrophic-risks'].join(' ')
-  const better = CAUSE_SUBAREAS['better-futures'].join(' ')
+  const gcr = SUB_AREAS_BY_CAUSE['global-catastrophic-risks']
+    .map((sub) => SUB_AREA_DEFINITIONS[sub])
+    .join(' ')
+  const better = SUB_AREAS_BY_CAUSE['better-futures']
+    .map((sub) => SUB_AREA_DEFINITIONS[sub])
+    .join(' ')
   assert.match(gcr, /AI/)
   assert.match(better, /AI/)
 })
@@ -231,7 +351,7 @@ test('enforceGates strips a cause label that is no longer in the vocabulary', ()
   assert.equal(result.violations.length, 2)
 })
 
-test('enforceGates leaves the four current cause areas alone', () => {
+test('enforceGates leaves the current cause areas alone', () => {
   for (const cause of CAUSE_AREAS) {
     const result = enforceGates(
       { primaryCause: cause, secondaryCauses: [], leverage: 'field-building' },

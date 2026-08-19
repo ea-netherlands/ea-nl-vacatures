@@ -39,6 +39,7 @@ export const CAUSE_AREAS = [
   'farmed-animal-welfare',
   'global-catastrophic-risks',
   'better-futures',
+  'movement-building',
 ] as const
 
 export type CauseArea = (typeof CAUSE_AREAS)[number]
@@ -64,42 +65,137 @@ export const CAUSE_AREA_DEFINITIONS: Record<CauseArea, string> = {
     'Events that could kill a very large share of humanity or permanently end its prospects. AI takeover, misalignment and catastrophic misuse; pandemics, biosurveillance and dual-use research governance; nuclear security and great-power conflict.',
   'better-futures':
     'Whether the long-run future goes well *given* that humanity survives. Who holds power over transformative AI and whose values get locked in; the quality and resilience of democratic institutions; the moral circle, including digital minds; space governance. The concern here is not extinction but a surviving world that is much worse than it could have been.',
+  'movement-building':
+    'Growing the number of people who take these problems seriously and act on them, and the number who give effectively. Community building at the Centre for Effective Altruism, Effectief Altruïsme Nederland, the School for Moral Ambition and equivalents; consumer-facing effective giving at Giving What We Can, Doneer Effectief, the Tien Procent Club. The boundary is deliberately narrow, and three exclusions carry it: (1) it is NOT "any job at an EA organisation" — a researcher at GiveWell or a campaigner at an ACE-recommended charity is filed under the problem their work serves; (2) fundraising or advocacy for a single operating charity\u2019s own programme is that charity\u2019s problem area, not this one; (3) field building aimed at ONE problem belongs to that problem, not here — an AI-safety fellowship, talent pipeline or research incubator such as Kairos is global-catastrophic-risks work, because the field it grows is AI safety rather than the movement as a whole. What lands here is cause-general: the community and the giving infrastructure that serve every problem on the board at once.',
 }
 
 /**
- * Sub-areas. Not a stored field and not a filter — descriptive text used in the
- * classifier prompt and on the cause pages, so that a four-item taxonomy still
- * tells a reader (and the model) what actually falls inside each area.
+ * Sub-areas — a real, stored, filterable field as of August 2026.
  *
- * The AI entries are deliberately split across two areas. That is the whole
- * point of the revision, and the sub-area lists are where the boundary is
- * stated concretely enough to act on.
+ * They used to be descriptive prose for the classifier prompt and the cause
+ * pages. They are now first-class, because the four-item cause axis fails at
+ * the only moment that matters: almost nobody browsing a job board thinks of
+ * themselves as looking for "global catastrophic risks". They look for AI
+ * safety, or pandemic preparedness, or nuclear security. The cause area is how
+ * we reason about the board; the sub-area is how a reader finds their way into
+ * it, so it has to be clickable rather than merely readable.
+ *
+ * Ids are stable and appear in URLs (`?subarea=ai-safety`). Renaming one is a
+ * breaking change to an indexed URL — add a new id instead.
+ *
+ * Every sub-area belongs to exactly one cause area, so `SUB_AREA_CAUSE` can be
+ * derived rather than maintained, and a sub-area filter implies its parent.
  */
-export const CAUSE_SUBAREAS: Record<CauseArea, readonly string[]> = {
+export const SUB_AREAS_BY_CAUSE = {
   'global-health-wellbeing': [
-    'Global health and disease control in low- and middle-income countries',
-    'Development finance and aid policy',
-    'Health systems in low- and middle-income countries',
-    'Lead exposure and air quality in poor countries',
-    'Mental health at scale in the developing world',
+    'global-health',
+    'development-finance',
+    'health-systems',
+    'lead-and-air-quality',
+    'mental-health',
   ],
   'farmed-animal-welfare': [
-    'Farmed animal advocacy and corporate campaigns',
-    'Animal law and enforcement',
-    'Cultivated meat, fermentation and plant-based protein',
-    'Protein transition policy and finance',
+    'animal-advocacy',
+    'animal-law',
+    'alternative-protein',
+    'protein-transition-policy',
   ],
-  'global-catastrophic-risks': [
-    'AI takeover, misalignment and catastrophic misuse',
-    'Biosecurity, pandemic preparedness and dual-use research',
-    'Nuclear security and great-power conflict',
-  ],
+  'global-catastrophic-risks': ['ai-safety', 'biosecurity', 'nuclear-security'],
   'better-futures': [
-    'AI governance, power concentration and value lock-in',
-    'Quality and resilience of democratic institutions',
-    'Moral circle expansion, including digital minds',
-    'Space governance',
+    'ai-governance',
+    'democratic-institutions',
+    'moral-circle',
+    'space-governance',
   ],
+  'movement-building': ['community-building', 'effective-giving'],
+} as const satisfies Record<CauseArea, readonly string[]>
+
+export const SUB_AREAS = Object.values(SUB_AREAS_BY_CAUSE).flat() as readonly SubArea[]
+
+export type SubArea =
+  (typeof SUB_AREAS_BY_CAUSE)[CauseArea][number]
+
+/** Which cause area a sub-area belongs to. Derived, never hand-maintained. */
+export const SUB_AREA_CAUSE: Record<SubArea, CauseArea> = Object.fromEntries(
+  (Object.entries(SUB_AREAS_BY_CAUSE) as [CauseArea, readonly SubArea[]][]).flatMap(
+    ([cause, subs]) => subs.map((sub) => [sub, cause] as const),
+  ),
+) as Record<SubArea, CauseArea>
+
+/**
+ * Definitions used by the classifier. Deliberately concrete: the AI split
+ * across `ai-safety` and `ai-governance` is the one boundary the model gets
+ * wrong most often, so both entries say what the *other* one takes.
+ */
+export const SUB_AREA_DEFINITIONS: Record<SubArea, string> = {
+  'global-health': 'Infectious disease control, vaccination, nutrition and mortality in low- and middle-income countries.',
+  'development-finance': 'Aid budgets, development banks, concessional finance, and the policy that directs them.',
+  'health-systems': 'Building and running health systems in low- and middle-income countries.',
+  'lead-and-air-quality': 'Lead exposure, indoor and outdoor air quality, and environmental health in poor countries.',
+  'mental-health': 'Delivering mental health care at scale in the developing world.',
+  'animal-advocacy': 'Corporate campaigns, welfare commitments, and public advocacy for farmed animals.',
+  'animal-law': 'Animal law, welfare regulation, inspection and enforcement.',
+  'alternative-protein': 'Cultivated meat, precision fermentation and plant-based protein — science, engineering and commercial roles.',
+  'protein-transition-policy': 'Policy, subsidy and investment that shapes what protein gets produced.',
+  'ai-safety': 'Preventing AI systems from causing catastrophe: alignment, interpretability, evaluations, control, and catastrophic misuse. The failure mode is that things end very badly. Governance work aimed at who *holds power* rather than at catastrophe belongs in ai-governance.',
+  'biosecurity': 'Pandemic preparedness, biosurveillance, dual-use research governance, and biological weapons.',
+  'nuclear-security': 'Nuclear weapons policy, arms control, escalation risk and great-power conflict.',
+  'ai-governance': 'Who ends up holding power over transformative AI and whose values get entrenched: AI regulation, competition and compute policy, standards, auditing regimes. The failure mode is a surviving world that is much worse than it could have been. Work aimed squarely at preventing catastrophe belongs in ai-safety.',
+  'democratic-institutions': 'The quality, integrity and resilience of democratic institutions, including information environments.',
+  'moral-circle': 'Extending moral consideration — wild animals, invertebrates, digital minds.',
+  'space-governance': 'Rules and institutions for activity beyond Earth.',
+  'community-building': 'Growing and supporting the community of people who work on these problems: national and university groups, events, fellowships, careers advice, the Centre for Effective Altruism, the School for Moral Ambition.',
+  'effective-giving': 'Public-facing effective giving: persuading people to donate and directing those donations well. Giving What We Can, Doneer Effectief, the Tien Procent Club, pledge and platform work.',
+}
+
+// ---------------------------------------------------------------------------
+// Axis two — skill (August 2026)
+// ---------------------------------------------------------------------------
+
+/**
+ * The skill axis, for readers who are cause-neutral and know what they are good
+ * at rather than what they want to work on.
+ *
+ * This is Probably Good's taxonomy, adopted deliberately rather than invented:
+ * a reader who has already browsed jobs.probablygood.org should not have to
+ * learn a second vocabulary to browse ours, and the categories are well tested.
+ * `engineering` is physical/biological/chemical engineering; `software-engineering`
+ * is software. Keeping them apart is Probably Good's call and a correct one for
+ * a board carrying both cultivated-meat process engineers and ML engineers.
+ *
+ * A listing carries one or two. Two is the cap on purpose — a role tagged with
+ * five skills is a role the classifier did not understand.
+ */
+export const SKILLS = [
+  'communications',
+  'data',
+  'engineering',
+  'finance',
+  'information-security',
+  'legal',
+  'management',
+  'operations',
+  'policy',
+  'research',
+  'software-engineering',
+] as const
+
+export type Skill = (typeof SKILLS)[number]
+
+export const MAX_SKILLS_PER_LISTING = 2
+
+export const SKILL_DEFINITIONS: Record<Skill, string> = {
+  communications: 'Communications, marketing, outreach, community management, journalism, fundraising and public affairs.',
+  data: 'Data science, data analysis, statistics, monitoring and evaluation, data engineering.',
+  engineering: 'Physical, biological, chemical and process engineering. Laboratory and manufacturing roles. NOT software.',
+  finance: 'Investment, grantmaking, accounting, financial analysis, economics applied to capital.',
+  'information-security': 'Security engineering, threat modelling, compliance and infrastructure hardening.',
+  legal: 'Law, regulatory compliance, contracts, litigation and legal research.',
+  management: 'Leading teams, running organisations, executive and programme leadership.',
+  operations: 'Operations, HR, recruiting, finance administration, office and event management, executive assistance.',
+  policy: 'Policy analysis, advising, advocacy, government affairs, diplomacy and regulation.',
+  research: 'Academic and applied research, including AI safety research, economics, and policy research.',
+  'software-engineering': 'Software engineering, machine learning engineering, infrastructure and product engineering.',
 }
 
 /**
@@ -125,7 +221,20 @@ export const EXCLUDED_TOPICS = [
 export type ExcludedTopic = (typeof EXCLUDED_TOPICS)[number]['id']
 
 // ---------------------------------------------------------------------------
-// Axis two — leverage archetype (§5.2). Each job gets exactly one.
+// Leverage archetype (§5.2) — INTERNAL ONLY as of August 2026.
+//
+// This was the board's second public browse axis and it no longer is. It was
+// retired from the reader-facing UI because it asked people to sort themselves
+// by a concept they do not hold: nobody arrives thinking "I would like to do
+// capital allocation". Skill and cause are the two axes a reader actually has.
+//
+// It survives because it is still doing real work out of sight:
+//   - `meetsPromotionThreshold` scores every listing on it before publication,
+//     which is the board's quality bar;
+//   - `earning-to-give` and `trusted-recommendation` are employer-level gates,
+//     and the latter is what splits the two tiers on the index.
+// Deleting it would cost the board its filter on mediocrity and buy the reader
+// nothing they can see. So: classified, scored, never rendered.
 // ---------------------------------------------------------------------------
 
 export const LEVERAGE_TYPES = [
@@ -204,8 +313,40 @@ export const WORK_AUTHORISATIONS = [
 ] as const
 export type WorkAuthorisation = (typeof WORK_AUTHORISATIONS)[number]
 
-export const LOCATION_MODES = ['on-site', 'hybrid', 'remote-nl', 'remote-eu'] as const
+/**
+ * Where you actually have to be — three options, revised August 2026.
+ *
+ * It used to be `on-site | hybrid | remote-nl | remote-eu`, which mixed two
+ * questions together and answered neither well. A reader in the Netherlands is
+ * deciding one thing: do I have to be somewhere, and if so, how often. So:
+ *
+ * - `remote`      you can do this job from anywhere in the Netherlands.
+ * - `on-site-nl`  you have to be at a specific Dutch workplace.
+ * - `nl-flexible` a Dutch employer with a Dutch office where a hybrid
+ *                 arrangement is normal — some days in, most days wherever.
+ *
+ * Note what is deliberately NOT here. Most `remote` roles on this board are at
+ * foreign organisations, and "remote at a US non-profit" is a materially
+ * different proposition from "remote at a Dutch ministry" — different contract,
+ * different timezone, different right-to-work question. That distinction is
+ * real, but it is a question about the employer and about work authorisation,
+ * both of which already have their own fields. Crowding it into the location
+ * filter would give the reader four options that answer three questions again.
+ */
+export const LOCATION_MODES = ['remote', 'on-site-nl', 'nl-flexible'] as const
 export type LocationMode = (typeof LOCATION_MODES)[number]
+
+/**
+ * The pre-August-2026 vocabulary, kept solely so the backfill and any listing
+ * classified before the change can be mapped forward. Nothing reads this at
+ * runtime once the backfill has run.
+ */
+export const LEGACY_LOCATION_MODE_MAP: Record<string, LocationMode> = {
+  'on-site': 'on-site-nl',
+  hybrid: 'nl-flexible',
+  'remote-nl': 'remote',
+  'remote-eu': 'remote',
+}
 
 export const SENIORITIES = ['internship', 'entry', 'mid', 'senior', 'executive'] as const
 export type Seniority = (typeof SENIORITIES)[number]
@@ -243,6 +384,42 @@ export const CAUSE_AREA_TITLES_NL: Record<CauseArea, string> = {
   'farmed-animal-welfare': 'Dierenwelzijn in de veehouderij',
   'global-catastrophic-risks': 'Mondiale catastrofale risico’s',
   'better-futures': 'Betere toekomsten',
+  'movement-building': 'De beweging opbouwen',
+}
+
+export const SUB_AREA_TITLES_NL: Record<SubArea, string> = {
+  'global-health': 'Mondiale gezondheid en infectieziekten',
+  'development-finance': 'Ontwikkelingsfinanciering en hulpbeleid',
+  'health-systems': 'Zorgstelsels in arme landen',
+  'lead-and-air-quality': 'Lood en luchtkwaliteit',
+  'mental-health': 'Mentale gezondheid op schaal',
+  'animal-advocacy': 'Belangenbehartiging en campagnes',
+  'animal-law': 'Dierenrecht en handhaving',
+  'alternative-protein': 'Kweekvlees en plantaardige eiwitten',
+  'protein-transition-policy': 'Beleid rond de eiwittransitie',
+  'ai-safety': 'AI-veiligheid',
+  'biosecurity': 'Pandemieën en biosecurity',
+  'nuclear-security': 'Nucleaire veiligheid',
+  'ai-governance': 'AI-governance en macht',
+  'democratic-institutions': 'Democratische instituties',
+  'moral-circle': 'De morele cirkel',
+  'space-governance': 'Ruimtebestuur',
+  'community-building': 'Community building',
+  'effective-giving': 'Effectief geven',
+}
+
+export const SKILL_TITLES_NL: Record<Skill, string> = {
+  communications: 'Communicatie en outreach',
+  data: 'Data',
+  engineering: 'Techniek',
+  finance: 'Financieel',
+  'information-security': 'Informatiebeveiliging',
+  legal: 'Juridisch',
+  management: 'Management',
+  operations: 'Operations',
+  policy: 'Beleid',
+  research: 'Onderzoek',
+  'software-engineering': 'Software engineering',
 }
 
 export const LEVERAGE_TITLES_NL: Record<LeverageType, string> = {
@@ -261,6 +438,12 @@ export const causeAreaOptions = (): SanityOption[] =>
 
 export const leverageOptions = (): SanityOption[] =>
   LEVERAGE_TYPES.map((value) => ({ value, title: LEVERAGE_TITLES_NL[value] }))
+
+export const subAreaOptions = (): SanityOption[] =>
+  SUB_AREAS.map((value) => ({ value, title: SUB_AREA_TITLES_NL[value] }))
+
+export const skillOptions = (): SanityOption[] =>
+  SKILLS.map((value) => ({ value, title: SKILL_TITLES_NL[value] }))
 
 export const plainOptions = (values: readonly string[]): SanityOption[] =>
   values.map((value) => ({ value, title: value }))

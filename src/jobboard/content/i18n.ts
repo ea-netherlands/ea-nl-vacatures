@@ -15,12 +15,16 @@ import {
   LEVERAGE_TYPES,
   LOCATION_MODES,
   SENIORITIES,
+  SKILLS,
+  SUB_AREAS,
   WORK_AUTHORISATIONS,
   type CauseArea,
   type LanguageRequirement,
   type LeverageType,
   type LocationMode,
   type Seniority,
+  type Skill,
+  type SubArea,
   type WorkAuthorisation,
 } from '../taxonomy'
 
@@ -102,12 +106,38 @@ type Strings = {
   intlBoardBlurbs: Record<InternationalBoardId, string>
   intlFallback: string
   intlShort: string
+  /**
+   * The index's one-line form. Deliberately does NOT name the three boards —
+   * `intlShort` does, because on a listing page it stands alone, whereas here
+   * the three names follow immediately as links and saying them twice reads
+   * like a stutter.
+   */
+  intlCompact: string
   intlLink: string
 
   // Why climate is not on the board (§5.1)
   climateHeading: string
   climateBody: string[]
   climateReferralLink: string
+
+  // Index — hero and the browse grid (rebuilt August 2026)
+  heroTitle: string
+  heroLead: string
+  /** "36 vacatures · nieuwste van 18 augustus" — the newest listing, not today. */
+  heroStat: (n: number, newest: string) => string
+  heroBrowseCta: string
+  browseCauseHeading: string
+  browseCauseBody: string
+  browseSkillHeading: string
+  browseSkillBody: string
+  browseSkillAside: string
+  browseRoleCount: (n: number) => string
+  browseEmptyTile: string
+  browseShowAll: (n: number) => string
+  backToBrowse: string
+  filteredByCause: (label: string) => string
+  filteredBySubArea: (label: string) => string
+  filteredBySkill: (label: string) => string
 
   // Index
   indexTitle: string
@@ -139,6 +169,8 @@ type Strings = {
   filterCause: string
   filterLeverage: string
   filterLocation: string
+  filterSkill: string
+  filterSubArea: string
   filterLanguage: string
   filterSeniority: string
   filterAny: string
@@ -201,7 +233,10 @@ type Strings = {
   disagreeBody: string
 
   causeAreas: Record<CauseArea, string>
-  causeSubareas: Record<CauseArea, string[]>
+  /** One line per cause area, for the browse tiles. */
+  causeBlurbs: Record<CauseArea, string>
+  subAreas: Record<SubArea, string>
+  skills: Record<Skill, string>
   leverage: Record<LeverageType, string>
   locationModes: Record<LocationMode, string>
   languageRequirements: Record<LanguageRequirement, string>
@@ -230,6 +265,8 @@ const nl: Strings = {
     'Verhuizen kan niet voor iedereen. Een partner met een baan hier, kinderen op school, een zorgtaak, een verblijfsvergunning — of je wilt simpelweg niet weg. Dat is een redelijke afweging en geen gebrek aan toewijding. Voor die situatie is dit bord gemaakt: de beste mogelijkheden die we in Nederland kunnen vinden. We zeggen het liever meteen dan dat je er later zelf achter komt.',
   intlShort:
     'Zit je niet vast aan Nederland? Kijk dan eerst bij 80,000 Hours, Probably Good en EA Opportunities — daar staan de sterkste kansen.',
+  intlCompact:
+    'Zit je niet vast aan Nederland? De sterkste kansen liggen meestal ergens anders. Kijk daar eerst:',
   intlLink: 'Waarom we dit zeggen',
 
   climateHeading: 'Waarom staat klimaat er niet bij?',
@@ -239,10 +276,31 @@ const nl: Strings = {
   ],
   climateReferralLink: 'Ga naar Effective Environmentalism',
 
+  heroTitle: 'Werk aan de grootste problemen ter wereld — zonder te verhuizen.',
+  heroLead:
+    'Een korte, met de hand samengestelde lijst Nederlandse vacatures, met bij elke functie waarom die er meer toe doet dan het werk van één persoon.',
+  heroStat: (n, newest) =>
+    `${n === 1 ? '1 vacature' : `${n} vacatures`} · nieuwste van ${newest}`,
+  heroBrowseCta: 'Kies een probleemgebied',
+  browseCauseHeading: 'Waar wil je aan werken?',
+  browseCauseBody:
+    'Vijf probleemgebieden die we volgen omdat ze groot, verwaarloosd en aan te pakken zijn. Kies een gebied, of ga meteen naar het onderwerp dat je zoekt.',
+  browseSkillHeading: 'Geen voorkeur? Kies op vaardigheid.',
+  browseSkillBody:
+    'Als het je niet uitmaakt aan welk probleem je werkt, maar je wel weet waar je goed in bent.',
+  browseSkillAside: 'Dezelfde indeling die Probably Good gebruikt.',
+  browseRoleCount: (n) => (n === 1 ? '1 vacature' : `${n} vacatures`),
+  browseEmptyTile: 'Nu niets open',
+  browseShowAll: (n) => `Bekijk alle ${n} vacatures`,
+  backToBrowse: 'Alle probleemgebieden',
+  filteredByCause: (label) => label,
+  filteredBySubArea: (label) => label,
+  filteredBySkill: (label) => `Vaardigheid: ${label.toLowerCase()}`,
+
   indexTitle: 'Vacatures',
   indexIntroHeading: 'Wat staat hier?',
   indexIntroBody: [
-    'Dit bord gaat over één vraag: hoe werk je vanuit Nederland aan de grootste en meest verwaarloosde problemen ter wereld? We houden vier probleemgebieden bij en zoeken de Nederlandse functies die er echt iets aan veranderen.',
+    'Dit bord gaat over één vraag: hoe werk je vanuit Nederland aan de grootste en meest verwaarloosde problemen ter wereld? We houden vijf probleemgebieden bij en zoeken de Nederlandse functies die er echt iets aan veranderen.',
     'De meeste staan bij werkgevers die zelf niet zouden zeggen dat ze aan een groot wereldprobleem werken: een ministerie, een bank, een toezichthouder, een universiteit. Bij elke vacature schrijven we één of twee zinnen over waar de hefboom zit — waarom déze functie meer verandert dan het werk van één persoon.',
     'We houden de lijst kort. Vijfentwintig goede vacatures zijn meer waard dan tweehonderd middelmatige.',
   ],
@@ -252,13 +310,13 @@ const nl: Strings = {
   sortLabel: 'Sorteer op',
   sortRecent: 'Nieuwste eerst',
   sortLeverage: 'Grootste hefboom eerst',
-  tierRecommendedHeading: 'Onze beste aanbevelingen',
+  tierRecommendedHeading: 'De beste organisaties ter wereld in wat ze doen',
   tierRecommendedBody:
-    'Deze functies zijn bij organisaties die door onafhankelijke onderzoeksorganisaties zijn doorgelicht — GiveWell, Animal Charity Evaluators, Founders Pledge en The Life You Can Save — of die door 80,000 Hours worden uitgelicht. Zij hebben het werk al gedaan om te beoordelen of de organisatie zelf iets betekent. Daarom staat hier elke functie die openstaat voor iemand in Nederland, ook een ondersteunende of operationele rol.',
+    'Van deze organisaties zijn we er redelijk zeker van dat ze wereldwijd tot de besten behoren in hun vak — doorgelicht door GiveWell, Animal Charity Evaluators, Founders Pledge of The Life You Can Save, of uitgelicht door 80,000 Hours. Daarom staat hier elke functie die openstaat voor iemand in Nederland, ook ondersteunend of operationeel werk. Reken wel op stevige concurrentie, en op werk op afstand of verhuizen.',
   tierRecommendedCount: (n) => (n === 1 ? '1 vacature' : `${n} vacatures`),
-  tierDutchHeading: 'Nederlandse organisaties met een hefboom',
+  tierDutchHeading: 'Functies met een hefboom, hier in Nederland',
   tierDutchBody:
-    'Grote Nederlandse organisaties — ministeries, toezichthouders, universiteiten, banken — die invloed hebben op een van deze vier problemen. Niemand heeft ze als geheel doorgelicht, dus beoordelen we hier per functie: telt wat deze specifieke rol doet, of leunt het vooral op de missie van de werkgever? Dat oordeel is van ons, en je mag het van ons betwisten.',
+    'Nederlandse organisaties — ministeries, toezichthouders, universiteiten, banken — waar je vanuit Nederland aan een van deze problemen kunt bijdragen. Niemand heeft ze als geheel doorgelicht, dus beoordelen we per functie: telt wat deze specifieke rol doet, of leunt het op de missie van de werkgever? Dat oordeel is van ons. De concurrentie is hier meestal een stuk minder hevig.',
   tierDutchCount: (n) => (n === 1 ? '1 vacature' : `${n} vacatures`),
   tierExpand: (n) => `Toon alle ${n} vacatures`,
   tierCollapse: 'Toon minder',
@@ -273,6 +331,8 @@ const nl: Strings = {
   filterCause: 'Probleemgebied',
   filterLeverage: 'Soort hefboom',
   filterLocation: 'Werkplek',
+  filterSkill: 'Vaardigheid',
+  filterSubArea: 'Onderwerp',
   filterLanguage: 'Taaleis',
   filterSeniority: 'Niveau',
   filterAny: 'Alle',
@@ -338,34 +398,52 @@ const nl: Strings = {
     'farmed-animal-welfare': 'Dierenwelzijn in de veehouderij',
     'global-catastrophic-risks': 'Mondiale catastrofale risico’s',
     'better-futures': 'Betere toekomsten',
+    'movement-building': 'De beweging opbouwen',
   },
-  // Sub-areas are display text, not a filter. They exist because four
-  // categories are too coarse to tell a reader what actually falls inside one.
-  causeSubareas: {
-    'global-health-wellbeing': [
-      'Mondiale gezondheid en infectieziekten',
-      'Ontwikkelingsfinanciering en hulpbeleid',
-      'Zorgstelsels in lage- en middeninkomenslanden',
-      'Loodvergiftiging en luchtkwaliteit',
-      'Psychische gezondheid op schaal',
-    ],
-    'farmed-animal-welfare': [
-      'Campagnes richting bedrijven en belangenbehartiging',
-      'Dierenrecht en handhaving',
-      'Kweekvlees, fermentatie en plantaardige eiwitten',
-      'Beleid en financiering van de eiwittransitie',
-    ],
-    'global-catastrophic-risks': [
-      'AI die zich aan menselijke controle onttrekt, en catastrofaal misbruik',
-      'Biosecurity, pandemische paraatheid en dual-use onderzoek',
-      'Nucleaire veiligheid en conflict tussen grootmachten',
-    ],
-    'better-futures': [
-      'AI-beleid, machtsconcentratie en het vastleggen van waarden',
-      'Kwaliteit en weerbaarheid van democratische instituties',
-      'Uitbreiding van je morele cirkel, inclusief digitale wezens (digital minds)',
-      'Ruimtebeleid',
-    ],
+  causeBlurbs: {
+    'global-health-wellbeing':
+      'Ziekte en armoede bij de armste mensen die nu leven — en het geld en beleid dat daarover gaat.',
+    'farmed-animal-welfare':
+      'Het lijden van dieren in de voedselproductie, en de eiwittransitie die dat kan beëindigen.',
+    'global-catastrophic-risks':
+      'Gebeurtenissen die een groot deel van de mensheid kunnen doden of haar vooruitzichten voorgoed kunnen beëindigen.',
+    'better-futures':
+      'Of de verre toekomst góéd gaat als de mensheid het overleeft: wie de macht heeft, en wiens waarden blijven gelden.',
+    'movement-building':
+      'Meer mensen die deze problemen serieus nemen, en meer geld dat effectief terechtkomt.',
+  },
+  subAreas: {
+    'global-health': 'Mondiale gezondheid en infectieziekten',
+    'development-finance': 'Ontwikkelingsfinanciering en hulpbeleid',
+    'health-systems': 'Zorgstelsels in arme landen',
+    'lead-and-air-quality': 'Lood en luchtkwaliteit',
+    'mental-health': 'Psychische gezondheid op schaal',
+    'animal-advocacy': 'Campagnes en belangenbehartiging',
+    'animal-law': 'Dierenrecht en handhaving',
+    'alternative-protein': 'Kweekvlees en plantaardige eiwitten',
+    'protein-transition-policy': 'Beleid rond de eiwittransitie',
+    'ai-safety': 'AI-veiligheid',
+    biosecurity: 'Pandemieën en biosecurity',
+    'nuclear-security': 'Nucleaire veiligheid',
+    'ai-governance': 'AI-governance en macht',
+    'democratic-institutions': 'Democratische instituties',
+    'moral-circle': 'De morele cirkel',
+    'space-governance': 'Ruimtebeleid',
+    'community-building': 'Community building',
+    'effective-giving': 'Effectief geven',
+  },
+  skills: {
+    communications: 'Communicatie en outreach',
+    data: 'Data',
+    engineering: 'Techniek',
+    finance: 'Financieel',
+    'information-security': 'Informatiebeveiliging',
+    legal: 'Juridisch',
+    management: 'Management',
+    operations: 'Operations',
+    policy: 'Beleid',
+    research: 'Onderzoek',
+    'software-engineering': 'Software engineering',
   },
   leverage: {
     'capital-allocation': 'Geldstromen sturen',
@@ -378,10 +456,9 @@ const nl: Strings = {
     'trusted-recommendation': 'Aanbevolen door een evaluator',
   },
   locationModes: {
-    'on-site': 'Op locatie',
-    hybrid: 'Hybride',
-    'remote-nl': 'Op afstand (Nederland)',
-    'remote-eu': 'Op afstand (Europa)',
+    remote: 'Op afstand',
+    'on-site-nl': 'Op locatie in Nederland',
+    'nl-flexible': 'Nederlandse werkgever, flexibel',
   },
   languageRequirements: {
     'dutch-required': 'Nederlands vereist',
@@ -425,6 +502,8 @@ const en: Strings = {
     'Not everyone can move. A partner with a job here, children in school, caring responsibilities, a residence permit — or you simply do not want to leave. That is a reasonable trade-off, not a lack of commitment. This board is built for that situation: the best options we can find in the Netherlands. We would rather say so up front than let you work it out later.',
   intlShort:
     'Free to leave the Netherlands? Look at 80,000 Hours, Probably Good and EA Opportunities first — the strongest opportunities are there.',
+  intlCompact:
+    'Free to leave the Netherlands? The strongest opportunities are usually elsewhere. Look there first:',
   intlLink: 'Why we say this',
 
   climateHeading: 'Why is climate not here?',
@@ -434,10 +513,30 @@ const en: Strings = {
   ],
   climateReferralLink: 'Go to Effective Environmentalism',
 
+  heroTitle: 'Work on the world’s biggest problems — without leaving the Netherlands.',
+  heroLead:
+    'A short, hand-picked list of Dutch jobs, each with a reason why it changes more than one person’s work.',
+  heroStat: (n, newest) => `${n === 1 ? '1 job' : `${n} jobs`} · newest from ${newest}`,
+  heroBrowseCta: 'Pick a problem area',
+  browseCauseHeading: 'What do you want to work on?',
+  browseCauseBody:
+    'Five problem areas we track because they are large, neglected and tractable. Pick an area, or go straight to the topic you came for.',
+  browseSkillHeading: 'No preference? Browse by skill.',
+  browseSkillBody:
+    'For when the problem matters less to you than what you are good at.',
+  browseSkillAside: 'The same categories Probably Good uses.',
+  browseRoleCount: (n) => (n === 1 ? '1 job' : `${n} jobs`),
+  browseEmptyTile: 'Nothing open now',
+  browseShowAll: (n) => `See all ${n} jobs`,
+  backToBrowse: 'All problem areas',
+  filteredByCause: (label) => label,
+  filteredBySubArea: (label) => label,
+  filteredBySkill: (label) => `Skill: ${label.toLowerCase()}`,
+
   indexTitle: 'Jobs',
   indexIntroHeading: 'What is this?',
   indexIntroBody: [
-    'This board is about one question: how do you work on the world’s largest and most neglected problems from the Netherlands? We track four problem areas and look for the Dutch roles that genuinely move them.',
+    'This board is about one question: how do you work on the world’s largest and most neglected problems from the Netherlands? We track five problem areas and look for the Dutch roles that genuinely move them.',
     'Most are at employers who would not say they work on a big global problem: a ministry, a bank, a regulator, a university. For each one we write a sentence or two about where the leverage sits — why this particular role changes more than one person’s work.',
     'We keep the list short. Twenty-five good listings are worth more than two hundred mediocre ones.',
   ],
@@ -447,13 +546,13 @@ const en: Strings = {
   sortLabel: 'Sort by',
   sortRecent: 'Newest first',
   sortLeverage: 'Highest leverage first',
-  tierRecommendedHeading: 'Our strongest recommendations',
+  tierRecommendedHeading: 'Among the best in the world at what they do',
   tierRecommendedBody:
-    'These roles are at organisations vetted by independent research organisations — GiveWell, Animal Charity Evaluators, Founders Pledge and The Life You Can Save — or featured by 80,000 Hours. They have already done the work of judging whether the organisation itself is worth your time. So we list every role there that is open to someone in the Netherlands, including support and operations roles.',
+    'We are fairly confident these organisations are among the best in the world in their field — vetted by GiveWell, Animal Charity Evaluators, Founders Pledge or The Life You Can Save, or featured by 80,000 Hours. So we list every role there that is open to someone in the Netherlands, including support and operations work. Expect fierce competition, and expect remote work or a move.',
   tierRecommendedCount: (n) => (n === 1 ? '1 role' : `${n} roles`),
-  tierDutchHeading: 'Dutch organisations with leverage',
+  tierDutchHeading: 'Roles with leverage, here in the Netherlands',
   tierDutchBody:
-    'Large Dutch organisations — ministries, regulators, universities, banks — with influence over one of these four problems. Nobody has vetted them as a whole, so here we judge role by role: does what this specific job does count, or is it leaning on the employer’s mission? That judgement is ours, and you are welcome to argue with it.',
+    'Dutch organisations — ministries, regulators, universities, banks — where you can work on one of these problems without leaving. Nobody has vetted them as a whole, so we judge role by role: does what this specific job does count, or is it leaning on the employer’s mission? That judgement is ours. Competition here is usually a good deal lighter.',
   tierDutchCount: (n) => (n === 1 ? '1 role' : `${n} roles`),
   tierExpand: (n) => `Show all ${n} roles`,
   tierCollapse: 'Show fewer',
@@ -467,6 +566,8 @@ const en: Strings = {
   filterCause: 'Problem area',
   filterLeverage: 'Kind of leverage',
   filterLocation: 'Where you work',
+  filterSkill: 'Skill',
+  filterSubArea: 'Topic',
   filterLanguage: 'Language',
   filterSeniority: 'Level',
   filterAny: 'All',
@@ -532,32 +633,52 @@ const en: Strings = {
     'farmed-animal-welfare': 'Farmed animal welfare',
     'global-catastrophic-risks': 'Global catastrophic risks',
     'better-futures': 'Better futures',
+    'movement-building': 'Building the movement',
   },
-  causeSubareas: {
-    'global-health-wellbeing': [
-      'Global health and infectious disease',
-      'Development finance and aid policy',
-      'Health systems in low- and middle-income countries',
-      'Lead exposure and air quality',
-      'Mental health at scale',
-    ],
-    'farmed-animal-welfare': [
-      'Corporate campaigns and advocacy',
-      'Animal law and enforcement',
-      'Cultivated meat, fermentation and plant-based protein',
-      'Protein transition policy and finance',
-    ],
-    'global-catastrophic-risks': [
-      'AI escaping human control, and catastrophic misuse',
-      'Biosecurity, pandemic preparedness and dual-use research',
-      'Nuclear security and great-power conflict',
-    ],
-    'better-futures': [
-      'AI governance, power concentration and value lock-in',
-      'Quality and resilience of democratic institutions',
-      'Moral circle expansion, including digital minds',
-      'Space governance',
-    ],
+  causeBlurbs: {
+    'global-health-wellbeing':
+      'Disease and poverty among the poorest people alive today — and the money and policy that move it.',
+    'farmed-animal-welfare':
+      'The suffering of animals in food production, and the protein transition that could end it.',
+    'global-catastrophic-risks':
+      'Events that could kill a very large share of humanity or permanently end its prospects.',
+    'better-futures':
+      'Whether the long-run future goes well if humanity survives: who holds power, and whose values last.',
+    'movement-building':
+      'More people taking these problems seriously, and more money reaching the things that work.',
+  },
+  subAreas: {
+    'global-health': 'Global health and infectious disease',
+    'development-finance': 'Development finance and aid policy',
+    'health-systems': 'Health systems in poor countries',
+    'lead-and-air-quality': 'Lead exposure and air quality',
+    'mental-health': 'Mental health at scale',
+    'animal-advocacy': 'Campaigns and advocacy',
+    'animal-law': 'Animal law and enforcement',
+    'alternative-protein': 'Cultivated meat and plant-based protein',
+    'protein-transition-policy': 'Protein transition policy',
+    'ai-safety': 'AI safety',
+    biosecurity: 'Pandemics and biosecurity',
+    'nuclear-security': 'Nuclear security',
+    'ai-governance': 'AI governance and power',
+    'democratic-institutions': 'Democratic institutions',
+    'moral-circle': 'The moral circle',
+    'space-governance': 'Space governance',
+    'community-building': 'Community building',
+    'effective-giving': 'Effective giving',
+  },
+  skills: {
+    communications: 'Communications and outreach',
+    data: 'Data',
+    engineering: 'Engineering',
+    finance: 'Finance',
+    'information-security': 'Information security',
+    legal: 'Legal',
+    management: 'Management',
+    operations: 'Operations',
+    policy: 'Policy',
+    research: 'Research',
+    'software-engineering': 'Software engineering',
   },
   leverage: {
     'capital-allocation': 'Directing money',
@@ -570,10 +691,9 @@ const en: Strings = {
     'trusted-recommendation': 'Recommended by an evaluator',
   },
   locationModes: {
-    'on-site': 'On site',
-    hybrid: 'Hybrid',
-    'remote-nl': 'Remote (Netherlands)',
-    'remote-eu': 'Remote (Europe)',
+    remote: 'Remote',
+    'on-site-nl': 'On site in the Netherlands',
+    'nl-flexible': 'Dutch employer, flexible',
   },
   languageRequirements: {
     'dutch-required': 'Dutch required',

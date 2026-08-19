@@ -11,6 +11,9 @@ import {
   causeAreaOptions,
   leverageOptions,
   plainOptions,
+  skillOptions,
+  subAreaOptions,
+  MAX_SKILLS_PER_LISTING,
   LANGUAGE_REQUIREMENTS,
   LOCATION_MODES,
   SENIORITIES,
@@ -118,10 +121,32 @@ export const jobListing = defineType({
       options: { list: causeAreaOptions() },
     }),
     defineField({
+      name: 'subArea',
+      title: 'Sub-area',
+      type: 'string',
+      group: 'taxonomy',
+      description:
+        'The topic a reader would actually search for — "AI-veiligheid", not "mondiale catastrofale risico’s". This drives the chips on the index, so it is what most people click to reach this listing. Must belong to the primary cause area. Leave empty only for a genuinely cross-cutting role — a cause-prioritisation post that sits above every sub-area — rather than as a shortcut when none feels perfect.',
+      options: { list: subAreaOptions() },
+    }),
+    defineField({
+      name: 'skills',
+      title: 'Skills',
+      type: 'array',
+      of: [{ type: 'string' }],
+      group: 'taxonomy',
+      description:
+        'One or two, for readers who are cause-neutral. Two is the cap: a role that seems to need five is a role we have not understood.',
+      options: { list: skillOptions() },
+      validation: (r) => r.required().min(1).max(MAX_SKILLS_PER_LISTING),
+    }),
+    defineField({
       name: 'leverage',
       title: 'Type of leverage',
       type: 'string',
       group: 'taxonomy',
+      description:
+        'Internal only — no longer shown to readers. It still sets the quality bar at promotion time and splits the two tiers on the index, so keep it accurate.',
       options: { list: leverageOptions() },
       validation: (r) => r.required(),
     }),
@@ -135,9 +160,11 @@ export const jobListing = defineType({
     }),
     defineField({
       name: 'locationMode',
-      title: 'Work location type',
+      title: 'Where you work',
       type: 'string',
       group: 'practical',
+      description:
+        'remote = doable from anywhere in NL · on-site-nl = must be at a Dutch workplace · nl-flexible = Dutch employer with a Dutch office where hybrid is normal.',
       options: { list: plainOptions(LOCATION_MODES) },
     }),
     defineField({

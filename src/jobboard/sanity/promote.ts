@@ -53,6 +53,8 @@ type PromotableRow = {
   source_id: string
   primary_cause: string | null
   secondary_causes: string[]
+  sub_area: string | null
+  skills: string[]
   leverage: string | null
   cause_score: number
   leverage_score: number
@@ -109,6 +111,7 @@ export async function runPromotion(options: PromoteOptions = {}): Promise<Promot
     if (
       !row.primary_cause ||
       !row.leverage ||
+      !row.skills?.length ||
       !meetsPromotionThreshold(row.cause_score, row.leverage_score)
     ) {
       report.skippedBelowThreshold++
@@ -158,6 +161,8 @@ export async function runPromotion(options: PromoteOptions = {}): Promise<Promot
         excerpt: buildExcerpt(row.description),
         primaryCause: row.primary_cause,
         secondaryCauses: row.secondary_causes ?? [],
+        subArea: row.sub_area,
+        skills: row.skills ?? [],
         leverage: row.leverage,
         locationCity: cityFrom(row.location_raw),
         locationMode: row.location_mode,
@@ -203,7 +208,8 @@ async function loadPromotable(db: Db, limit: number): Promise<PromotableRow[]> {
     `select l.id, l.title, l.employer_id, l.employer_name, l.apply_url, l.description,
             l.location_raw, l.posted_at, l.deadline_at, l.salary_min, l.salary_max,
             l.salary_currency, l.salary_period, l.mentions_30_percent_ruling, l.source_id,
-            c.primary_cause, c.secondary_causes, c.leverage, c.cause_score,
+            c.primary_cause, c.secondary_causes, c.sub_area, c.skills,
+            c.leverage, c.cause_score,
             c.leverage_score, c.total_score, c.language_requirement,
             c.work_authorisation, c.security_screening, c.security_note,
             c.seniority, c.location_mode, c.draft_note, c.reasoning,
@@ -226,6 +232,7 @@ async function loadPromotable(db: Db, limit: number): Promise<PromotableRow[]> {
         and c.nl_eligible
         and c.primary_cause is not null
         and c.leverage is not null
+        and cardinality(c.skills) > 0
         and c.total_score >= 4
         and c.cause_score >= 2
       order by c.total_score desc, l.first_seen_at desc

@@ -693,3 +693,288 @@
   color: var(--fg-muted);
   max-width: 68ch;
 }
+
+/* ===========================================================================
+   THE BROWSE GRID — cause tiles and skill tiles (August 2026)
+   ---------------------------------------------------------------------------
+   Every value here is a token. The visual interest has to come from structure
+   rather than from colour, because the system allows one accent hue, no
+   gradients and light mode only — so the tiles lean on the two motifs that
+   already carry the brand: the dashed rule and the pressable-key inset shadow.
+   =========================================================================== */
+
+.browseHeading {
+  font-size: var(--text-2xl);
+}
+
+.browseBody {
+  margin-top: var(--space-2);
+  margin-bottom: var(--space-8);
+  color: var(--fg-muted);
+  max-width: 62ch;
+}
+
+.browseAside {
+  color: var(--fg-subtle);
+  font-size: var(--text-sm);
+}
+
+/*
+  Two columns on desktop rather than three. Each tile carries a blurb and up to
+  five sub-area chips, and at three across the chips wrap into an unreadable
+  column — the chips are the point of the tile, so the grid is sized around
+  them rather than around the headings.
+*/
+.causeGrid {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 48rem) {
+  .causeGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /*
+    Five tiles into two columns leaves the last one orphaned beside a hole.
+    Letting it span the row turns 2-2-1 into a deliberate rhythm rather than a
+    gap, and it suits the tile that lands there: movement building is the
+    newest area with the fewest sub-areas, so it has the least to lose from a
+    wider, shorter shape.
+  */
+  .causeTile:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+}
+
+.causeTile {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--bg);
+  box-shadow: var(--card-elevated-shadow);
+  transition: box-shadow var(--transition-common), border-color var(--transition-common);
+}
+
+.causeTile:hover {
+  border-color: var(--primary-emphasized);
+  box-shadow: var(--card-elevated-shadow-hover);
+}
+
+.causeTileMain {
+  display: block;
+  padding: var(--space-5) var(--space-5) var(--space-4);
+  text-decoration: none;
+  color: var(--fg);
+}
+
+.causeTileMain:hover {
+  color: var(--fg);
+}
+
+/*
+  The tinted panel behind the glyph. This is where a photograph would go on a
+  board that had photography; an icon on --primary-subtle is the version that
+  stays inside the system and does not pretend to a mood the copy avoids.
+*/
+.causeTileIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--space-12);
+  height: var(--space-12);
+  border-radius: var(--radius-card);
+  background: var(--primary-subtle);
+  border: 1px solid var(--primary-muted);
+  color: var(--primary-fg);
+  font-size: var(--text-3xl);
+  margin-bottom: var(--space-4);
+}
+
+.causeTileTitle {
+  font-size: var(--text-xl);
+}
+
+.causeTileBlurb {
+  margin-top: var(--space-2);
+  color: var(--fg-muted);
+  font-size: var(--text-sm);
+  line-height: var(--lh-relaxed);
+}
+
+.causeTileCount {
+  margin-top: var(--space-3);
+  font-size: var(--text-sm);
+  font-weight: var(--fw-medium);
+  color: var(--primary-fg);
+}
+
+/*
+  Sub-area chips, separated from the tile body by a dashed rule — the same
+  device that separates every section on the board, reused at tile scale so the
+  chips read as a second, more specific way in rather than as tags describing
+  what is above them.
+*/
+.subAreaChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  list-style: none;
+  padding: var(--space-4) var(--space-5) var(--space-5);
+  margin: 0;
+  border-top: var(--rule-dashed);
+}
+
+.subAreaChip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1-5) var(--space-3);
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border);
+  background: var(--bg-subtle);
+  font-size: var(--text-xs);
+  color: var(--fg);
+  text-decoration: none;
+  transition: background var(--transition-common), border-color var(--transition-common);
+}
+
+.subAreaChip:hover {
+  background: var(--primary-subtle);
+  border-color: var(--primary-emphasized);
+  color: var(--primary-fg);
+}
+
+.subAreaChipCount {
+  color: var(--fg-subtle);
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+  A sub-area with nothing open is still shown, so the reader can tell the
+  difference between "we do not cover this" and "nothing is open right now" —
+  but it is not a link, because a link that leads to an empty list is a small
+  lie about what is behind it.
+*/
+.subAreaChipEmpty {
+  color: var(--fg-subtle);
+  background: transparent;
+  border-style: dashed;
+  cursor: default;
+}
+
+.subAreaChipEmpty:hover {
+  background: transparent;
+  border-color: var(--border);
+  color: var(--fg-subtle);
+}
+
+/* --- Skills. Denser than causes: a name, a glyph and a number. --- */
+
+.skillGrid {
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
+}
+
+.skillTile {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--bg);
+  box-shadow: var(--card-elevated-shadow);
+  text-decoration: none;
+  color: var(--fg);
+  font-size: var(--text-sm);
+  transition: box-shadow var(--transition-common), border-color var(--transition-common);
+}
+
+.skillTile:hover {
+  color: var(--fg);
+  border-color: var(--primary-emphasized);
+  box-shadow: var(--card-elevated-shadow-hover);
+}
+
+.skillTileIcon {
+  display: inline-flex;
+  color: var(--primary-fg);
+  font-size: var(--text-xl);
+}
+
+.skillTileName {
+  flex: 1;
+}
+
+.skillTileCount {
+  color: var(--fg-subtle);
+  font-variant-numeric: tabular-nums;
+}
+
+.skillTileEmpty {
+  color: var(--fg-subtle);
+  background: transparent;
+  border-style: dashed;
+  box-shadow: none;
+  cursor: default;
+}
+
+.skillTileEmpty:hover {
+  border-color: var(--border);
+  box-shadow: none;
+  color: var(--fg-subtle);
+}
+
+.skillTileEmpty .skillTileIcon {
+  color: var(--fg-subtle);
+}
+
+/*
+  The compact international-first band, for the index.
+
+  Same claim as the full band, one line of it. It keeps the tinted surface and
+  the globe so it still reads as the board pointing away from itself rather
+  than as a row of partner links — the distinction the full band spends four
+  hundred words on, and the one thing the short form must not lose.
+*/
+.intlBandCompact {
+  padding: var(--space-4) var(--space-5);
+  border: 1px solid var(--primary-muted);
+  border-radius: var(--radius-card);
+  background: var(--primary-subtle);
+}
+
+.intlCompactText {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--fg);
+}
+
+.intlCompactText svg {
+  flex: none;
+  margin-top: 0.15em;
+  color: var(--primary-fg);
+  font-size: var(--text-lg);
+}
+
+.intlCompactLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
+  margin-top: var(--space-3);
+  padding-left: calc(var(--text-lg) + var(--space-3));
+  font-size: var(--text-sm);
+}
+
+.intlCompactLinks a {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1-5);
+  font-weight: var(--fw-medium);
+}

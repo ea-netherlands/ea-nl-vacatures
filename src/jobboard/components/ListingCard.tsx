@@ -74,16 +74,25 @@ export function ListingCard({
         {note ? <p className={u.cardNote}>{note}</p> : null}
 
         <span className={u.cardTags}>
-          {listing.primaryCause ? (
+          {/* The sub-area, not the cause area, when we have one: "AI-veiligheid"
+              tells a scanning reader more than "mondiale catastrofale risico's",
+              and it is the label they most likely clicked to get here. The
+              leverage archetype used to sit in this row and no longer does — it
+              is internal now (see ../taxonomy). */}
+          {listing.subArea ? (
+            <span className={`${u.badge} ${u.badgeCause}`}>
+              {copy.subAreas[listing.subArea]}
+            </span>
+          ) : listing.primaryCause ? (
             <span className={`${u.badge} ${u.badgeCause}`}>
               {copy.causeAreas[listing.primaryCause]}
             </span>
           ) : null}
-          {listing.leverage ? (
-            <span className={`${u.badge} ${u.badgeOutline}`}>
-              {copy.leverage[listing.leverage]}
+          {listing.skills.slice(0, 2).map((skill) => (
+            <span key={skill} className={`${u.badge} ${u.badgeOutline}`}>
+              {copy.skills[skill]}
             </span>
-          ) : null}
+          ))}
           {listing.seniority ? (
             <span className={`${u.badge} ${u.badgeNeutral}`}>
               {copy.seniorities[listing.seniority]}

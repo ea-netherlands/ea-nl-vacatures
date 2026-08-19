@@ -114,6 +114,13 @@ create table if not exists classification (
 
 create index if not exists classification_score_idx on classification (total_score desc);
 
+-- Added August 2026 with the browse rebuild. `sub_area` is the label a reader
+-- actually browses by ("ai-safety", not "global-catastrophic-risks"); `skills`
+-- is the cause-neutral axis that replaced leverage in the public UI. Both are
+-- classified, both are required before a listing can be promoted.
+alter table classification add column if not exists sub_area text;
+alter table classification add column if not exists skills text[] not null default '{}';
+
 create table if not exists decision (
   id            bigserial primary key,
   listing_id    bigint not null references listing(id) on delete cascade,

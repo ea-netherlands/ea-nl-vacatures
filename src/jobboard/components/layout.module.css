@@ -259,3 +259,49 @@
   max-width: 60ch;
   margin-bottom: var(--space-6);
 }
+
+/* --- Hero additions for the browse/filtered split (August 2026) --- */
+
+/*
+  The stat line under the hero lead. Deliberately the smallest thing in the
+  hero: the count is reassurance that the board is alive and maintained, not a
+  boast — thirty-six is not a number to set in display type.
+*/
+.heroStat {
+  margin-top: var(--space-6);
+  font-size: var(--text-sm);
+  color: var(--fg-subtle);
+}
+
+/*
+  Filtered state. Roughly half the vertical space, and the title steps down two
+  sizes: it is now the name of a cause area rather than the board's pitch, and
+  a sub-area set in 3rem would shout at a reader who has already committed.
+*/
+.heroInnerCompact {
+  position: relative;
+  padding-block: var(--space-8) var(--space-6);
+}
+
+.heroTitleCompact {
+  font-size: var(--text-3xl);
+  line-height: var(--lh-tight);
+  max-width: 30ch;
+}
+
+.heroBack {
+  margin-bottom: var(--space-3);
+  font-size: var(--text-sm);
+}
+
+.heroBack a {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--fg-muted);
+  text-decoration: none;
+}
+
+.heroBack a:hover {
+  color: var(--link-hover);
+}

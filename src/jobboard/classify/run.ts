@@ -11,7 +11,16 @@ import type { Db } from '../db/client'
 import { getDb } from '../db/client'
 import { structuredCall, TRIAGE_MODEL, DRAFTING_MODEL } from '../lib/anthropic'
 import { truncateWords } from '../lib/text'
-import { meetsPromotionThreshold, NEAR_MISS_TOTAL, PROMOTION_MIN_CAUSE_SCORE } from '../taxonomy'
+import {
+  meetsPromotionThreshold,
+  MAX_SKILLS_PER_LISTING,
+  NEAR_MISS_TOTAL,
+  PROMOTION_MIN_CAUSE_SCORE,
+  SKILLS,
+  SUB_AREAS_BY_CAUSE,
+  type CauseArea,
+  type Skill,
+} from '../taxonomy'
 import { enforceGates, type EmployerGateFlags } from '../taxonomy/gates'
 import { buildNoteSystemPrompt, buildTriageUserPrompt, TRIAGE_SYSTEM_PROMPT } from './prompt'
 import { NOTE_SCHEMA, TRIAGE_SCHEMA, type TriageResult } from './schema'
@@ -143,12 +152,28 @@ export async function runClassification(
       // never offered as an option to the model in the first place.
       const trusted = c.employer?.recommender_allowlisted ?? false
       const leverage = trusted ? 'trusted-recommendation' : gated.leverage
+
+      // A sub-area that does not belong to the cause we actually assigned is
+      // worse than none: it would file the listing under a chip nobody
+      // browsing that cause will ever see. Drop it rather than trust it.
+      const subArea =
+        raw.subArea &&
+        gated.primaryCause &&
+        (SUB_AREAS_BY_CAUSE[gated.primaryCause as CauseArea] as readonly string[]).includes(
+          raw.subArea,
+        )
+          ? raw.subArea
+          : null
+      const skills = (raw.skills ?? [])
+        .filter((skill): skill is Skill => (SKILLS as readonly string[]).includes(skill))
+        .slice(0, MAX_SKILLS_PER_LISTING)
       const leverageScore = trusted ? 3 : raw.leverageScore
       const causeScore = trusted ? Math.max(raw.causeScore, PROMOTION_MIN_CAUSE_SCORE) : raw.causeScore
 
       const promotable =
         raw.nlEligible &&
         gated.primaryCause !== null &&
+        skills.length > 0 &&
         leverage !== null &&
         meetsPromotionThreshold(causeScore, leverageScore)
 
@@ -193,17 +218,20 @@ export async function runClassification(
 
       await db.query(
         `insert into classification (
-           listing_id, model, nl_eligible, primary_cause, secondary_causes, leverage,
+           listing_id, model, nl_eligible, primary_cause, secondary_causes, sub_area,
+           skills, leverage,
            cause_score, leverage_score, language_requirement, work_authorisation,
            security_screening, security_note, seniority, location_mode,
            draft_note, reasoning, gate_violations, raw_response
-         ) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17::jsonb,$18::jsonb)
+         ) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19::jsonb,$20::jsonb)
          on conflict (listing_id) do update set
            model = excluded.model,
            classified_at = now(),
            nl_eligible = excluded.nl_eligible,
            primary_cause = excluded.primary_cause,
            secondary_causes = excluded.secondary_causes,
+           sub_area = excluded.sub_area,
+           skills = excluded.skills,
            leverage = excluded.leverage,
            cause_score = excluded.cause_score,
            leverage_score = excluded.leverage_score,
@@ -223,6 +251,8 @@ export async function runClassification(
           raw.nlEligible,
           gated.primaryCause,
           gated.secondaryCauses,
+          subArea,
+          skills,
           leverage,
           causeScore,
           leverageScore,

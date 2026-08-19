@@ -8,11 +8,16 @@
 
 import {
   CAUSE_AREA_DEFINITIONS,
-  CAUSE_SUBAREAS,
   EXCLUDED_TOPICS,
   LEVERAGE_DEFINITIONS,
+  SKILL_DEFINITIONS,
+  SKILLS,
+  SUB_AREA_DEFINITIONS,
+  SUB_AREAS_BY_CAUSE,
   type CauseArea,
   type LeverageType,
+  type Skill,
+  type SubArea,
 } from '../taxonomy'
 
 /**
@@ -73,7 +78,7 @@ any others the role genuinely bears on.
 ${(Object.entries(CAUSE_AREA_DEFINITIONS) as [CauseArea, string][])
   .map(
     ([key, def]) =>
-      `- \`${key}\` — ${def}\n  Includes: ${CAUSE_SUBAREAS[key].join('; ')}.`,
+      `- \`${key}\` — ${def}\n  Sub-areas: ${SUB_AREAS_BY_CAUSE[key].join(', ')}.`,
   )
   .join('\n')}
 
@@ -123,9 +128,41 @@ emissions — judge it on which one the role actually serves. And an ordinary
 employer having a sustainability programme is irrelevant either way; you are
 scoring the role, not the employer's reputation.
 
+## Sub-areas
+
+Every listing gets exactly one sub-area, and it must belong to the primary cause
+area you chose. This is the label a reader actually browses by — almost nobody
+arrives at a job board looking for "global catastrophic risks"; they look for AI
+safety, or pandemic preparedness. A wrong sub-area therefore hides a good
+listing from the people most likely to want it, which is worse than a wrong
+secondary cause.
+
+${(Object.entries(SUB_AREA_DEFINITIONS) as [SubArea, string][])
+  .map(([key, def]) => `- \`${key}\` — ${def}`)
+  .join('\n')}
+
+## Skills
+
+One or two, ordered most central first. This axis is for readers who do not mind
+which problem they work on but know what they are good at, so answer the
+question *the candidate* would answer: "what do you do?", not "what does this
+organisation work on".
+
+The distinction that trips this up most often: a policy officer at a ministry
+whose brief is AI is \`policy\`, not \`research\`. A machine-learning engineer at
+an AI safety lab is \`software-engineering\`, not \`research\`, unless the ad is
+plainly describing a research post. \`engineering\` is physical, biological,
+chemical and process engineering — never software.
+
+${(Object.entries(SKILL_DEFINITIONS) as [Skill, string][])
+  .map(([key, def]) => `- \`${key}\` — ${def}`)
+  .join('\n')}
+
 ## Leverage archetypes
 
-Each job gets exactly one.
+Each job gets exactly one. This one is never shown to readers — it sets the
+quality bar at promotion time — so classify it honestly rather than
+flatteringly.
 
 ${(Object.entries(LEVERAGE_DEFINITIONS) as [LeverageType, string][])
   .map(([key, def]) => `- \`${key}\` — ${def}`)

@@ -14,17 +14,29 @@ import { useEffect, useState } from 'react'
 import {
   CAUSE_AREAS,
   LANGUAGE_REQUIREMENTS,
-  LEVERAGE_TYPES,
   LOCATION_MODES,
   SENIORITIES,
+  SKILLS,
+  SUB_AREA_CAUSE,
+  SUB_AREAS,
+  SUB_AREAS_BY_CAUSE,
+  type CauseArea,
 } from '../taxonomy'
 import { routes, t, type Locale } from '../content/i18n'
 import { Icon } from './Icon'
 import u from './ui.module.css'
 
 export type FilterState = {
+  /**
+   * Not a filter. `view=all` forces the index out of its browse state and into
+   * the plain list, for the reader who wants to see everything rather than
+   * choose a way in. Without it, "no filters" and "show me everything" would be
+   * the same URL and the second would be unreachable.
+   */
+  view?: string
   cause?: string
-  leverage?: string
+  subarea?: string
+  skill?: string
   location?: string
   language?: string
   seniority?: string
@@ -34,9 +46,22 @@ export type FilterState = {
 const INTRO_COOKIE = 'jb_intro_seen'
 
 /**
- * Filters in the spec's order of prominence: cause area, leverage type,
- * location mode, language requirement, seniority. Language requirement gets a
- * visual lift because it is the filter no other board offers.
+ * The filter bar, rebuilt August 2026 around two axes rather than three.
+ *
+ * `leverage` used to sit here as the second axis and no longer does. It asked
+ * readers to sort themselves by a concept they do not hold — nobody arrives
+ * thinking "I would like to do capital allocation" — so it was retired from the
+ * public UI and replaced by `skill`, which is the question a cause-neutral
+ * reader can actually answer. Leverage is still classified and still gates
+ * promotion; see the leverage section of ../taxonomy.
+ *
+ * The bar is also no longer the front door. It appears only once a reader has
+ * chosen something from the browse grid, so its job is narrowing a visible list
+ * rather than introducing the vocabulary — which is what a row of selects is
+ * genuinely good at.
+ *
+ * Order of prominence: topic, skill, where you work, language, level. Language
+ * keeps its visual lift because it is the filter no other board offers.
  */
 export function Filters({
   locale,
@@ -55,13 +80,43 @@ export function Filters({
     const next = new URLSearchParams(params?.toString() ?? '')
     if (value) next.set(key, value)
     else next.delete(key)
+
+    // A sub-area belongs to exactly one cause, so the two can contradict each
+    // other and produce a guaranteed-empty list. Keep them consistent here
+    // rather than letting the reader discover it as "no results".
+    if (key === 'subarea' && value) {
+      const parent = SUB_AREA_CAUSE[value as keyof typeof SUB_AREA_CAUSE]
+      if (parent) next.set('cause', parent)
+    }
+    if (key === 'cause') {
+      const sub = next.get('subarea')
+      if (sub && (!value || SUB_AREA_CAUSE[sub as keyof typeof SUB_AREA_CAUSE] !== value)) {
+        next.delete('subarea')
+      }
+    }
+
     const query = next.toString()
     router.push(query ? `?${query}` : '?', { scroll: false })
   }
 
   const hasFilters = Boolean(
-    state.cause || state.leverage || state.location || state.language || state.seniority,
+    state.cause ||
+      state.subarea ||
+      state.skill ||
+      state.location ||
+      state.language ||
+      state.seniority,
   )
+
+  /*
+    Within a cause, offering all eighteen sub-areas would list fifteen that
+    cannot match. Narrow to the chosen cause's own sub-areas; outside a cause,
+    offer the lot.
+  */
+  const subAreaValues =
+    state.cause && (CAUSE_AREAS as readonly string[]).includes(state.cause)
+      ? SUB_AREAS_BY_CAUSE[state.cause as CauseArea]
+      : SUB_AREAS
 
   const fields: {
     key: keyof FilterState
@@ -77,10 +132,16 @@ export function Filters({
       labels: copy.causeAreas,
     },
     {
-      key: 'leverage',
-      label: copy.filterLeverage,
-      values: LEVERAGE_TYPES,
-      labels: copy.leverage,
+      key: 'subarea',
+      label: copy.filterSubArea,
+      values: subAreaValues,
+      labels: copy.subAreas,
+    },
+    {
+      key: 'skill',
+      label: copy.filterSkill,
+      values: SKILLS,
+      labels: copy.skills,
     },
     {
       key: 'location',

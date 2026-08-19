@@ -138,11 +138,25 @@ export async function DetailPage({ locale, slug }: { locale: Locale; slug: strin
                 {copy.causeAreas[listing.primaryCause]}
               </Link>
             ) : null}
-            {listing.leverage ? (
-              <span className={`${u.badge} ${u.badgeOutline}`}>
-                {copy.leverage[listing.leverage]}
-              </span>
+            {/* Sub-area and skills, both linking back into the filtered index.
+                The leverage archetype used to sit here; it is internal now. */}
+            {listing.subArea ? (
+              <Link
+                href={`${r.index}?subarea=${listing.subArea}`}
+                className={`${u.badge} ${u.badgeCause}`}
+              >
+                {copy.subAreas[listing.subArea]}
+              </Link>
             ) : null}
+            {listing.skills.map((skill) => (
+              <Link
+                key={skill}
+                href={`${r.index}?skill=${skill}`}
+                className={`${u.badge} ${u.badgeOutline}`}
+              >
+                {copy.skills[skill]}
+              </Link>
+            ))}
           </p>
         </div>
       </Section>

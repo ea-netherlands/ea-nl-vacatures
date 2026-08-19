@@ -44,7 +44,8 @@ import { isSanityConfigured, writeClient } from '../jobboard/sanity/client'
 import {
   CAUSE_AREA_DEFINITIONS,
   CAUSE_AREAS,
-  CAUSE_SUBAREAS,
+  SUB_AREA_TITLES_NL,
+  SUB_AREAS_BY_CAUSE,
   type CauseArea,
 } from '../jobboard/taxonomy'
 import { t as translationsFor } from '../jobboard/content/i18n'
@@ -75,6 +76,8 @@ const CAUSE_SEARCH_HINTS: Record<CauseArea, string> = {
     'banen AI-beleid, AI safety vacatures Nederland, pandemische paraatheid werk, internationale veiligheid banen Den Haag, non-proliferatie werk',
   'better-futures':
     'AI governance jobs Netherlands, beleidsmedewerker AI, banen digitale grondrechten, toekomstige generaties beleid',
+  'movement-building':
+    'effectief altruïsme vacatures, banen goede doelen effectief geven, community builder vacature, School for Moral Ambition banen',
 }
 
 async function buildSpecs(): Promise<PageSpec[]> {
@@ -147,7 +150,7 @@ Cover four things:
 3. What kinds of Dutch roles bear on it. Be concrete about the *kinds* of employer (a ministry, a regulator, a research institute, a lender, a foundation) rather than naming specific organisations, since the listings themselves change.
 4. Honest acknowledgement of what is uncertain or disputed — in the "uncertainties" field.
 
-What falls inside this area: ${CAUSE_SUBAREAS[cause].join('; ')}.
+What falls inside this area: ${SUB_AREAS_BY_CAUSE[cause].map((sub) => SUB_AREA_TITLES_NL[sub]).join('; ')}.
 
 ${
       cause === 'global-catastrophic-risks'
@@ -285,7 +288,11 @@ Reply with exactly these four blocks, in this order, with these markers and noth
           parsed.uncertainties,
         ].join('\n'),
         schema: CRITIQUE_SCHEMA,
-        maxTokens: 4000,
+        // Was 4000 — too tight once the critic finds enough issues on a
+        // 700-900 word page to fill it (each finding quotes a verbatim
+        // fragment plus a problem and a suggested fix). Matches the budget
+        // given to the generation and rewrite calls below.
+        maxTokens: 8000,
       })
 
       if (critique.findings.length === 0) {

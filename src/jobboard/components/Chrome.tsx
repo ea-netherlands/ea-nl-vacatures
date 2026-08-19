@@ -55,13 +55,23 @@ export function Eyebrow({ children }: { children: ReactNode }) {
   return <span className={s.eyebrow}>{children}</span>
 }
 
+/**
+ * The hero.
+ *
+ * `compact` is what the index's filtered state uses: once a reader has picked a
+ * cause or a skill, a full-height hero restating the board's pitch is something
+ * to scroll past on the way to the list they asked for. Same furniture, less of
+ * it, and the title becomes the name of what they chose.
+ */
 export function Hero({
   title,
   lead,
+  compact,
   children,
 }: {
   title: string
   lead?: string
+  compact?: boolean
   children?: ReactNode
 }) {
   return (
@@ -69,8 +79,8 @@ export function Hero({
       <div className={s.heroPattern} aria-hidden="true" />
       <div className={s.heroHalo} aria-hidden="true" />
       <Container>
-        <div className={s.heroInner}>
-          <h1 className={s.heroTitle}>{title}</h1>
+        <div className={compact ? s.heroInnerCompact : s.heroInner}>
+          <h1 className={compact ? s.heroTitleCompact : s.heroTitle}>{title}</h1>
           {lead ? <p className={s.heroLead}>{lead}</p> : null}
           {children}
         </div>
@@ -267,9 +277,47 @@ export function OnwardStep({ locale }: { locale: Locale }) {
  * able to leave at the second paragraph, and a reader who cannot should not have
  * to read a pitch before reaching the part addressed to them.
  */
-export function InternationalFirst({ locale }: { locale: Locale }) {
+export function InternationalFirst({
+  locale,
+  compact,
+}: {
+  locale: Locale
+  compact?: boolean
+}) {
   const copy = t(locale)
   const r = routes(locale)
+
+  /*
+    The compact form, for the index.
+
+    The full band runs to roughly eight hundred pixels, which on the rebuilt
+    index meant a reader met a screen and a half of "look somewhere else first"
+    before reaching a single cause tile. The statement has to stay above
+    everything actionable — it is the board's one piece of real honesty and a
+    version of it below the grid would be a footer — but "above" and "at full
+    height" are different requirements. So the index gets the same three boards
+    and the same claim in one line each, and the reasoning stays one click away
+    on the method page.
+  */
+  if (compact) {
+    return (
+      <div className={u.intlBandCompact}>
+        <p className={u.intlCompactText}>
+          <Icon name="world" />
+          <span>{copy.intlCompact}</span>
+        </p>
+        <p className={u.intlCompactLinks}>
+          {INTERNATIONAL_BOARDS.map((board) => (
+            <a key={board.id} href={board.url} rel="noopener">
+              {board.name}
+              <Icon name="external-link" />
+            </a>
+          ))}
+          <Link href={r.method}>{copy.intlLink}</Link>
+        </p>
+      </div>
+    )
+  }
 
   return (
     <div className={u.intlBand}>

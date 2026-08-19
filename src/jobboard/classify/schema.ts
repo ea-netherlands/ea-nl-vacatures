@@ -10,7 +10,10 @@ import {
   LANGUAGE_REQUIREMENTS,
   LEVERAGE_TYPES,
   LOCATION_MODES,
+  MAX_SKILLS_PER_LISTING,
   SENIORITIES,
+  SKILLS,
+  SUB_AREAS,
   WORK_AUTHORISATIONS,
 } from '../taxonomy'
 
@@ -21,6 +24,8 @@ export const TRIAGE_SCHEMA = {
     'nlEligible',
     'primaryCause',
     'secondaryCauses',
+    'subArea',
+    'skills',
     'leverage',
     'causeScore',
     'leverageScore',
@@ -50,6 +55,16 @@ export const TRIAGE_SCHEMA = {
       type: 'array',
       items: { type: 'string', enum: [...CAUSE_AREAS] },
       description: 'Zero or more secondary cause areas.',
+    },
+    subArea: {
+      anyOf: [{ type: 'string', enum: [...SUB_AREAS] }, { type: 'null' }],
+      description:
+        'The sub-area within the primary cause area, or null if none fit. It MUST be one of the sub-areas belonging to the primaryCause you chose — a mismatched pair is discarded.',
+    },
+    skills: {
+      type: 'array',
+      items: { type: 'string', enum: [...SKILLS] },
+      description: `One or two skills, at most ${MAX_SKILLS_PER_LISTING}. What a candidate would say they do, not what the employer works on: a policy officer at a ministry working on AI is \`policy\`, not \`research\`. Order them most central first.`,
     },
     leverage: {
       anyOf: [{ type: 'string', enum: [...LEVERAGE_TYPES] }, { type: 'null' }],
@@ -98,6 +113,8 @@ export type TriageResult = {
   nlEligible: boolean
   primaryCause: string | null
   secondaryCauses: string[]
+  subArea: string | null
+  skills: string[]
   leverage: string | null
   causeScore: number
   leverageScore: number

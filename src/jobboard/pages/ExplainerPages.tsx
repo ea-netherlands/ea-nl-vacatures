@@ -36,7 +36,7 @@ import {
   getExplainer,
   getLiveListings,
 } from '../sanity/queries'
-import { CAUSE_AREAS, type CauseArea } from '../taxonomy'
+import { CAUSE_AREAS, SUB_AREAS_BY_CAUSE, type CauseArea } from '../taxonomy'
 import s from '../components/layout.module.css'
 import u from '../components/ui.module.css'
 
@@ -67,9 +67,9 @@ export async function CausePage({ locale, slug }: { locale: Locale; slug: string
       <Container>
         {/*
           Four cause areas are coarse enough that the name alone does not tell a
-          reader whether their field is inside one. The sub-areas are display
-          text, not filters — they answer "does my work count?" without adding a
-          vocabulary the classifier would then have to be calibrated against.
+          reader whether their field is inside one. As of August 2026 the
+          sub-areas are a real filter, so each one links straight to its own
+          filtered list rather than only answering "does my work count?".
         */}
         <Section first>
           <Eyebrow>
@@ -77,8 +77,10 @@ export async function CausePage({ locale, slug }: { locale: Locale; slug: string
             {locale === 'nl' ? 'Wat hieronder valt' : 'What this covers'}
           </Eyebrow>
           <ul className={u.subareaList}>
-            {copy.causeSubareas[cause].map((sub) => (
-              <li key={sub}>{sub}</li>
+            {SUB_AREAS_BY_CAUSE[cause].map((sub) => (
+              <li key={sub}>
+                <Link href={`${r.index}?subarea=${sub}`}>{copy.subAreas[sub]}</Link>
+              </li>
             ))}
           </ul>
         </Section>
@@ -160,7 +162,9 @@ export async function CausesIndexPage({ locale }: { locale: Locale }) {
                 <p className={u.cardMeta}>
                   {copy.resultCount(counts.get(cause) ?? 0)}
                 </p>
-                <p className={u.cardNote}>{copy.causeSubareas[cause].join(' · ')}</p>
+                <p className={u.cardNote}>
+                  {SUB_AREAS_BY_CAUSE[cause].map((sub) => copy.subAreas[sub]).join(' · ')}
+                </p>
               </Link>
             ))}
           </div>
