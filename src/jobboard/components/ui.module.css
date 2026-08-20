@@ -24,8 +24,12 @@
   color: var(--primary-contrast);
   box-shadow: var(--btn-solid-shadow);
 }
+/* The site's button recipe hovers to `colorPalette.solid/90` — the same teal
+   at 90% alpha, which lightens against the page. Hovering to teal-700 darkened
+   instead, so a solid button here moved the opposite way from every solid
+   button on the website. */
 .btnSolid:hover {
-  background: var(--ea-teal-700);
+  background: color-mix(in srgb, var(--primary-solid) 90%, transparent);
   color: var(--primary-contrast);
   box-shadow: var(--btn-solid-shadow-hover);
 }
@@ -33,14 +37,18 @@
   transform: translateY(1px);
 }
 
+/* The site's `subtle` variant is white with a 1px slate-200 border and
+   slate-700 ink — not a filled slate-50 chip. The border is what makes it read
+   as a pressable key next to a solid one. */
 .btnSubtle {
-  background: var(--bg-subtle);
-  color: var(--fg);
+  background: var(--bg);
+  color: var(--slate-700);
+  border: 1px solid var(--border);
   box-shadow: var(--btn-subtle-shadow);
 }
 .btnSubtle:hover {
-  background: var(--bg-muted);
-  color: var(--fg);
+  background: var(--bg-subtle);
+  color: var(--slate-900);
 }
 .btnSubtle:active {
   transform: translateY(1px);
@@ -184,12 +192,15 @@
   margin-bottom: var(--space-8);
 }
 
+/* Sentence case, no tracking. Uppercase letterspaced micro-labels are a
+   convention the website never uses — its own labels are sentence-case body
+   text at `medium`, and the design system pins heading tracking at 0. The
+   strings are already authored in sentence case ("Waarom staat dit op het
+   bord"), so shouting them was pure CSS. */
 .whyHeading {
   font-family: var(--font-body);
-  font-size: var(--text-xs);
+  font-size: var(--text-sm);
   font-weight: var(--fw-semibold);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
   color: var(--primary-fg);
   margin-bottom: var(--space-3);
 }
@@ -247,11 +258,9 @@
 }
 
 .filterLabel {
-  font-size: var(--text-xs);
-  font-weight: var(--fw-semibold);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--fg-subtle);
+  font-size: var(--text-sm);
+  font-weight: var(--fw-medium);
+  color: var(--fg-muted);
 }
 
 /* Language requirement deserves unusual prominence — it is the filter no other
