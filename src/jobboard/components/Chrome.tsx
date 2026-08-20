@@ -20,6 +20,26 @@ import { Icon, type IconName } from './Icon'
 import s from './layout.module.css'
 import u from './ui.module.css'
 
+/**
+ * The site's own footer social row. Same two networks, same order, drawn with
+ * Tabler outline glyphs rather than the website's `react-icons` brand marks —
+ * the design system mandates Tabler, and this module has no runtime icon
+ * dependency by design.
+ */
+const SOCIALS = [
+  {
+    href: 'https://www.instagram.com/ea_netherlands/',
+    icon: 'brand-instagram' as const,
+    label: 'Instagram',
+  },
+  {
+    href: 'https://www.linkedin.com/company/effectief-altru%C3%AFsme-nederland/',
+    icon: 'brand-linkedin' as const,
+    label: 'LinkedIn',
+  },
+]
+
+
 export function Container({
   children,
   className,
@@ -141,6 +161,19 @@ function Footer({ locale }: { locale: Locale }) {
     <footer className={s.footer}>
       <Container>
         <div className={s.footerGrid}>
+          {/* The site's footer leads with the brand lockup and a one-line
+              slogan before the link columns. The board's footer had neither,
+              so a reader who landed on a listing from a search never saw
+              whose board it was. */}
+          <div className={s.footerBrand}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/img/ean-logo.svg"
+              alt="Effectief Altruïsme Nederland"
+              className={s.footerLogo}
+            />
+            <p className={s.footerSlogan}>{copy.footerSlogan}</p>
+          </div>
           <div>
             <p className={s.footerHeading}>{locale === 'nl' ? 'Het bord' : 'The board'}</p>
             <ul className={s.footerList}>
@@ -213,6 +246,25 @@ function Footer({ locale }: { locale: Locale }) {
           <p>
             {copy.disagreeBody}{' '}
             <a href={ONWARD_LINKS.contact}>jobs@effectiefaltruisme.nl</a>
+          </p>
+        </div>
+
+        <div className={s.footerBottom}>
+          <p>
+            © {new Date().getFullYear()} Effectief Altruïsme.{' '}
+            {locale === 'nl' ? 'Alle rechten voorbehouden.' : 'All rights reserved.'}
+          </p>
+          <p className={s.footerSocials}>
+            {SOCIALS.map((social) => (
+              <a
+                key={social.href}
+                href={social.href}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Icon name={social.icon} size="1.25rem" label={social.label} />
+              </a>
+            ))}
           </p>
         </div>
       </Container>

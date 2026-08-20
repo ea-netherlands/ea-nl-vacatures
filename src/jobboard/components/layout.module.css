@@ -49,6 +49,18 @@
   padding-block: var(--space-12);
   border-top: var(--rule-dashed);
 }
+
+/* The site steps section padding up from 48px to 64px at its md breakpoint;
+   the board held a flat 48px, which read tighter than the rest of the site on
+   a desktop screen. */
+@media (min-width: 48rem) {
+  .section {
+    padding-block: var(--space-16);
+  }
+  .sectionFirst {
+    padding-block: var(--space-12) var(--space-16);
+  }
+}
 .sectionFirst {
   padding-block: var(--space-10) var(--space-12);
   border-top: none;
@@ -58,8 +70,15 @@
   border-top: var(--rule-dashed);
 }
 
+/* The site's navbar is sticky, solid white, with a 1px solid hairline under
+   it. The dashed rule is the motif for *section* boundaries in the page body —
+   using it here made the header look like the first section rather than the
+   frame around them. */
 .header {
-  border-bottom: var(--rule-dashed);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  border-bottom: 1px solid var(--border);
   background: var(--bg);
 }
 
@@ -138,13 +157,31 @@
   flex: 1;
 }
 
+/* White with a 1px hairline, butted against the last section — the site's
+   footer, which is not a tinted slab floating below a gap. */
 .footer {
-  border-top: var(--rule-dashed);
-  background: var(--bg-subtle);
-  padding-block: var(--space-10);
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+  padding-block: var(--space-12);
   font-size: var(--text-sm);
   color: var(--fg-muted);
-  margin-top: var(--space-16);
+}
+
+.footerBrand {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  align-items: flex-start;
+}
+
+.footerLogo {
+  height: 2.5rem;
+  width: auto;
+}
+
+.footerSlogan {
+  color: var(--fg-muted);
+  max-width: 28ch;
 }
 
 .footerGrid {
@@ -153,14 +190,14 @@
   grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
 }
 
+/* The site's footer column headings are sentence-case body text at `medium`
+   in the default foreground — not uppercase, not tracked, not subtle. */
 .footerHeading {
   font-family: var(--font-body);
-  font-size: var(--text-xs);
-  font-weight: var(--fw-semibold);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--fg-subtle);
-  margin-bottom: var(--space-3);
+  font-size: var(--text-sm);
+  font-weight: var(--fw-medium);
+  color: var(--fg);
+  margin-bottom: var(--space-4);
 }
 
 .footerList {
@@ -168,7 +205,18 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: var(--space-3);
+}
+
+/* Muted and undecorated, going to full-strength ink on hover — the site's
+   footer links. Teal underlines belong in running prose, and a footer of
+   fifteen of them was the loudest thing on the page. */
+.footerList a {
+  color: var(--fg-muted);
+  text-decoration: none;
+}
+.footerList a:hover {
+  color: var(--fg);
 }
 
 .footerNote {
@@ -176,6 +224,39 @@
   padding-top: var(--space-6);
   border-top: var(--rule-dashed);
   max-width: var(--container-prose);
+}
+
+.footerBottom {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-top: var(--space-8);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border);
+  color: var(--fg-muted);
+}
+
+.footerSocials {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.footerSocials a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--radius-md);
+  color: var(--fg-muted);
+  text-decoration: none;
+}
+.footerSocials a:hover {
+  background: var(--bg-muted);
+  color: var(--fg);
 }
 
 /* Hero: faint repeating wave pattern with a soft radial teal halo. */

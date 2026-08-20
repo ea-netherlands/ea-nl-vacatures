@@ -56,8 +56,14 @@ export type IconName =
   | 'microscope'
   | 'code'
   | 'search'
+  | 'brand-linkedin'
+  | 'brand-instagram'
 
 const PATHS: Record<IconName, string> = {
+  'brand-linkedin':
+    'M8 11v5M8 8v.01M12 16v-5M16 16v-3a2 2 0 1 0 -4 0M3 7a4 4 0 0 1 4 -4h10a4 4 0 0 1 4 4v10a4 4 0 0 1 -4 4h-10a4 4 0 0 1 -4 -4l0 -10',
+  'brand-instagram':
+    'M4 8a4 4 0 0 1 4 -4h8a4 4 0 0 1 4 4v8a4 4 0 0 1 -4 4h-8a4 4 0 0 1 -4 -4l0 -8M9 12a3 3 0 1 0 6 0a3 3 0 0 0 -6 0M16.5 7.5v.01',
   hourglass:
     'M6.5 7h11M6.5 17h11M6 20v-2a6 6 0 1 1 12 0v2a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1zM6 4v2a6 6 0 1 0 12 0V4a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1z',
   'circle-check': 'M9 12l2 2 4-4M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z',

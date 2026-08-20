@@ -74,6 +74,27 @@
   font-display: swap;
 }
 
+/* --- The one other rule that cannot be scoped.
+
+       `src/app/layout.tsx` ships no global CSS on purpose, which left the UA
+       default `body { margin: 8px }` in place and no background on the canvas
+       at all: the board rendered inside an 8px unpainted gutter, with the
+       browser's default grey showing through it on every side and behind any
+       page shorter than the viewport. The header never reached the top of the
+       window.
+
+       The white is a literal rather than `var(--bg)` deliberately: the tokens
+       are declared on `.jb-root`, so nothing resolves out here. Declaring them
+       on `:root` instead is the thing this file is explicitly built not to do.
+
+       Harmless at merge time — every host app resets body margin, and this
+       just agrees with it. --- */
+html,
+body {
+  margin: 0;
+  background: #fff;
+}
+
 .jb-root {
   color-scheme: light;
 
@@ -124,7 +145,13 @@
   /* --- Foreground --- */
   --fg: var(--black);
   --fg-muted: var(--slate-600);
-  --fg-subtle: var(--slate-500);
+  /* The site's Chakra theme maps `fg.subtle` to neutral.400, which in its
+     slate ramp is the DARK #64748b — its 400 and 500 stops are transposed
+     relative to every other slate ramp. This was pointing at --slate-500
+     (#94a3b8), so every "subtle" label on the board rendered two stops
+     lighter than the site's and at 2.5:1 against white, under the 4.5:1
+     WCAG AA floor for small text. #64748b is 4.8:1. */
+  --fg-subtle: var(--slate-400);
   --fg-inverted: var(--slate-50);
 
   /* --- Borders --- */
