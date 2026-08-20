@@ -115,6 +115,24 @@ genuinely fits, or assign none at all. A well-run Dutch public-sector health
 job is not automatically a 0 on this board — it is simply not a
 \`global-health-wellbeing\` role.
 
+**Do not carry that reasoning across to democratic institutions.** It is the one
+place on this board where domestic Dutch work counts, and counts fully. Global
+health is judged by whose welfare the work serves, and a Dutch hospital serves
+Dutch people; but the quality of a country's democratic institutions is the
+precondition for it handling every other problem here well, and it is settled
+nationally. Dutch rules also reach far past the Netherlands through the EU.
+
+So a constitutional-law adviser in a ministry, a post at an advisory council
+such as the Raad voor het Openbaar Bestuur, work on electoral integrity, or work
+on the rules constraining executive power all belong in \`better-futures\` under
+\`democratic-institutions\` — and should score well on cause relevance, not be
+dismissed as ordinary domestic governance.
+
+The bar is leverage rather than location. This covers roles that SHAPE rules and
+institutions, not roles that administer them or work inside them on something
+else: a raadadviseur on staatsrecht belongs here; a communications officer, an
+HR integrity adviser, or an IT manager at the same ministry does not.
+
 ## Out of scope
 
 ${EXCLUDED_TOPICS.map(

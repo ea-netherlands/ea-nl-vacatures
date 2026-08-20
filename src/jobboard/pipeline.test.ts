@@ -14,6 +14,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import { nlEligible, stage1 } from './classify/stage1'
+import { TRIAGE_SYSTEM_PROMPT } from './classify/prompt'
 import {
   earningToGiveEligible,
   enforceGates,
@@ -264,6 +265,32 @@ test('movement-building excludes field building aimed at a single problem', () =
       `${id} is consumer-facing effective giving and must be eligible`,
     )
   }
+})
+
+test('domestic Dutch work counts for democratic institutions, and only there', () => {
+  /*
+    The board's one deliberate asymmetry, decided August 2026.
+
+    Everywhere else, domestic Dutch work is out of scope — `global-health-wellbeing`
+    says so explicitly, because a Dutch hospital serves Dutch people rather than
+    the world's poorest. Applying the same instinct to democracy cost us a
+    raadadviseur on staatsrecht at the Prime Minister's ministry, scored 0+0 as
+    "ordinary domestic governance". Rescored 3+3 once the exception was stated.
+
+    Both halves need to survive: the exception, and the leverage bar that stops
+    it swallowing every administrative post in The Hague.
+  */
+  const definition = SUB_AREA_DEFINITIONS['democratic-institutions']
+  assert.match(definition, /DOMESTIC Dutch work counts here/)
+  assert.match(
+    definition,
+    /SHAPE the rules/,
+    'without the leverage bar this admits every ministry job in the country',
+  )
+
+  // And the classifier has to be told, or it carries the global-health
+  // reasoning across by analogy — which is exactly what happened.
+  assert.match(TRIAGE_SYSTEM_PROMPT, /Do not carry that reasoning across to democratic institutions/)
 })
 
 test('sub-areas are unique, and each maps back to exactly one cause area', () => {
