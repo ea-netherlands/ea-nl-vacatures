@@ -439,3 +439,84 @@ export function ClimateNote({ locale }: { locale: Locale }) {
     </div>
   )
 }
+
+/**
+ * The earning-to-give band on the index.
+ *
+ * Sits directly after the skill grid, which is where the argument lands: a
+ * reader who has just scrolled past every cause area and every skill without
+ * finding themselves is exactly the reader this route is for. Before that point
+ * it would be an interruption; in the footer it would never be read.
+ *
+ * It links onward to three different mechanisms rather than three versions of
+ * the same one — a personal pledge, an equity pledge for founders, and company
+ * ownership — because "give some of your salary away" is the only one most
+ * people have heard of, and it is not always the one that fits.
+ *
+ * The call to action deliberately promises the case against as well. This is
+ * the most contested idea on the board and the page it leads to argues both
+ * sides; a band that sold only the upside would misrepresent its own
+ * destination.
+ */
+export function EarningToGiveBand({ locale }: { locale: Locale }) {
+  const copy = t(locale)
+  const r = routes(locale)
+
+  const routes_ = [
+    { href: ONWARD_LINKS.givingWhatWeCan, label: copy.e2gBandGwwc },
+    { href: ONWARD_LINKS.foundersPledge, label: copy.e2gBandFoundersPledge },
+    { href: ONWARD_LINKS.profitForGood, label: copy.e2gBandProfitForGood },
+  ]
+
+  return (
+    <div className={u.e2gBand}>
+      <div className={u.e2gBandMain}>
+        <span className={u.e2gBandIcon} aria-hidden="true">
+          <Icon name="coin" />
+        </span>
+        <div>
+          <h2 className={u.e2gBandHeading}>{copy.e2gBandHeading}</h2>
+          <p className={u.e2gBandBody}>{copy.e2gBandBody}</p>
+          <p className={u.e2gBandCta}>
+            <Link href={r.earningToGive}>
+              {copy.e2gBandCta} <Icon name="arrow-right" />
+            </Link>
+          </p>
+        </div>
+      </div>
+
+      <div className={u.e2gBandRoutes}>
+        <p className={u.e2gBandRoutesLabel}>{copy.e2gBandRouted}</p>
+        <ul className={u.e2gBandList}>
+          {routes_.map((route) => (
+            <li key={route.href}>
+              <a href={route.href} rel="noopener">
+                {route.label}
+                <Icon name="external-link" />
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * One contextual link to somebody else's writing.
+ *
+ * Placed next to the claim it backs rather than gathered into a reading list,
+ * which nobody opens. Same reasoning as the explainer pages' source cards: this
+ * board is a few dozen listings and a short argument, and 80,000 Hours has
+ * written the long version of nearly every idea it leans on.
+ */
+export function FurtherReading({ href, label }: { href: string; label: string }) {
+  return (
+    <p className={u.furtherReading}>
+      <a href={href} rel="noopener">
+        {label}
+        <Icon name="external-link" />
+      </a>
+    </p>
+  )
+}

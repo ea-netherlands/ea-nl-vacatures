@@ -96,6 +96,25 @@ export const ONWARD_LINKS = {
   geefrevolutie: 'https://www.geefrevolutie.nl',
   contact: 'mailto:jobs@effectiefaltruisme.nl',
   effectiveEnvironmentalism: 'https://www.effectiveenvironmentalism.org',
+
+  // Ways people actually route money once they have taken a well-paid job.
+  // Three different mechanisms rather than three versions of the same one: a
+  // personal pledge, an equity pledge for founders, and company ownership.
+  givingWhatWeCan: 'https://www.givingwhatwecan.org',
+  foundersPledge: 'https://www.founderspledge.com',
+  profitForGood: 'https://profit4good.org',
+
+  /*
+    80,000 Hours' own writing, linked where the reader is already asking the
+    question it answers rather than gathered into a reading list nobody opens.
+    Each one sits next to the claim it backs: the definition beside the
+    headline, cause choice beside the cause grid, the guide and the planning
+    process beside the "what next" block at the foot of the page.
+  */
+  socialImpactDefinition: 'https://80000hours.org/articles/what-is-social-impact-definition/',
+  problemChoiceMatters: 'https://80000hours.org/articles/your-choice-of-problem-is-crucial/',
+  careerGuide80k: 'https://80000hours.org/make-a-difference-with-your-career/',
+  careerPlanning80k: 'https://80000hours.org/career-planning/summary/',
 } as const
 
 type Strings = {
@@ -151,6 +170,21 @@ type Strings = {
    */
   heroWhy: string
   heroWhyLink: string
+  heroWhatIsImpact: string
+
+  // Earning to give, promoted to its own band on the index (August 2026)
+  e2gBandHeading: string
+  e2gBandBody: string
+  e2gBandCta: string
+  e2gBandRouted: string
+  e2gBandGwwc: string
+  e2gBandFoundersPledge: string
+  e2gBandProfitForGood: string
+
+  // Contextual further reading
+  readProblemChoice: string
+  readCareerGuide: string
+  readCareerPlanning: string
   heroStat: (n: number, newest: string) => string
   heroBrowseCta: string
   browseCauseHeading: string
@@ -330,6 +364,20 @@ const nl: Strings = {
   heroWhy:
     'Functies met een echte hefboom op problemen die groot zijn, weinig aandacht krijgen en op te lossen zijn. Werk waarin je meer verandert dan het werk van één persoon — en waarbij het uitmaakt dat jij het doet, en niet iemand die er toch al zat.',
   heroWhyLink: 'Zo redeneren we',
+  heroWhatIsImpact: 'Wat telt als goed doen?',
+
+  e2gBandHeading: 'Of verdien goed, en geef weg wat je overhoudt',
+  e2gBandBody:
+    'Past het werk zelf niet bij je, of ben je er niet de sterkste kandidaat voor? Dan kun je nog steeds veel betekenen door een goed betaalde baan te nemen en een vast deel van je inkomen weg te geven. In Amsterdam zit een van de grootste handelscentra van Europa, dus die afweging is hier ongewoon concreet.',
+  e2gBandCta: 'Lees waarom, en het argument ertegen',
+  e2gBandRouted: 'Zo doen mensen dat:',
+  e2gBandGwwc: 'Giving What We Can — de belofte om minstens 10% weg te geven',
+  e2gBandFoundersPledge: 'Founders Pledge — voor oprichters die een deel van hun aandelen beloven',
+  e2gBandProfitForGood: 'Profit for Good — bedrijven waarvan de winst naar goede doelen gaat',
+
+  readProblemChoice: 'Waarom je keuze van probleem zoveel uitmaakt',
+  readCareerGuide: 'De loopbaangids van 80,000 Hours',
+  readCareerPlanning: 'Een loopbaanplan in het kort',
   heroStat: (n, newest) =>
     `${n === 1 ? '1 vacature' : `${n} vacatures`} · nieuwste van ${newest}`,
   heroBrowseCta: 'Kies een probleemgebied',
@@ -597,6 +645,20 @@ const en: Strings = {
   heroWhy:
     'Roles with real leverage on problems that are large, neglected and actually solvable. Work where what you do changes more than one person’s work — and where it matters that you take it, rather than someone who would have been there anyway.',
   heroWhyLink: 'How we reason',
+  heroWhatIsImpact: 'What counts as doing good?',
+
+  e2gBandHeading: 'Or earn well, and give away what you do not need',
+  e2gBandBody:
+    'If the work itself does not suit you, or you are not the strongest candidate for it, you can still do a great deal by taking a well-paid job and giving away a fixed share of your income. Amsterdam holds one of Europe’s largest trading hubs, so that trade-off is unusually concrete here.',
+  e2gBandCta: 'Read why, and the case against',
+  e2gBandRouted: 'How people actually do it:',
+  e2gBandGwwc: 'Giving What We Can — the pledge to give at least 10%',
+  e2gBandFoundersPledge: 'Founders Pledge — for founders committing a share of their equity',
+  e2gBandProfitForGood: 'Profit for Good — companies whose profits go to charity',
+
+  readProblemChoice: 'Why your choice of problem matters so much',
+  readCareerGuide: 'The 80,000 Hours career guide',
+  readCareerPlanning: 'Career planning, in short',
   heroStat: (n, newest) => `${n === 1 ? '1 job' : `${n} jobs`} · newest from ${newest}`,
   heroBrowseCta: 'Pick a problem area',
   browseCauseHeading: 'What do you want to work on?',

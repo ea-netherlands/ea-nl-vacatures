@@ -1158,3 +1158,111 @@
   height: 1px;
   overflow: hidden;
 }
+
+/* ===========================================================================
+   EARNING TO GIVE — the band on the index
+   ---------------------------------------------------------------------------
+   Tinted rather than white so it reads as a different kind of answer to the
+   grids above it, but without the pressable-key shadow the cause tiles carry:
+   it is a route, not a category, and should not compete with them for the same
+   click.
+   =========================================================================== */
+
+.e2gBand {
+  border: 1px solid var(--primary-muted);
+  border-radius: var(--radius-card);
+  background: var(--primary-subtle);
+  padding: var(--space-6);
+}
+
+.e2gBandMain {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+
+.e2gBandIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: var(--space-10);
+  height: var(--space-10);
+  border-radius: var(--radius-card);
+  background: var(--bg);
+  border: 1px solid var(--primary-muted);
+  color: var(--primary-fg);
+  font-size: var(--text-2xl);
+}
+
+.e2gBandHeading {
+  font-size: var(--text-xl);
+}
+
+.e2gBandBody {
+  margin-top: var(--space-2);
+  max-width: 62ch;
+  color: var(--fg-muted);
+  line-height: var(--lh-relaxed);
+}
+
+.e2gBandCta {
+  margin-top: var(--space-3);
+  font-weight: var(--fw-medium);
+}
+
+.e2gBandCta a,
+.e2gBandList a {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* The three onward routes, behind the dashed rule the board uses for "adjacent
+   to the argument rather than part of it". */
+.e2gBandRoutes {
+  margin-top: var(--space-5);
+  padding-top: var(--space-4);
+  padding-left: calc(var(--space-10) + var(--space-4));
+  border-top: var(--rule-dashed);
+}
+
+.e2gBandRoutesLabel {
+  font-size: var(--text-sm);
+  color: var(--fg-subtle);
+  margin-bottom: var(--space-2);
+}
+
+.e2gBandList {
+  list-style: none;
+  display: grid;
+  gap: var(--space-1-5);
+  font-size: var(--text-sm);
+}
+
+@media (max-width: 40rem) {
+  .e2gBandRoutes {
+    padding-left: 0;
+  }
+}
+
+/*
+  A single contextual link to somebody else's writing. Quiet on purpose — it
+  should be findable by a reader who wants more and invisible to one who does
+  not, which is the opposite of how a call to action behaves.
+*/
+.furtherReading {
+  margin-top: var(--space-5);
+  font-size: var(--text-sm);
+}
+
+.furtherReading a {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--fg-muted);
+}
+
+.furtherReading a:hover {
+  color: var(--link-hover);
+}

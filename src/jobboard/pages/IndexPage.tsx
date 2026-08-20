@@ -41,6 +41,8 @@ import Link from 'next/link'
 import { EmptyState, Filters, type FilterState } from '../components/Filters'
 import {
   Container,
+  EarningToGiveBand,
+  FurtherReading,
   Hero,
   InternationalFirst,
   OnwardStep,
@@ -50,7 +52,7 @@ import {
 import { CauseGrid, SkillGrid, countFacets } from '../components/BrowseGrid'
 import { ExpandableCardList } from '../components/ExpandableCardList'
 import { Icon } from '../components/Icon'
-import { routes, t, type Locale } from '../content/i18n'
+import { ONWARD_LINKS, routes, t, type Locale } from '../content/i18n'
 import { getLiveListings } from '../sanity/queries'
 import type { ListingView } from '../sanity/queries'
 import { CAUSE_AREAS, SUB_AREA_CAUSE, type CauseArea, type Skill, type SubArea } from '../taxonomy'
@@ -216,6 +218,13 @@ export async function IndexPage({
           <p className={s.heroWhy}>
             {copy.heroWhy}{' '}
             <Link href={r.method}>{copy.heroWhyLink}</Link>
+            {' · '}
+            {/* The headline claims these are the most socially impactful jobs
+                in the country. 80,000 Hours has written the definition that
+                claim rests on, so it sits beside it. */}
+            <a href={ONWARD_LINKS.socialImpactDefinition} rel="noopener">
+              {copy.heroWhatIsImpact}
+            </a>
           </p>
           <p className={s.heroStat}>
             {updated ? copy.heroStat(all.length, updated) : copy.browseRoleCount(all.length)}
@@ -236,6 +245,13 @@ export async function IndexPage({
             <h2 className={u.browseHeading}>{copy.browseCauseHeading}</h2>
             <p className={u.browseBody}>{copy.browseCauseBody}</p>
             <CauseGrid locale={locale} counts={counts} />
+            {/* The grid asks the reader to pick a problem. This is the argument
+                for why that choice carries more weight than anything else they
+                will decide, and it belongs at the moment of choosing. */}
+            <FurtherReading
+              href={ONWARD_LINKS.problemChoiceMatters}
+              label={copy.readProblemChoice}
+            />
           </Section>
 
           <Section>
@@ -244,6 +260,13 @@ export async function IndexPage({
               {copy.browseSkillBody} <span className={u.browseAside}>{copy.browseSkillAside}</span>
             </p>
             <SkillGrid locale={locale} counts={counts} />
+          </Section>
+
+          {/* After both grids on purpose: a reader who has scrolled past every
+              cause and every skill without finding themselves is precisely who
+              this route is for. */}
+          <Section>
+            <EarningToGiveBand locale={locale} />
           </Section>
 
           <Section tight>
@@ -265,6 +288,13 @@ export async function IndexPage({
 
           <Section tight>
             <OnwardStep locale={locale} />
+            {/* The "what next" block is where someone asks how to actually go
+                about this, which is the question these two answer. */}
+            <FurtherReading href={ONWARD_LINKS.careerGuide80k} label={copy.readCareerGuide} />
+            <FurtherReading
+              href={ONWARD_LINKS.careerPlanning80k}
+              label={copy.readCareerPlanning}
+            />
           </Section>
         </Container>
       </>
