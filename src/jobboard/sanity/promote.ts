@@ -172,6 +172,7 @@ export async function runPromotion(options: PromoteOptions = {}): Promise<Promot
         securityScreening: row.security_screening ?? false,
         securityNote: row.security_note,
         salaryText: salaryText(row),
+        salaryPeriod: salaryPeriod(row),
         mentions30PercentRuling: row.mentions_30_percent_ruling,
         postedAt: row.posted_at,
         deadlineAt: row.deadline_at,
@@ -308,6 +309,19 @@ function cityFrom(locationRaw: string | null): string | null {
   return locationRaw.split(/[,·|/]/)[0]?.trim() || null
 }
 
+/**
+ * The figure only — no period, and therefore no language.
+ *
+ * This used to append " per maand" / " per jaar", which baked a Dutch word into
+ * a stored content field and put it straight onto the English page: a reader on
+ * /en saw "€5.900–€8.100 per maand" under an English heading. The period is
+ * interface furniture, not source data, so it belongs in `content/i18n` like
+ * every other label and gets applied at render time from `salaryPeriod`.
+ *
+ * The numbers keep their Dutch grouping deliberately. A salary advertised in
+ * the Netherlands is written 5.900 there, and re-punctuating it to 5,900 for
+ * English readers would make it disagree with the employer's own ad.
+ */
 function salaryText(row: PromotableRow): string | undefined {
   const min = row.salary_min ? Number(row.salary_min) : null
   const max = row.salary_max ? Number(row.salary_max) : null
@@ -315,9 +329,15 @@ function salaryText(row: PromotableRow): string | undefined {
   const currency = row.salary_currency ?? 'EUR'
   const symbol = currency === 'EUR' ? '€' : `${currency} `
   const fmt = (n: number) => n.toLocaleString('nl-NL', { maximumFractionDigits: 0 })
-  const period = row.salary_period === 'month' ? ' per maand' : row.salary_period === 'year' ? ' per jaar' : ''
-  if (min && max) return `${symbol}${fmt(min)}–${symbol}${fmt(max)}${period}`
-  return `${symbol}${fmt((min ?? max)!)}${period}`
+  if (min && max) return `${symbol}${fmt(min)}–${symbol}${fmt(max)}`
+  return `${symbol}${fmt((min ?? max)!)}`
+}
+
+/** The pay period as a value, for the renderer to label in the reader's language. */
+function salaryPeriod(row: PromotableRow): 'month' | 'year' | undefined {
+  if (row.salary_period === 'month') return 'month'
+  if (row.salary_period === 'year') return 'year'
+  return undefined
 }
 
 /**

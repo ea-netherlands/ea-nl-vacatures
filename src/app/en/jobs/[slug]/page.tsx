@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { DetailPage } from '@jobboard/pages/DetailPage'
-import { firstLine } from '@jobboard/components/ListingCard'
+import { excerptFor, firstLine, noteFor } from '@jobboard/components/ListingCard'
 import { ROUTES } from '@jobboard/content/i18n'
 import { getAllListingSlugs, getListingBySlug } from '@jobboard/sanity/queries'
 import { absolute, bilingualMetadata, breadcrumbJsonLd, JsonLd, jobPostingJsonLd } from '@jobboard/lib/seo'
@@ -28,8 +28,7 @@ export async function generateMetadata({
     enPath: ROUTES.en.detail(slug),
     title: `${listing.title}${listing.employer ? ` — ${listing.employer.name}` : ''}`,
     description:
-      firstLine(listing.whyThisMattersEn ?? listing.whyThisMattersNl, 155) ||
-      (listing.excerpt ?? undefined),
+      firstLine(noteFor(listing, 'en'), 155) || (excerptFor(listing, 'en') ?? undefined),
   })
 }
 

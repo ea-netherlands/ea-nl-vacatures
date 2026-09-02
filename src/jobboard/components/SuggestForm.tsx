@@ -1,10 +1,26 @@
 /**
- * The suggestion form.
+ * The feedback form.
  *
- * Four fields and a submit button. Every additional field is a reason for
- * someone to close the tab, and the only one that genuinely matters is the
- * link — a curator can find the rest from it. The email is optional and says
- * so in its label rather than in small print underneath.
+ * ## What changed, September 2026
+ *
+ * This was a tip form: pick "a vacancy" or "an organisation", paste a link,
+ * send. That is still the highest-value thing anyone can send us — coverage is
+ * the board's binding constraint, and most Dutch employers cannot be followed
+ * automatically — so those two remain the first two options.
+ *
+ * But they were the *only* two, and a form that accepts nothing else tells a
+ * reader with different feedback that there is nowhere to put it. While the
+ * board is in beta the other cases are worth at least as much: a listing that
+ * should not be here, a whole field we are blind to, a page nobody could
+ * navigate. Those readers previously got an email address in the footer, which
+ * asks them to compose a message from a blank page.
+ *
+ * So there are six kinds now, and the form reshapes itself around the one
+ * picked. The pointer kinds keep their required link and organisation, because
+ * for those the link *is* the suggestion. The other four drop both to optional
+ * and promote the message to required — for a correction or a gap, the
+ * sentences are the whole content, and demanding a URL first would turn
+ * someone away who has something to say about the board as a whole.
  *
  * It posts JSON rather than a form submission because the honeypot and timing
  * checks want to travel with the payload, and because the reader should get an
@@ -14,7 +30,13 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { t, type Locale } from '../content/i18n'
+import {
+  FEEDBACK_KINDS,
+  POINTER_KINDS,
+  t,
+  type FeedbackKind,
+  type Locale,
+} from '../content/i18n'
 import { Icon } from './Icon'
 import u from './ui.module.css'
 
@@ -23,7 +45,16 @@ type State = 'idle' | 'sending' | 'sent' | 'error'
 export function SuggestForm({ locale }: { locale: Locale }) {
   const copy = t(locale)
   const [state, setState] = useState<State>('idle')
-  const [kind, setKind] = useState<'listing' | 'employer'>('listing')
+  const [kind, setKind] = useState<FeedbackKind>('listing')
+
+  /*
+    Whether this kind points at a specific thing on the web.
+
+    Everything conditional in the form hangs off this one question rather than
+    off a per-kind table, so a seventh kind added later gets sensible defaults
+    instead of silently falling through every branch.
+  */
+  const pointer = POINTER_KINDS.includes(kind)
 
   // When the form was rendered, so the endpoint can reject a submission that
   // arrived faster than a person could have typed it. A ref rather than state:
@@ -71,9 +102,18 @@ export function SuggestForm({ locale }: { locale: Locale }) {
     <form className={u.suggestForm} onSubmit={onSubmit}>
       <fieldset className={u.suggestFieldset}>
         <legend className={u.filterLabel}>{copy.suggestKindLabel}</legend>
-        <div className={u.suggestRadios}>
-          {(['listing', 'employer'] as const).map((value) => (
-            <label key={value} className={u.suggestRadio}>
+        {/*
+          A stacked list of labelled options rather than a row of bare radios.
+          Six kinds is more than a row can carry, and the hint under each label
+          is doing real work: "something here is wrong" means nothing until it
+          says that a closed vacancy and a reason you disagree with both count.
+        */}
+        <div className={u.suggestKindList}>
+          {FEEDBACK_KINDS.map((value) => (
+            <label
+              key={value}
+              className={`${u.suggestKind} ${kind === value ? u.suggestKindActive : ''}`}
+            >
               <input
                 type="radio"
                 name="kind"
@@ -81,7 +121,10 @@ export function SuggestForm({ locale }: { locale: Locale }) {
                 checked={kind === value}
                 onChange={() => setKind(value)}
               />
-              {value === 'listing' ? copy.suggestKindListing : copy.suggestKindEmployer}
+              <span className={u.suggestKindText}>
+                <span className={u.suggestKindLabelText}>{copy.feedbackKinds[value].label}</span>
+                <span className={u.suggestKindHint}>{copy.feedbackKinds[value].hint}</span>
+              </span>
             </label>
           ))}
         </div>
@@ -89,34 +132,58 @@ export function SuggestForm({ locale }: { locale: Locale }) {
 
       <label className={u.suggestField}>
         <span className={u.filterLabel}>
-          {kind === 'listing' ? copy.suggestUrlListing : copy.suggestUrlEmployer}
+          {kind === 'listing'
+            ? copy.suggestUrlListing
+            : kind === 'employer'
+              ? copy.suggestUrlEmployer
+              : copy.feedbackUrlOptional}
         </span>
         <input
           className={u.suggestInput}
           type="url"
           name="url"
-          required
+          required={pointer}
           placeholder="https://"
           autoComplete="off"
         />
       </label>
 
-      <label className={u.suggestField}>
-        <span className={u.filterLabel}>{copy.suggestOrgLabel}</span>
-        <input
-          className={u.suggestInput}
-          type="text"
-          name="organisation"
-          required
-          maxLength={120}
-          autoComplete="off"
-        />
-      </label>
+      {/*
+        The organisation field disappears entirely for the two kinds that are
+        about the site rather than about an employer. Leaving it visible but
+        optional would ask someone reporting a broken filter to work out
+        whether it applies to them.
+      */}
+      {kind !== 'site' && kind !== 'other' ? (
+        <label className={u.suggestField}>
+          <span className={u.filterLabel}>
+            {pointer ? copy.suggestOrgLabel : copy.feedbackOrgOptional}
+          </span>
+          <input
+            className={u.suggestInput}
+            type="text"
+            name="organisation"
+            required={pointer}
+            maxLength={120}
+            autoComplete="off"
+          />
+        </label>
+      ) : null}
 
       <label className={u.suggestField}>
-        <span className={u.filterLabel}>{copy.suggestWhyLabel}</span>
-        <span className={u.suggestHint}>{copy.suggestWhyHint}</span>
-        <textarea className={u.suggestTextarea} name="why" rows={4} maxLength={2000} />
+        <span className={u.filterLabel}>
+          {pointer ? copy.suggestWhyLabel : copy.feedbackMessageLabel}
+        </span>
+        <span className={u.suggestHint}>
+          {pointer ? copy.suggestWhyHint : copy.feedbackMessageHint}
+        </span>
+        <textarea
+          className={u.suggestTextarea}
+          name="why"
+          rows={pointer ? 4 : 6}
+          required={!pointer}
+          maxLength={2000}
+        />
       </label>
 
       <label className={u.suggestField}>

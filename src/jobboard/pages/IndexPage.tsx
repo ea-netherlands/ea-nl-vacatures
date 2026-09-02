@@ -40,8 +40,11 @@
 import Link from 'next/link'
 import { EmptyState, Filters, type FilterState } from '../components/Filters'
 import {
+  BetaBand,
+  BetaNote,
   Container,
   EarningToGiveBand,
+  FeedbackBand,
   FurtherReading,
   Hero,
   InternationalFirst,
@@ -241,6 +244,20 @@ export async function IndexPage({
             <InternationalFirst locale={locale} compact />
           </Section>
 
+          {/*
+            Beta second, and still above the grid.
+
+            The order between these two is deliberate and worth keeping. The
+            international statement is about where the reader should look; the
+            beta statement is about how much to trust what they find here. A
+            reader who can relocate should be able to leave before they read a
+            word about our roadmap — so the look-elsewhere point keeps its
+            place at the top, and the caveat about this board follows it.
+          */}
+          <Section tight>
+            <BetaBand locale={locale} />
+          </Section>
+
           <Section>
             <h2 className={u.browseHeading}>{copy.browseCauseHeading}</h2>
             <p className={u.browseBody}>{copy.browseCauseBody}</p>
@@ -286,6 +303,14 @@ export async function IndexPage({
             </p>
           </Section>
 
+          {/* Before the onward step, not after it: the onward step sends
+              people away to a course and a newsletter, and asking for feedback
+              on the far side of an exit link asks the readers least likely to
+              still be here. */}
+          <Section tight>
+            <FeedbackBand locale={locale} />
+          </Section>
+
           <Section tight>
             <OnwardStep locale={locale} />
             {/* The "what next" block is where someone asks how to actually go
@@ -318,6 +343,11 @@ export async function IndexPage({
 
       <Container>
         <Section first>
+          {/* The filtered state is a list, and a reader who arrived on a shared
+              ?cause= link may never touch the browse page where the full beta
+              band lives. One line, so it does not sit between them and the
+              results they asked for. */}
+          <BetaNote locale={locale} />
           <Filters locale={locale} state={state} resultCount={filtered.length} />
         </Section>
 
@@ -358,6 +388,10 @@ export async function IndexPage({
               ) : null}
             </>
           )}
+        </Section>
+
+        <Section tight>
+          <FeedbackBand locale={locale} />
         </Section>
 
         <Section tight>

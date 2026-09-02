@@ -15,6 +15,7 @@
     "ingest": "tsx src/scripts/ingest.ts",
     "classify": "tsx src/scripts/classify.ts",
     "promote": "tsx src/scripts/promote.ts",
+    "translate": "tsx src/scripts/translate.ts",
     "expire": "tsx src/scripts/expire.ts",
     "grade": "tsx src/scripts/grade.ts",
     "pipeline": "tsx src/scripts/pipeline.ts",

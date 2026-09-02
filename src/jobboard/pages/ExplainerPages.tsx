@@ -14,9 +14,11 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import {
+  BetaBand,
   ClimateNote,
   Container,
   Eyebrow,
+  FeedbackBand,
   Hero,
   InternationalFirst,
   OnwardStep,
@@ -127,6 +129,12 @@ export async function CausePage({ locale, slug }: { locale: Locale; slug: string
           </p>
         </Section>
 
+        {/* Every page a reader can finish on offers the same invitation
+            while the board is in beta. */}
+        <Section tight>
+          <FeedbackBand locale={locale} />
+        </Section>
+
         <Section tight>
           <OnwardStep locale={locale} />
         </Section>
@@ -181,6 +189,12 @@ export async function CausesIndexPage({ locale }: { locale: Locale }) {
         */}
         <Section tight>
           <ClimateNote locale={locale} />
+        </Section>
+
+        {/* Every page a reader can finish on offers the same invitation
+            while the board is in beta. */}
+        <Section tight>
+          <FeedbackBand locale={locale} />
         </Section>
 
         <Section tight>
@@ -239,7 +253,7 @@ export async function MethodPage({ locale }: { locale: Locale }) {
         <Section>
           <Eyebrow>
             <Icon name="scale" />
-            {framework.name}
+            {locale === 'nl' ? framework.name : framework.nameEn}
           </Eyebrow>
           <h2 className={s.sectionHeading}>
             {locale === 'nl' ? 'Drie vragen, en een vierde' : 'Three questions, and a fourth'}
@@ -253,14 +267,18 @@ export async function MethodPage({ locale }: { locale: Locale }) {
             {framework.dimensions.map((d) => (
               <div key={d.nl} className={u.card}>
                 <h3 className={u.cardTitle}>{locale === 'nl' ? d.nl : d.en}</h3>
-                <p style={{ color: 'var(--fg-muted)' }}>{d.question}</p>
+                <p style={{ color: 'var(--fg-muted)' }}>
+                  {locale === 'nl' ? d.question : d.questionEn}
+                </p>
               </div>
             ))}
             <div className={u.card}>
               <h3 className={u.cardTitle}>
                 {locale === 'nl' ? framework.fourth.nl : framework.fourth.en}
               </h3>
-              <p style={{ color: 'var(--fg-muted)' }}>{framework.fourth.question}</p>
+              <p style={{ color: 'var(--fg-muted)' }}>
+                {locale === 'nl' ? framework.fourth.question : framework.fourth.questionEn}
+              </p>
               <p
                 style={{
                   marginTop: 'var(--space-3)',
@@ -303,6 +321,14 @@ export async function MethodPage({ locale }: { locale: Locale }) {
           <ClimateNote locale={locale} />
         </Section>
 
+        {/* The full beta statement earns its place on this page more than
+            anywhere else. This is the page that sets out how we judge a role,
+            so it is the page where "and here is how far we have actually got"
+            is part of the same answer rather than a caveat bolted to it. */}
+        <Section tight>
+          <BetaBand locale={locale} />
+        </Section>
+
         <Section>
           <h2 className={s.sectionHeading}>
             {locale === 'nl' ? 'Hoe groot is dit bord?' : 'How big is this board?'}
@@ -324,6 +350,12 @@ export async function MethodPage({ locale }: { locale: Locale }) {
               {locale === 'nl' ? 'Loopbaangids' : 'Career guide'}
             </a>
           </p>
+        </Section>
+
+        {/* A reader who has followed the whole method has the most considered
+            objection anyone on the board could give us. Ask for it here. */}
+        <Section tight>
+          <FeedbackBand locale={locale} />
         </Section>
 
         <Section tight>
@@ -400,6 +432,12 @@ export async function EmployerPage({ locale, slug }: { locale: Locale; slug: str
           </p>
         </Section>
 
+        {/* Every page a reader can finish on offers the same invitation
+            while the board is in beta. */}
+        <Section tight>
+          <FeedbackBand locale={locale} />
+        </Section>
+
         <Section tight>
           <OnwardStep locale={locale} />
         </Section>
@@ -448,6 +486,12 @@ export async function EmployersIndexPage({ locale }: { locale: Locale }) {
                 : 'No organisations with open roles yet.'}
             </p>
           )}
+        </Section>
+
+        {/* Every page a reader can finish on offers the same invitation
+            while the board is in beta. */}
+        <Section tight>
+          <FeedbackBand locale={locale} />
         </Section>
       </Container>
     </>
@@ -557,18 +601,30 @@ export async function EarningToGivePage({ locale }: { locale: Locale }) {
             <Link href={r.method}>{copy.indexIntroMethodLink}</Link>
           </p>
         </Section>
+
+        {/* Every page a reader can finish on offers the same invitation
+            while the board is in beta. */}
+        <Section tight>
+          <FeedbackBand locale={locale} />
+        </Section>
       </Container>
     </>
   )
 }
 
 /**
- * The suggestion page.
+ * The feedback page.
  *
  * Deliberately explains the problem before showing the form. "Tell us about a
  * job" is a request; "of thirty-one Dutch organisations we checked, one
  * publishes a feed we can read" is a reason, and the reader who can help is
  * exactly the reader who will recognise that problem as real.
+ *
+ * It keeps the `SuggestPage` name and the /tip and /suggest routes it was born
+ * with, but it now takes six kinds of feedback rather than two — see
+ * `SuggestForm`. The second paragraph carries the widening: the board is in
+ * beta, and being told where it is wrong is worth as much as being told what it
+ * is missing.
  */
 export function SuggestPage({ locale }: { locale: Locale }) {
   const copy = t(locale)
@@ -576,14 +632,17 @@ export function SuggestPage({ locale }: { locale: Locale }) {
 
   return (
     <>
-      <Hero title={copy.suggestTitle} lead={copy.suggestLead} />
+      <Hero title={copy.feedbackTitle} lead={copy.feedbackLead} />
       <Container>
         <Section first>
-          <div className={s.prose}>
-            {copy.suggestBody.map((p) => (
-              <p key={p.slice(0, 24)} className={u.introBody}>
-                {p}
-              </p>
+          {/* The gap class goes on the wrapper, not on each paragraph. Applied
+              per-paragraph it makes each one its own single-item flex container,
+              which sets the colour and measure but leaves no space between them
+              — theme.css zeroes `p` margins — so the three ran together as one
+              block. Only visible once this page grew past one paragraph. */}
+          <div className={`${s.prose} ${u.introBody}`}>
+            {copy.feedbackBody.map((p) => (
+              <p key={p.slice(0, 24)}>{p}</p>
             ))}
           </div>
         </Section>

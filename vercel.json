@@ -18,6 +18,10 @@
       "schedule": "0 8 * * *"
     },
     {
+      "path": "/api/cron/translate",
+      "schedule": "30 8 * * *"
+    },
+    {
       "path": "/api/cron/linkcheck",
       "schedule": "0 9 * * 1"
     },

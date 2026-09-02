@@ -1,5 +1,11 @@
 /**
- * POST /api/suggest — a reader tells us about an employer or a vacancy.
+ * POST /api/suggest — a reader sends us feedback.
+ *
+ * Six kinds, defined once in `content/i18n` and shared with the form: a
+ * vacancy, an organisation to watch, a correction, something the board is
+ * missing, a note about the site, or anything else. It began as the first two
+ * only; the path keeps its name so existing links and the Studio queue are
+ * undisturbed.
  *
  * Writes a `suggestion` document for a curator to triage. It never creates a
  * listing and never publishes anything: the board's entire value is that a
@@ -23,6 +29,7 @@
  */
 
 import { NextResponse } from 'next/server'
+import { isFeedbackKind, POINTER_KINDS } from '../../../jobboard/content/i18n'
 import { isSanityConfigured, writeClient } from '../../../jobboard/sanity/client'
 
 export const runtime = 'nodejs'
@@ -94,23 +101,42 @@ export async function POST(request: Request) {
   }
 
   const kind = str(body.kind)
-  if (kind !== 'employer' && kind !== 'listing') return badRequest('kind')
+  if (!isFeedbackKind(kind)) return badRequest('kind')
+
+  /*
+    Which fields are required depends on the kind, and the split is the same one
+    the form uses — imported rather than restated, so the two cannot drift.
+
+    For the two pointer kinds the link is the suggestion, so it stays required.
+    For the other four the message is the content: a reader reporting that a
+    whole field is missing from the board has no URL to give, and rejecting
+    them for it would lose exactly the feedback the beta is asking for.
+  */
+  const pointer = POINTER_KINDS.includes(kind)
 
   const url = str(body.url)
-  let parsed: URL
-  try {
-    parsed = new URL(url)
-  } catch {
+  let parsed: URL | null = null
+  if (url) {
+    try {
+      parsed = new URL(url)
+    } catch {
+      return badRequest('url')
+    }
+    // Only http(s). A `javascript:` or `data:` URL in a field a curator will
+    // click is the one genuinely dangerous thing this form could accept.
+    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return badRequest('url')
+  } else if (pointer) {
     return badRequest('url')
   }
-  // Only http(s). A `javascript:` or `data:` URL in a field a curator will
-  // click is the one genuinely dangerous thing this form could accept.
-  if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return badRequest('url')
 
   const organisation = str(body.organisation)
-  if (!organisation || organisation.length > 120) return badRequest('organisation')
+  if (pointer && !organisation) return badRequest('organisation')
+  if (organisation.length > 120) return badRequest('organisation')
 
   const why = str(body.why).slice(0, 2000)
+  // The mirror of the rule above: without a link, the message is the entire
+  // submission, and an empty one is a document a curator can do nothing with.
+  if (!pointer && !why) return badRequest('why')
 
   // Optional, and only lightly checked: a wrong address costs us one unanswered
   // follow-up, whereas rejecting a valid unusual address loses the suggestion.
@@ -123,8 +149,8 @@ export async function POST(request: Request) {
     await writeClient().create({
       _type: 'suggestion',
       kind,
-      url: parsed.toString(),
-      organisation,
+      url: parsed ? parsed.toString() : undefined,
+      organisation: organisation || undefined,
       why: why || undefined,
       submitterEmail: submitterEmail || undefined,
       status: 'new',

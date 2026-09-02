@@ -56,6 +56,8 @@ export type IconName =
   | 'microscope'
   | 'code'
   | 'search'
+  | 'message'
+  | 'flask'
   | 'brand-linkedin'
   | 'brand-instagram'
 
@@ -134,6 +136,13 @@ const PATHS: Record<IconName, string> = {
     'M7 8l-4 4l4 4M17 8l4 4l-4 4M14 4l-4 16',
   search:
     'M3 10a7 7 0 1 0 14 0a7 7 0 1 0 -14 0M21 21l-6 -6',
+  message:
+    'M8 9h8M8 13h6M18 4a3 3 0 0 1 3 3v8a3 3 0 0 1 -3 3h-5l-5 3v-3h-2a3 3 0 0 1 -3 -3v-8a3 3 0 0 1 3 -3z',
+  // Tabler's conical flask. The board's one "this is an experiment" glyph, on
+  // the beta band — the design system forbids emoji, and a beaker is the least
+  // alarming way to say unfinished without reaching for a warning triangle.
+  flask:
+    'M6.1 15h11.8M14 3v7l4.5 8a2 2 0 0 1 -1.8 3h-9.4a2 2 0 0 1 -1.8 -3l4.5 -8v-7M9 3h6',
 }
 
 export type IconProps = Omit<SVGProps<SVGSVGElement>, 'name'> & {

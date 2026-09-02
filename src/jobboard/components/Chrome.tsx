@@ -127,6 +127,11 @@ function Header({ locale, switchHref }: { locale: Locale; switchHref: string }) 
             <img src="/img/ean-logo.svg" alt="Effectief Altruïsme Nederland" className={s.brandLogo} />
             <span className={s.brandDivider} aria-hidden="true" />
             <span className={s.brandName}>{copy.boardName}</span>
+            {/* The one beta signal that is on literally every page, including
+                the listing pages most readers land on from search without ever
+                seeing the index. A pill next to the board's name, because that
+                is where a reader looks to work out what they are on. */}
+            <span className={s.betaPill}>{copy.betaBadge}</span>
           </Link>
           <nav className={s.nav} aria-label={copy.boardName}>
             <Link href={r.index} className={s.navLink}>
@@ -141,11 +146,16 @@ function Header({ locale, switchHref }: { locale: Locale; switchHref: string }) 
             <Link href={r.earningToGive} className={s.navLinkDistinct}>
               {copy.e2gTitle}
             </Link>
-            <Link href={r.suggest} className={s.navLink}>
-              {copy.suggestNavLabel}
-            </Link>
             <Link href={switchHref} className={s.navLink} lang={otherLocale(locale)}>
               {copy.languageSwitch}
+            </Link>
+            {/* Feedback is the last item and the only one drawn as a control.
+                While the board is in beta it is the point of the whole page,
+                so it stops being a link in a row of six and becomes the thing
+                the header is asking for. */}
+            <Link href={r.suggest} className={s.navFeedback}>
+              <Icon name="message" />
+              {copy.suggestNavLabel}
             </Link>
           </nav>
         </div>
@@ -240,12 +250,18 @@ function Footer({ locale }: { locale: Locale }) {
           </div>
         </div>
 
-        {/* The board is curated by people who can be wrong, and says so (§9.5). */}
+        {/* The board is curated by people who can be wrong, and says so (§9.5).
+            It used to say so and then offer only an email address, which asks a
+            reader to compose a message from nothing. The form is named first
+            because it is the lower-effort route and the one that reaches the
+            review queue; the address stays for people who would rather write. */}
         <div className={s.footerNote}>
           <p className={u.onwardHeading}>{copy.disagreeHeading}</p>
           <p>
             {copy.disagreeBody}{' '}
-            <a href={ONWARD_LINKS.contact}>jobs@effectiefaltruisme.nl</a>
+            <Link href={r.suggest}>{copy.feedbackBandCta}</Link>
+            {locale === 'nl' ? ', of mail ' : ', or email '}
+            <a href={ONWARD_LINKS.contact}>jobs@effectiefaltruisme.nl</a>.
           </p>
         </div>
 
@@ -315,6 +331,108 @@ export function OnwardStep({ locale }: { locale: Locale }) {
         <a href={ONWARD_LINKS.newsletter} className={`${u.btn} ${u.btnGhost}`}>
           {copy.onwardNewsletter}
         </a>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * The beta band, on the index.
+ *
+ * The board is going to the Dutch EA community for feedback before it is
+ * finished, and an unmarked beta gets read as a finished product — which is
+ * the expensive failure here, because the gaps a reader would otherwise write
+ * to us about (a whole field we do not cover, a listing that should not be on
+ * the board) get filed as deliberate editorial choices instead.
+ *
+ * So it says what is actually incomplete, in specifics rather than in a
+ * disclaimer: coverage, our judgement, the missing English explainers, stale
+ * listings. A vague "this is a beta, things may change" earns nothing — the
+ * reader already assumed that, and it tells them nothing about what to look
+ * for or what would be worth reporting.
+ *
+ * Not dismissible. It is two paragraphs at the top of one page, and a beta
+ * notice a reader can permanently hide is one most readers will never see.
+ */
+export function BetaBand({ locale }: { locale: Locale }) {
+  const copy = t(locale)
+  const r = routes(locale)
+  return (
+    <div className={u.betaBand}>
+      <h2 className={u.betaHeading}>
+        <Icon name="flask" />
+        {copy.betaHeading}
+      </h2>
+      <div className={u.betaBody}>
+        {copy.betaBody.map((p) => (
+          <p key={p.slice(0, 24)}>{p}</p>
+        ))}
+      </div>
+      <p className={u.betaActions}>
+        <Link href={r.suggest} className={`${u.btn} ${u.btnSolid} ${u.btnSmall}`}>
+          {copy.betaCta}
+          <Icon name="arrow-right" />
+        </Link>
+      </p>
+    </div>
+  )
+}
+
+/**
+ * The compact beta note, for a listing page.
+ *
+ * Same reasoning as `InternationalNote`: most readers land on a listing from a
+ * Dutch-language search and never see the index, so a statement that only
+ * exists there does not reach them. One line, and it makes the point that
+ * matters *on this page* rather than restating the band — the thing a reader is
+ * looking at is our judgement about one role, and that is the judgement we are
+ * asking them to push back on.
+ */
+export function BetaNote({ locale }: { locale: Locale }) {
+  const copy = t(locale)
+  const r = routes(locale)
+  return (
+    <p className={u.betaShort}>
+      <Icon name="flask" />
+      <span>
+        {copy.betaShort} <Link href={r.suggest}>{copy.betaShortLink}</Link>
+      </span>
+    </p>
+  )
+}
+
+/**
+ * The standing invitation to send feedback, at the foot of a page.
+ *
+ * Deliberately a band rather than a line in `linkRow`. The feedback route used
+ * to be one nav item reading "Tip ons" plus an email address in the footer,
+ * which is enough for someone already looking for it and invisible to everyone
+ * else. While the board is in beta, hearing back is the point of publishing at
+ * all, so it gets the same weight as the earning-to-give band.
+ *
+ * The email address stays alongside the form. Some people will not fill in a
+ * form on principle, and the cost of offering both is one extra link.
+ */
+export function FeedbackBand({ locale }: { locale: Locale }) {
+  const copy = t(locale)
+  const r = routes(locale)
+  return (
+    <div className={u.feedbackBand}>
+      <span className={u.feedbackBandIcon} aria-hidden="true">
+        <Icon name="message" />
+      </span>
+      <div className={u.feedbackBandMain}>
+        <h2 className={u.feedbackBandHeading}>{copy.feedbackBandHeading}</h2>
+        <p className={u.feedbackBandBody}>{copy.feedbackBandBody}</p>
+        <p className={u.feedbackBandActions}>
+          <Link href={r.suggest} className={`${u.btn} ${u.btnSolid} ${u.btnSmall}`}>
+            {copy.feedbackBandCta}
+            <Icon name="arrow-right" />
+          </Link>
+          <a href={ONWARD_LINKS.contact} className={u.feedbackBandEmail}>
+            {copy.feedbackBandEmail}
+          </a>
+        </p>
       </div>
     </div>
   )

@@ -1055,30 +1055,72 @@
   margin: 0;
 }
 
-.suggestRadios {
+/*
+  The six feedback kinds.
+
+  Replaced a two-option pill row (`.suggestRadios`/`.suggestRadio`, removed with
+  it) when the form widened from tips to feedback.
+
+  A stacked list of cards rather than the pill row above, which worked at two
+  options and falls apart at six — pills wrap into an unreadable block, and
+  there is nowhere to put the hint line that makes each option mean something.
+  Card radius, hairline border, teal fill on the selected one: the same
+  selected-state language as the pills, at a size that can carry two lines.
+*/
+.suggestKindList {
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-3);
-  margin-top: var(--space-2);
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
 }
 
-.suggestRadio {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-2-5) var(--space-4);
+.suggestKind {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
   border: 1px solid var(--border);
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-card);
   background: var(--bg);
-  font-size: var(--text-sm);
   cursor: pointer;
   transition: border-color var(--transition-common), background var(--transition-common);
 }
 
-.suggestRadio:has(input:checked) {
+.suggestKind:hover {
+  border-color: var(--border-emphasized);
+  background: var(--bg-subtle);
+}
+
+.suggestKind input {
+  flex: none;
+  /* Aligns the control with the cap height of the label rather than the top of
+     its line box, which otherwise leaves it floating above the text. */
+  margin-top: 0.2em;
+  accent-color: var(--primary-solid);
+}
+
+.suggestKindActive {
   border-color: var(--primary-emphasized);
   background: var(--primary-subtle);
-  color: var(--primary-fg);
+}
+
+.suggestKindText {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-0-5);
+  min-width: 0;
+}
+
+.suggestKindLabelText {
+  font-size: var(--text-md);
+  font-weight: var(--fw-medium);
+  color: var(--fg);
+}
+
+.suggestKindHint {
+  font-size: var(--text-sm);
+  line-height: var(--lh-snug);
+  color: var(--fg-muted);
 }
 
 .suggestField {
@@ -1274,4 +1316,138 @@
 
 .furtherReading a:hover {
   color: var(--link-hover);
+}
+
+/* ============================================================
+   Beta and feedback (September 2026)
+   ------------------------------------------------------------
+   The board went to the Dutch community for feedback before it
+   was finished. These are the three surfaces that say so and
+   ask for a reply: the band on the index, the one-line note on
+   a listing, and the standing invitation at the foot of a page.
+   ============================================================ */
+
+/*
+  The beta band.
+
+  Dashed border rather than solid, and the page background rather than a tint.
+  The board already uses a dashed rule for "adjacent to the argument, not part
+  of it" — the climate note, the source attribution — and this is the same kind
+  of aside: true about the whole board, not a step in the reasoning. A filled
+  teal slab here would compete with the international-first band immediately
+  below it, which is the one thing on the index that must be read first.
+*/
+.betaBand {
+  border: 1px dashed var(--border-emphasized);
+  border-radius: var(--radius-card);
+  padding: var(--space-6);
+  background: var(--bg-subtle);
+}
+
+.betaHeading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2-5);
+  font-size: var(--text-xl);
+  margin-bottom: var(--space-4);
+}
+
+.betaHeading svg {
+  flex: none;
+  color: var(--primary-fg);
+  font-size: var(--text-2xl);
+}
+
+.betaBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-width: 62ch;
+  color: var(--fg-muted);
+  line-height: var(--lh-relaxed);
+}
+
+.betaActions {
+  margin-top: var(--space-5);
+}
+
+/*
+  The one-line form, on a listing page. Same shape as `.intlShort`, because it
+  is doing the same job one line further down: a standing caveat that has to
+  reach a reader who arrived from a search engine and will never see the index.
+*/
+.betaShort {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2-5);
+  margin-bottom: var(--space-6);
+  padding: var(--space-3) var(--space-4);
+  border: 1px dashed var(--border-emphasized);
+  border-radius: var(--radius-card);
+  background: var(--bg-subtle);
+  font-size: var(--text-sm);
+  color: var(--fg-muted);
+}
+
+.betaShort svg {
+  flex: none;
+  margin-top: 0.15em;
+  color: var(--primary-fg);
+  font-size: var(--text-lg);
+}
+
+/*
+  The feedback band. Teal, filled, and shaped like the earning-to-give band on
+  purpose — while the board is in beta, hearing back is worth the same weight
+  on the page as the board's other standing invitation.
+*/
+.feedbackBand {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+  border: 1px solid var(--primary-muted);
+  border-radius: var(--radius-card);
+  background: var(--primary-subtle);
+  padding: var(--space-6);
+}
+
+.feedbackBandIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: var(--space-10);
+  height: var(--space-10);
+  border-radius: var(--radius-card);
+  background: var(--bg);
+  border: 1px solid var(--primary-muted);
+  color: var(--primary-fg);
+  font-size: var(--text-2xl);
+}
+
+.feedbackBandMain {
+  min-width: 0;
+}
+
+.feedbackBandHeading {
+  font-size: var(--text-xl);
+}
+
+.feedbackBandBody {
+  margin-top: var(--space-2);
+  max-width: 62ch;
+  color: var(--fg-muted);
+  line-height: var(--lh-relaxed);
+}
+
+.feedbackBandActions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  margin-top: var(--space-5);
+}
+
+.feedbackBandEmail {
+  font-size: var(--text-sm);
 }

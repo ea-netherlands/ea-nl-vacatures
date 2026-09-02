@@ -80,6 +80,34 @@ export const INTERNATIONAL_BOARDS = [
 
 export type InternationalBoardId = (typeof INTERNATIONAL_BOARDS)[number]['id']
 
+/**
+ * What a reader can tell us, in the order the form offers it.
+ *
+ * The first two are the original tip form and still the most valuable thing
+ * anyone sends: the August 2026 sweep found one Dutch organisation in thirty-one
+ * publishing a machine-readable job feed, so coverage genuinely depends on
+ * people telling us. The other four exist because a form that only accepts
+ * suggestions reads as "we are not asking about anything else" — and while the
+ * board is in beta, the something-is-wrong and we-are-missing-a-whole-area
+ * cases are worth more than a polite tip.
+ *
+ * The order is deliberate: most actionable first, catch-all last.
+ */
+export const FEEDBACK_KINDS = ['listing', 'employer', 'correction', 'gap', 'site', 'other'] as const
+export type FeedbackKind = (typeof FEEDBACK_KINDS)[number]
+
+/**
+ * The two kinds that are a pointer at something specific, and therefore the
+ * two where a link and an organisation name are the point rather than
+ * optional context. Shared with the API route so the form and the endpoint
+ * cannot drift apart on what is required.
+ */
+export const POINTER_KINDS: readonly FeedbackKind[] = ['listing', 'employer']
+
+export function isFeedbackKind(value: unknown): value is FeedbackKind {
+  return typeof value === 'string' && (FEEDBACK_KINDS as readonly string[]).includes(value)
+}
+
 /** External destinations for the onward step (§4). */
 export const ONWARD_LINKS = {
   introCourse: 'https://effectiefaltruisme.nl/introductiecursus',
@@ -121,6 +149,27 @@ type Strings = {
   boardName: string
   boardTagline: string
   skipToContent: string
+
+  /*
+    The beta statement.
+
+    The board went to the Dutch community for feedback before it was finished,
+    which means every reader is arriving at something incomplete. Saying so is
+    not modesty — an unmarked beta gets judged as a finished product, and the
+    specific failures worth hearing about (a listing that should not be here, a
+    whole area we are not covering) are exactly the ones a reader stays quiet
+    about when they assume the gaps are deliberate.
+
+    `betaBadge` rides in the header on every page. `betaBody` is the honest
+    version, on the index. `betaShort` is the one-line form for a listing page,
+    where most readers actually land.
+  */
+  betaBadge: string
+  betaHeading: string
+  betaBody: string[]
+  betaCta: string
+  betaShort: string
+  betaShortLink: string
 
   // The international-first statement (§4a) — index, method page and every
   // listing. `intlShort` is the compact form for a listing page, where a full
@@ -200,18 +249,35 @@ type Strings = {
   filteredBySubArea: (label: string) => string
   filteredBySkill: (label: string) => string
 
-  // Suggestions (August 2026)
-  suggestTitle: string
-  suggestLead: string
-  suggestBody: string[]
+  /*
+    Feedback (August 2026; widened from suggestions-only in September 2026).
+
+    It began as a tip form: name a vacancy or an organisation we have missed.
+    That is still the highest-value thing a reader can send, and it is still
+    first in the list — but it was the *only* thing the form would take, which
+    quietly told anyone with a different kind of feedback that there was
+    nowhere to put it. A reader who thinks a listing does not belong, or that
+    the board ignores their whole field, or that they could not work out what
+    the two tiers meant, was left with an email address in the footer.
+
+    So the kinds below are the six things people actually want to say, and the
+    form shapes itself around whichever one they pick.
+  */
+  feedbackTitle: string
+  feedbackLead: string
+  feedbackBody: string[]
   suggestKindLabel: string
-  suggestKindListing: string
-  suggestKindEmployer: string
+  /** Label and one-line hint per kind, in the order they are offered. */
+  feedbackKinds: Record<FeedbackKind, { label: string; hint: string }>
   suggestUrlListing: string
   suggestUrlEmployer: string
+  feedbackUrlOptional: string
   suggestOrgLabel: string
+  feedbackOrgOptional: string
   suggestWhyLabel: string
   suggestWhyHint: string
+  feedbackMessageLabel: string
+  feedbackMessageHint: string
   suggestEmailLabel: string
   suggestEmailHint: string
   suggestSubmit: string
@@ -220,6 +286,11 @@ type Strings = {
   suggestThanksHeading: string
   suggestThanksBody: string
   suggestNavLabel: string
+  /** The standing invitation, at the foot of the index and every listing. */
+  feedbackBandHeading: string
+  feedbackBandBody: string
+  feedbackBandCta: string
+  feedbackBandEmail: string
 
   // Index
   indexTitle: string
@@ -273,6 +344,9 @@ type Strings = {
   detailNoDeadline: string
   detailSalary: string
   detailSalaryUnknown: string
+  /** Appended to the figure at render time — see promote.ts salaryText. */
+  salaryPerMonth: string
+  salaryPerYear: string
   detailThirtyPercent: string
   detailThirtyPercentNote: string
 
@@ -333,6 +407,18 @@ const nl: Strings = {
   boardTagline:
     'Hoe je vanuit Nederland werkt aan de grootste en meest verwaarloosde problemen ter wereld',
   skipToContent: 'Naar de inhoud',
+
+  betaBadge: 'Bèta',
+  betaHeading: 'Dit bord is nog in bèta',
+  betaBody: [
+    'We laten het nu aan de Nederlandse gemeenschap zien terwijl het nog niet af is, omdat we liever nu horen wat er mis mee is dan over een half jaar.',
+    'Wat je merkt: de lijst is nog niet compleet — we volgen tientallen Nederlandse organisaties, maar zeker niet alle. De reden die we bij een vacature schrijven is ons oordeel en kan er gewoon naast zitten. De uitleg bij de probleemgebieden is er nog niet in het Engels. En sommige vacatures zijn dicht voordat wij het doorhebben.',
+    'Niets hiervan is een reden om te wachten met zeggen wat je ervan vindt. Het tegendeel.',
+  ],
+  betaCta: 'Vertel ons wat er beter kan',
+  betaShort:
+    'Dit bord is nog in bèta. De reden die hieronder staat is ons oordeel — laat het ons weten als je vindt dat het niet klopt.',
+  betaShortLink: 'Geef feedback',
 
   intlHeading: 'Kijk eerst buiten Nederland',
   intlBody: [
@@ -398,22 +484,52 @@ const nl: Strings = {
   filteredBySubArea: (label) => label,
   filteredBySkill: (label) => `Vaardigheid: ${label.toLowerCase()}`,
 
-  suggestTitle: 'Ken je een vacature of organisatie die hier hoort?',
-  suggestLead:
-    'De meeste Nederlandse organisaties publiceren hun vacatures niet op een manier die wij automatisch kunnen volgen. Mensen die in het veld werken weten het vaak eerder dan wij.',
-  suggestBody: [
-    'Van de eenendertig Nederlandse organisaties die we onlangs onderzochten, publiceerde er één een vacaturebestand dat we automatisch kunnen uitlezen. De rest zet vacatures op een gewone webpagina, vaak twee weken lang. Daar komen we alleen achter als iemand het ons vertelt.',
-    'Je tip komt bij een mens terecht, niet direct op het bord. We beoordelen elke vacature zelf en schrijven er zelf bij waarom die er staat — dat is het enige wat dit bord de moeite waard maakt.',
+  feedbackTitle: 'Wat vind je van dit bord?',
+  feedbackLead:
+    'Het bord is nog in bèta en we bouwen het voor mensen zoals jij. Alles is welkom: een vacature die we missen, een oordeel waar je het niet mee eens bent, of gewoon iets dat niet werkt.',
+  feedbackBody: [
+    'Twee dingen helpen ons het meest. Het eerste is vacatures en organisaties die we niet kennen: van de eenendertig Nederlandse organisaties die we onlangs onderzochten, publiceerde er één een vacaturebestand dat we automatisch kunnen uitlezen. De rest zet vacatures op een gewone webpagina, vaak twee weken lang. Daar komen we alleen achter als iemand het ons vertelt.',
+    'Het tweede is waar we het mis hebben. Een functie die er niet op hoort, een probleemgebied waar we blind voor zijn, een reden die niet klopt — dat horen we liever nu, terwijl het bord nog vormbaar is.',
+    'Alles komt bij een mens terecht, niet direct op het bord. We beoordelen elke vacature zelf en schrijven er zelf bij waarom die er staat — dat is het enige wat dit bord de moeite waard maakt.',
   ],
-  suggestKindLabel: 'Wat wil je doorgeven?',
-  suggestKindListing: 'Een specifieke vacature',
-  suggestKindEmployer: 'Een organisatie om in de gaten te houden',
+  suggestKindLabel: 'Waar gaat het over?',
+  feedbackKinds: {
+    listing: {
+      label: 'Een specifieke vacature',
+      hint: 'Een functie die volgens jou op het bord hoort.',
+    },
+    employer: {
+      label: 'Een organisatie om in de gaten te houden',
+      hint: 'Een werkgever bij wie we vaker moeten kijken, ook als er nu niets openstaat.',
+    },
+    correction: {
+      label: 'Er klopt iets niet',
+      hint: 'Een vacature die er niet op hoort of al gesloten is, een reden die niet klopt, een verkeerd label, een rammelende vertaling.',
+    },
+    gap: {
+      label: 'Er ontbreekt iets',
+      hint: 'Een vakgebied, een soort werk of een groep mensen waar dit bord langsheen kijkt.',
+    },
+    site: {
+      label: 'Over de site zelf',
+      hint: 'Iets was onduidelijk, moeilijk te vinden of kapot.',
+    },
+    other: {
+      label: 'Iets anders',
+      hint: 'Een vraag, een bezwaar, of iets waar geen hokje voor is.',
+    },
+  },
   suggestUrlListing: 'Link naar de vacature',
   suggestUrlEmployer: 'Link naar de vacaturepagina van de organisatie',
+  feedbackUrlOptional: 'Link (niet verplicht)',
   suggestOrgLabel: 'Welke organisatie?',
+  feedbackOrgOptional: 'Welke organisatie? (niet verplicht)',
   suggestWhyLabel: 'Waarom hoort dit hier?',
   suggestWhyHint:
     'Niet verplicht, maar dit is het nuttigste veld. Wat zie jij aan deze functie dat wij van buitenaf missen?',
+  feedbackMessageLabel: 'Wat wil je ons vertellen?',
+  feedbackMessageHint:
+    'Wees zo concreet als je kunt. Als het over een bepaalde pagina gaat, plak de link er dan bij.',
   suggestEmailLabel: 'Je e-mailadres',
   suggestEmailHint:
     'Niet verplicht. Alleen om een vraag te stellen als iets onduidelijk is. We gebruiken het nergens anders voor.',
@@ -423,7 +539,12 @@ const nl: Strings = {
   suggestThanksHeading: 'Dank je wel',
   suggestThanksBody:
     'We hebben het binnen. Iemand kijkt ernaar. Je hoort alleen van ons als we een vraag hebben.',
-  suggestNavLabel: 'Tip ons',
+  suggestNavLabel: 'Feedback',
+  feedbackBandHeading: 'Wat vind je hiervan?',
+  feedbackBandBody:
+    'Het bord is nog in bèta, dus dit is precies het moment om te zeggen wat je ervan vindt. Een vacature die we missen, een oordeel dat je niet deelt, iets dat niet werkt — het helpt allemaal.',
+  feedbackBandCta: 'Geef feedback',
+  feedbackBandEmail: 'Of mail ons',
 
   indexTitle: 'Vacatures',
   indexIntroHeading: 'Wat staat hier?',
@@ -481,6 +602,8 @@ const nl: Strings = {
   detailNoDeadline: 'Geen sluitingsdatum bekend',
   detailSalary: 'Salaris',
   detailSalaryUnknown: 'Niet vermeld',
+  salaryPerMonth: 'per maand',
+  salaryPerYear: 'per jaar',
   detailThirtyPercent: 'Vacature vermeldt de 30%-regeling',
   detailThirtyPercentNote:
     'De regeling gaat vanaf 2027 naar 27% en de voorwaarden veranderen regelmatig. Vraag een belastingadviseur wat het voor jou betekent — wij rekenen hier niets voor je uit.',
@@ -517,9 +640,9 @@ const nl: Strings = {
   expiredHeading: 'Deze vacature is gesloten',
   expiredBody: 'De vacature staat niet meer open. Hieronder staat waar je verder kunt kijken.',
   updatedAt: 'Bijgewerkt',
-  disagreeHeading: 'Oneens met een vacature op deze lijst?',
+  disagreeHeading: 'Oneens met iets op dit bord?',
   disagreeBody:
-    'Dit bord wordt samengesteld door mensen die het mis kunnen hebben. Vind je dat een vacature er niet op hoort, of mis je er een, mail ons dan.',
+    'Dit bord wordt samengesteld door mensen die het mis kunnen hebben. Vind je dat een vacature er niet op hoort, mis je er een, of klopt er iets anders niet:',
   footerSlogan: 'Samen beter doen.',
 
   causeAreas: {
@@ -616,6 +739,18 @@ const en: Strings = {
     'How to work on the world’s largest and most neglected problems from the Netherlands',
   skipToContent: 'Skip to content',
 
+  betaBadge: 'Beta',
+  betaHeading: 'This board is still in beta',
+  betaBody: [
+    'We are showing it to the Dutch community while it is unfinished, because we would rather hear what is wrong with it now than in six months.',
+    'What you will notice: the list is not complete — we follow dozens of Dutch organisations, but nowhere near all of them. The reason we write under each vacancy is our judgement, and it can simply be wrong. The problem-area explainers are not in English yet. And some vacancies close before we catch it.',
+    'None of that is a reason to wait before telling us what you think. The opposite.',
+  ],
+  betaCta: 'Tell us what would make it better',
+  betaShort:
+    'This board is still in beta. The reason below is our judgement — tell us if you think we have it wrong.',
+  betaShortLink: 'Give feedback',
+
   intlHeading: 'Look outside the Netherlands first',
   intlBody: [
     'If you are genuinely optimising your career for impact, the strongest opportunities are usually not in the Netherlands. Much of the work on these problems is concentrated in London, the Bay Area, Washington and Nairobi. These three boards cover it better than we do, and you should look at them first.',
@@ -679,22 +814,52 @@ const en: Strings = {
   filteredBySubArea: (label) => label,
   filteredBySkill: (label) => `Skill: ${label.toLowerCase()}`,
 
-  suggestTitle: 'Know a job or an organisation that belongs here?',
-  suggestLead:
-    'Most Dutch organisations do not publish vacancies in a form we can follow automatically. People working in the field usually know before we do.',
-  suggestBody: [
-    'Of thirty-one Dutch organisations we recently checked, one published a job feed we can read automatically. The rest post vacancies as ordinary web pages, often for two weeks. We only find those if someone tells us.',
-    'Your tip goes to a person, not straight onto the board. We assess every vacancy ourselves and write our own reason for listing it — that is the only thing making this board worth reading.',
+  feedbackTitle: 'What do you make of this board?',
+  feedbackLead:
+    'The board is in beta and we are building it for people like you. Anything is welcome: a vacancy we have missed, a judgement you disagree with, or simply something that does not work.',
+  feedbackBody: [
+    'Two things help us most. The first is vacancies and organisations we do not know about: of thirty-one Dutch organisations we recently checked, one published a job feed we can read automatically. The rest post vacancies as ordinary web pages, often for two weeks. We only find those if someone tells us.',
+    'The second is where we have got it wrong. A role that does not belong, a problem area we are blind to, a reason that does not hold up — we would rather hear it now, while the board can still change shape.',
+    'Everything goes to a person, not straight onto the board. We assess every vacancy ourselves and write our own reason for listing it — that is the only thing making this board worth reading.',
   ],
-  suggestKindLabel: 'What are you telling us about?',
-  suggestKindListing: 'A specific vacancy',
-  suggestKindEmployer: 'An organisation to watch',
+  suggestKindLabel: 'What is this about?',
+  feedbackKinds: {
+    listing: {
+      label: 'A specific vacancy',
+      hint: 'A role you think belongs on the board.',
+    },
+    employer: {
+      label: 'An organisation to watch',
+      hint: 'An employer we should check more often, even if nothing is open right now.',
+    },
+    correction: {
+      label: 'Something here is wrong',
+      hint: 'A role that does not belong or has already closed, a reason that does not hold up, a wrong label, a clumsy translation.',
+    },
+    gap: {
+      label: 'Something is missing',
+      hint: 'A field, a kind of work, or a group of people this board looks straight past.',
+    },
+    site: {
+      label: 'About the site itself',
+      hint: 'Something was unclear, hard to find, or broken.',
+    },
+    other: {
+      label: 'Something else',
+      hint: 'A question, an objection, or anything there is no box for.',
+    },
+  },
   suggestUrlListing: 'Link to the vacancy',
   suggestUrlEmployer: 'Link to the organisation’s careers page',
+  feedbackUrlOptional: 'Link (optional)',
   suggestOrgLabel: 'Which organisation?',
+  feedbackOrgOptional: 'Which organisation? (optional)',
   suggestWhyLabel: 'Why does it belong here?',
   suggestWhyHint:
     'Optional, but the most useful field. What do you see in this role that we would miss from outside?',
+  feedbackMessageLabel: 'What would you like to tell us?',
+  feedbackMessageHint:
+    'Be as specific as you can. If it is about a particular page, paste the link in with it.',
   suggestEmailLabel: 'Your email address',
   suggestEmailHint:
     'Optional. Only so we can ask if something is unclear. We will not use it for anything else.',
@@ -704,7 +869,12 @@ const en: Strings = {
   suggestThanksHeading: 'Thank you',
   suggestThanksBody:
     'We have it. Someone will look. You will only hear from us if we have a question.',
-  suggestNavLabel: 'Suggest a job',
+  suggestNavLabel: 'Feedback',
+  feedbackBandHeading: 'What do you make of this?',
+  feedbackBandBody:
+    'The board is still in beta, so this is exactly the moment to say what you think. A vacancy we have missed, a judgement you do not share, something that does not work — all of it helps.',
+  feedbackBandCta: 'Give feedback',
+  feedbackBandEmail: 'Or email us',
 
   indexTitle: 'Jobs',
   indexIntroHeading: 'What is this?',
@@ -761,6 +931,8 @@ const en: Strings = {
   detailNoDeadline: 'No closing date given',
   detailSalary: 'Salary',
   detailSalaryUnknown: 'Not stated',
+  salaryPerMonth: 'per month',
+  salaryPerYear: 'per year',
   detailThirtyPercent: 'This listing mentions the 30% ruling',
   detailThirtyPercentNote:
     'It drops to 27% from 2027 and the conditions change regularly. Ask a tax adviser what it means for you — we do not calculate anything here.',
@@ -797,9 +969,9 @@ const en: Strings = {
   expiredHeading: 'This job has closed',
   expiredBody: 'The role is no longer open. Below is where to look next.',
   updatedAt: 'Updated',
-  disagreeHeading: 'Disagree with something on this list?',
+  disagreeHeading: 'Disagree with something here?',
   disagreeBody:
-    'This board is curated by people who can be wrong. If you think a listing does not belong, or we are missing one, email us.',
+    'This board is curated by people who can be wrong. If you think a listing does not belong, if we are missing one, or if something else is off:',
   footerSlogan: 'Do better, together.',
 
   causeAreas: {

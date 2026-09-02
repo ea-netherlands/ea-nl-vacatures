@@ -24,6 +24,7 @@ const LISTING_FIELDS = /* groq */ `
   whyThisMattersNl,
   whyThisMattersEn,
   excerpt,
+  excerptEn,
   primaryCause,
   "secondaryCauses": coalesce(secondaryCauses, []),
   subArea,
@@ -37,6 +38,7 @@ const LISTING_FIELDS = /* groq */ `
   securityScreening,
   securityNote,
   salaryText,
+  salaryPeriod,
   mentions30PercentRuling,
   postedAt,
   deadlineAt,
@@ -61,6 +63,7 @@ export type ListingView = {
   whyThisMattersNl: string | null
   whyThisMattersEn: string | null
   excerpt: string | null
+  excerptEn: string | null
   primaryCause: CauseArea | null
   secondaryCauses: CauseArea[]
   subArea: SubArea | null
@@ -78,6 +81,7 @@ export type ListingView = {
   securityScreening: boolean | null
   securityNote: string | null
   salaryText: string | null
+  salaryPeriod: 'month' | 'year' | null
   mentions30PercentRuling: boolean | null
   postedAt: string | null
   deadlineAt: string | null

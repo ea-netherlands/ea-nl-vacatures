@@ -1,5 +1,11 @@
 /**
- * `suggestion` — a reader telling us about an employer or a vacancy.
+ * `suggestion` — a reader telling us something.
+
+ * Widened in September 2026 from employer-or-vacancy tips to six kinds of
+ * feedback, when the board went to the Dutch community in beta. The type name
+ * is unchanged so existing documents, the review queue and the API path all
+ * keep working; what changed is that `url` and `organisation` are no longer
+ * required, because a correction or a note about the site has neither.
  *
  * ## Why this exists
  *
@@ -26,6 +32,23 @@
  */
 
 import { defineField, defineType } from 'sanity'
+import { FEEDBACK_KINDS } from '../../content/i18n'
+
+/**
+ * The kinds a reader can pick, titled for the curator triaging them.
+ *
+ * Derived from `FEEDBACK_KINDS` rather than restated so the Studio cannot end
+ * up offering a set the form does not, and ordered the same way: the two that
+ * point at something specific first, the catch-all last.
+ */
+const KIND_TITLES: Record<(typeof FEEDBACK_KINDS)[number], string> = {
+  listing: 'A specific vacancy',
+  employer: 'An organisation to watch',
+  correction: 'Something on the board is wrong',
+  gap: 'The board is missing something',
+  site: 'About the site itself',
+  other: 'Something else',
+}
 
 export const SUGGESTION_STATUSES = [
   { value: 'new', title: 'New — nobody has looked yet' },
@@ -45,13 +68,10 @@ export const suggestion = defineType({
   fields: [
     defineField({
       name: 'kind',
-      title: 'What is being suggested',
+      title: 'What this is about',
       type: 'string',
       options: {
-        list: [
-          { value: 'employer', title: 'An organisation to watch' },
-          { value: 'listing', title: 'A specific vacancy' },
-        ],
+        list: FEEDBACK_KINDS.map((value) => ({ value, title: KIND_TITLES[value] })),
         layout: 'radio',
       },
       validation: (r) => r.required(),
@@ -61,22 +81,21 @@ export const suggestion = defineType({
       title: 'Link',
       type: 'url',
       description:
-        'The vacancy, or the organisation’s careers page. This is the field that makes a suggestion actionable — everything else is context.',
-      validation: (r) => r.required(),
+        'The vacancy, or the organisation’s careers page. Required by the form for those two kinds, because there the link is the suggestion. Empty on a correction or a general note, where the message carries everything.',
     }),
     defineField({
       name: 'organisation',
       title: 'Organisation',
       type: 'string',
-      validation: (r) => r.required().max(120),
+      validation: (r) => r.max(120),
     }),
     defineField({
       name: 'why',
-      title: 'Why it belongs',
+      title: 'What they said',
       type: 'text',
-      rows: 4,
+      rows: 6,
       description:
-        'The submitter’s own words. Worth reading before judging the link: someone who works in the field often knows the leverage in a role that reads as ordinary from outside.',
+        'The submitter’s own words, and on everything except a vacancy or organisation tip this is the whole submission. Worth reading before judging the link: someone who works in the field often knows the leverage in a role that reads as ordinary from outside.',
       validation: (r) => r.max(2000),
     }),
     defineField({
@@ -119,14 +138,19 @@ export const suggestion = defineType({
   preview: {
     select: {
       organisation: 'organisation',
+      why: 'why',
       kind: 'kind',
       status: 'status',
       submittedAt: 'submittedAt',
     },
-    prepare({ organisation, kind, status, submittedAt }) {
+    // Falls back to the message, because four of the six kinds carry no
+    // organisation — a queue of rows all reading "Untitled suggestion" would
+    // have to be opened one at a time to be triaged at all.
+    prepare({ organisation, why, kind, status, submittedAt }) {
       const when = submittedAt ? new Date(submittedAt).toISOString().slice(0, 10) : ''
+      const summary = typeof why === 'string' && why.trim() ? why.trim().slice(0, 60) : null
       return {
-        title: organisation || 'Untitled suggestion',
+        title: organisation || summary || 'Untitled',
         subtitle: [kind, status, when].filter(Boolean).join(' · '),
       }
     },

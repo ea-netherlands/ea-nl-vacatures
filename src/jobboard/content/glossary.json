@@ -416,30 +416,35 @@
   ],
   "framework": {
     "name": "ITN-raamwerk",
-    "note": "The spine for /vacatures/waarom-deze-banen (§9.5). Established EA NL house vocabulary rather than something the board invents.",
+    "note": "The spine for /vacatures/waarom-deze-banen (§9.5). Established EA NL house vocabulary rather than something the board invents. The `question` fields are Dutch because they were written as prompt input for the explainer generator; `questionEn` was added when the method page started rendering them to readers, and the two must be edited together.",
     "dimensions": [
       {
         "nl": "Belangrijkheid",
         "en": "Importance",
-        "question": "Hoe groot is het probleem — hoeveel leed of verlies gaat ermee gepaard?"
+        "question": "Hoe groot is het probleem — hoeveel leed of verlies gaat ermee gepaard?",
+        "questionEn": "How large is the problem — how much suffering or loss does it involve?"
       },
       {
         "nl": "Oplosbaarheid",
         "en": "Tractability",
-        "question": "Kun je er iets aan doen? Levert extra inzet meetbaar resultaat op?"
+        "question": "Kun je er iets aan doen? Levert extra inzet meetbaar resultaat op?",
+        "questionEn": "Can anything be done about it? Does extra effort produce a measurable result?"
       },
       {
         "nl": "Verwaarlozing",
         "en": "Neglectedness",
-        "question": "Hoeveel mensen en geld gaan er al naartoe? Waar is de eerstvolgende euro het meest waard?"
+        "question": "Hoeveel mensen en geld gaan er al naartoe? Waar is de eerstvolgende euro het meest waard?",
+        "questionEn": "How many people and how much money already go to it? Where is the next euro worth most?"
       }
     ],
     "fourth": {
       "nl": "Hefboom",
       "en": "Leverage",
       "question": "Hoeveel verandert er door déze functie, meer dan door het werk van één persoon?",
-      "note": "The fourth thing this board looks at that ITN alone does not capture (§9.5)."
-    }
+      "note": "The fourth thing this board looks at that ITN alone does not capture (§9.5).",
+      "questionEn": "How much changes because of this particular role, over and above one person’s work?"
+    },
+    "nameEn": "The ITN framework"
   },
   "organisations": [
     {

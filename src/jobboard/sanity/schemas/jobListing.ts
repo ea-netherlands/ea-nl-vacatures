@@ -90,7 +90,7 @@ export const jobListing = defineType({
       group: 'editorial',
       readOnly: true,
       description:
-        'Machine-translated from the Dutch on publish. Not human-reviewed by default — see §12. There is exactly one note for a curator to write, and it is the Dutch one.',
+        'Machine-translated by `npm run translate`. Not human-reviewed by default — see §12. There is exactly one note for a curator to write, and it is the Dutch one. Edit the Dutch and re-run with --force to refresh this.',
     }),
     defineField({
       name: 'excerpt',
@@ -101,6 +101,16 @@ export const jobListing = defineType({
       description:
         'Neutral and factual. The argument belongs in "Why this is on the board". Don’t copy the whole job ad text here.',
       validation: (r) => r.max(1200),
+    }),
+    defineField({
+      name: 'excerptEn',
+      title: 'English summary',
+      type: 'text',
+      rows: 4,
+      group: 'editorial',
+      readOnly: true,
+      description:
+        'Machine-translated by `npm run translate`. Most listings here are Dutch ads, so without this the English site showed a Dutch paragraph under "About the role" — the excerpt is the one editorial field that used to have no locale variant at all.',
     }),
 
     // ---- Taxonomy ----
@@ -209,7 +219,23 @@ export const jobListing = defineType({
       title: 'Salary as stated',
       type: 'string',
       group: 'practical',
-      description: 'Copy verbatim. Don’t convert or promise anything.',
+      description:
+        'The figure only — no "per maand" or "per year". Copy the numbers verbatim; don’t convert or promise anything. The period goes in the field below so the site can label it in the reader’s language.',
+    }),
+    defineField({
+      name: 'salaryPeriod',
+      title: 'Pay period',
+      type: 'string',
+      group: 'practical',
+      options: {
+        list: [
+          { value: 'month', title: 'Per month' },
+          { value: 'year', title: 'Per year' },
+        ],
+        layout: 'radio',
+      },
+      description:
+        'Kept separate from the figure because it is a label, not source data — spelling it into salaryText put a Dutch "per maand" on the English page.',
     }),
     defineField({
       name: 'mentions30PercentRuling',

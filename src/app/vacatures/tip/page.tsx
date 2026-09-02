@@ -9,9 +9,9 @@ export const metadata: Metadata = bilingualMetadata({
   locale: 'nl',
   nlPath: ROUTES.nl.suggest,
   enPath: ROUTES.en.suggest,
-  title: 'Tip ons',
+  title: 'Feedback',
   description:
-    'Ken je een Nederlandse vacature of organisatie die op dit bord hoort? Laat het ons weten — de meeste organisaties kunnen we niet automatisch volgen.',
+    'Dit bord is nog in bèta. Ken je een vacature of organisatie die hier hoort, klopt er iets niet, of missen we iets? Laat het ons weten.',
 })
 
 export default async function Page() {

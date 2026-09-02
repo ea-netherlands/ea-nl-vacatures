@@ -8,12 +8,12 @@
 
 import Link from 'next/link'
 import { routes, t, type Locale } from '../content/i18n'
-import { firstLine, noteFor } from '../lib/note'
+import { excerptFor, firstLine, noteFor, salaryFor } from '../lib/note'
 import type { ListingView } from '../sanity/queries'
 import { Icon } from './Icon'
 import u from './ui.module.css'
 
-export { firstLine, noteFor }
+export { excerptFor, firstLine, noteFor, salaryFor }
 
 export function CauseBadge({
   cause,
@@ -137,7 +137,7 @@ export function EarningToGiveCard({
   return (
     <li>
       <Link href={r.detail(listing.slug)} className={u.card}>
-        <p className={u.e2gPay}>{listing.salaryText ?? copy.detailSalaryUnknown}</p>
+        <p className={u.e2gPay}>{salaryFor(listing, copy) ?? copy.detailSalaryUnknown}</p>
         <p className={u.e2gSeniority}>
           {[
             listing.seniority ? copy.seniorities[listing.seniority] : null,

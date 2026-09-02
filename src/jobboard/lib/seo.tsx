@@ -11,6 +11,7 @@
 import type { Metadata } from 'next'
 import { DEFAULT_LOCALE, type Locale } from '../content/i18n'
 import type { ListingView } from '../sanity/queries'
+import { excerptFor, noteFor } from './note'
 
 export const SITE_URL = (
   process.env.NEXT_PUBLIC_SITE_URL ?? 'https://vacatures.effectiefaltruisme.nl'
@@ -70,8 +71,8 @@ export function bilingualMetadata(args: {
  * Check the current guidance before launch; this is the shape as of writing.
  */
 export function jobPostingJsonLd(listing: ListingView, locale: Locale, url: string) {
-  const note = locale === 'en' ? (listing.whyThisMattersEn ?? listing.whyThisMattersNl) : listing.whyThisMattersNl
-  const description = [listing.excerpt, note].filter(Boolean).join('\n\n')
+  const note = noteFor(listing, locale)
+  const description = [excerptFor(listing, locale), note].filter(Boolean).join('\n\n')
 
   const remote = listing.locationMode === 'remote'
 

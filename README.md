@@ -12,6 +12,25 @@ one- or two-sentence note explaining why the role matters, and publishes.
 **The editorial note is the product. Everything upstream of it is plumbing that
 exists to make writing it cheap.**
 
+## The board is in beta
+
+It went to the Dutch EA community for feedback in September 2026, before it was
+finished, and it says so: a pill in the header on every page, a band on the
+index naming what is actually incomplete, and a line on every listing saying the
+reason below is a judgement that may be wrong.
+
+That framing is load-bearing while it lasts. An unmarked beta gets read as a
+finished product, and the gaps worth hearing about — a field the board ignores,
+a listing that should not be here — get filed by readers as deliberate editorial
+choices rather than reported. Do not quietly drop the beta signals to make the
+board look more established; take them out when the things they name are
+actually fixed. The list of what they name is in `betaBody` in `content/i18n.ts`.
+
+The feedback route is sized to match: six kinds, not two. Vacancy and
+organisation tips still come first because coverage is the binding constraint,
+but corrections, missing areas, and notes about the site itself are now
+first-class — see `FEEDBACK_KINDS`.
+
 ---
 
 ## Quick start
@@ -166,6 +185,7 @@ human decisions to calibrate against.
 | `npm run classify` | Two-stage filter. `--skip-notes` for a cheap threshold-calibration pass. |
 | `npm run promote` | Writes the shortlist to Sanity as drafts. `--dry-run` first. |
 | `npm run expire` | Auto-unpublishes past expiry. `--linkcheck` for dead-link detection on crawl sources. |
+| `npm run translate` | Fills the English side of the editorial fields. `--dry` first, `--force` after editing Dutch copy. |
 | `npm run grade` | The M3 calibration tool. See below. |
 | `npm run pipeline` | ingest → classify → promote, end to end. |
 | `npm run mirror-glossary` | Refreshes the glossary mirror and distils the style guide. **Run before generating any page.** |
@@ -223,6 +243,26 @@ wished away, in this order:
    anti-translationese pass until it returns no findings.
 3. `--en` composes the English versions separately from the same outline. A
    one-sentence note survives machine translation; a page of argument does not.
+
+### The short fields are translated, the pages are not
+
+That distinction runs the other way for everything that is one or two sentences
+long. `npm run translate` fills `whyThisMattersEn`, `excerptEn` and
+`leverageNoteEn` from their Dutch originals, and `/api/cron/translate` does the
+same nightly at 08:30, after `promote` and `expire`.
+
+It runs after publication rather than at promotion time on purpose: the pipeline
+writes the *classifier's* draft note, which a curator rewrites before publishing,
+so translating earlier would translate a sentence nobody approved. The cost is a
+window between publishing and the next run, during which `/en` falls back to the
+Dutch — which is what it did permanently before this existed. Edit a Dutch note
+and the English one goes stale until `--force`.
+
+**English explainer pages do not exist yet.** `/en/jobs/causes/*` and the method
+page render their listings with a callout saying the explainer is still being
+written. Generating them is `generate-explainers -- --en`, a review pass, then
+`--publish-only`; it is a writing job, not a translation job, and it is the
+largest remaining gap on the English side.
 
 Pages are written to `content/explainers/*.md` for review whether or not you
 `--publish`.

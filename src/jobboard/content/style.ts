@@ -26,9 +26,22 @@ export type Glossary = {
   terms: GlossaryTerm[]
   framework: {
     name: string
+    /*
+      The English twin of every reader-facing string in this block.
+
+      `question` is Dutch, and was written that way deliberately: it started as
+      prompt input for the explainer generator, which composes natively in Dutch
+      and never translates into it. The method page then began rendering these
+      to readers, at which point the English page was showing four Dutch
+      sentences under four English headings. Hence the `*En` fields — the Dutch
+      keeps its job as generator input, and the page has something to display.
+
+      Edit the pair together; nothing enforces that they agree.
+    */
+    nameEn: string
     note: string
-    dimensions: { nl: string; en: string; question: string }[]
-    fourth: { nl: string; en: string; question: string; note: string }
+    dimensions: { nl: string; en: string; question: string; questionEn: string }[]
+    fourth: { nl: string; en: string; question: string; questionEn: string; note: string }
   }
   organisations: { name: string; abbr?: string; note?: string }[]
 }

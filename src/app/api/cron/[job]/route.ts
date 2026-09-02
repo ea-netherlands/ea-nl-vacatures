@@ -16,12 +16,13 @@ import { NextResponse } from 'next/server'
 import { runClassification } from '@jobboard/classify/run'
 import { checkDeadLinks, runIngest } from '@jobboard/ingest/run'
 import { runExpiry, runPromotion } from '@jobboard/sanity/promote'
+import { runTranslation } from '@jobboard/sanity/translate'
 
 export const dynamic = 'force-dynamic'
 /** Vercel's cron maximum on Pro. Adapters budget against this, minus a margin. */
 export const maxDuration = 300
 
-const JOBS = ['ingest', 'classify', 'promote', 'expire', 'linkcheck'] as const
+const JOBS = ['ingest', 'classify', 'promote', 'expire', 'linkcheck', 'translate'] as const
 type Job = (typeof JOBS)[number]
 
 /**
@@ -95,6 +96,25 @@ export async function GET(request: Request, { params }: { params: Promise<{ job:
       }
       case 'linkcheck': {
         const report = await checkDeadLinks(Number(url.searchParams.get('limit') ?? 100))
+        return NextResponse.json({ job, report, logs })
+      }
+      /*
+        Fills whyThisMattersEn, excerptEn and leverageNoteEn for anything a
+        curator has published since the last run.
+
+        Runs after `promote` and `expire` rather than inside the pipeline: the
+        pipeline writes the classifier's *draft* note, which the curator then
+        rewrites before publishing, so translating at promotion time would
+        translate a sentence nobody approved. `force=1` re-does everything,
+        which is the switch to reach for after editing Dutch copy in bulk.
+      */
+      case 'translate': {
+        const report = await runTranslation({
+          dryRun: url.searchParams.get('dryRun') === '1',
+          force: url.searchParams.get('force') === '1',
+          limit: Number(url.searchParams.get('limit') ?? 120),
+          onLog,
+        })
         return NextResponse.json({ job, report, logs })
       }
     }

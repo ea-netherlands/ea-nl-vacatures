@@ -13,9 +13,16 @@
 
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { Container, InternationalNote, OnwardStep, Section } from '../components/Chrome'
+import {
+  BetaNote,
+  Container,
+  FeedbackBand,
+  InternationalNote,
+  OnwardStep,
+  Section,
+} from '../components/Chrome'
 import { Icon } from '../components/Icon'
-import { noteFor } from '../components/ListingCard'
+import { excerptFor, noteFor, salaryFor } from '../components/ListingCard'
 import { Callout } from '../components/Prose'
 import { ONWARD_LINKS, routes, t, type Locale } from '../content/i18n'
 import { getListingBySlug } from '../sanity/queries'
@@ -77,7 +84,7 @@ function EligibilityTable({ listing, locale }: { listing: ListingView; locale: L
   }
   rows.push({
     label: copy.detailSalary,
-    value: listing.salaryText ?? copy.detailSalaryUnknown,
+    value: salaryFor(listing, copy) ?? copy.detailSalaryUnknown,
   })
   const posted = formatDate(listing.postedAt, locale)
   if (posted) rows.push({ label: copy.detailPostedAt, value: posted })
@@ -113,6 +120,7 @@ export async function DetailPage({ locale, slug }: { locale: Locale; slug: strin
   const copy = t(locale)
   const r = routes(locale)
   const note = noteFor(listing, locale)
+  const excerpt = excerptFor(listing, locale)
   const expired = isExpired(listing)
 
   return (
@@ -187,6 +195,13 @@ export async function DetailPage({ locale, slug }: { locale: Locale; slug: strin
               line, above our own editorial pitch rather than after it. */}
           <InternationalNote locale={locale} />
 
+          {/* Directly above the editorial note, because that note is what the
+              caveat is about. This page is where most readers arrive and where
+              a single sentence of our judgement carries the most weight, so it
+              is also where saying "and we might have this wrong" is worth the
+              line it costs. */}
+          <BetaNote locale={locale} />
+
           {/* THE editorial field, above the role summary, visually distinct. */}
           {note ? (
             <div className={u.whyBlock}>
@@ -195,7 +210,7 @@ export async function DetailPage({ locale, slug }: { locale: Locale; slug: strin
             </div>
           ) : null}
 
-          {listing.excerpt ? (
+          {excerpt ? (
             <>
               <h2 className={s.sectionHeading}>{copy.detailAboutHeading}</h2>
               {/* Deliberately an excerpt, not the full description: link out
@@ -203,7 +218,7 @@ export async function DetailPage({ locale, slug }: { locale: Locale; slug: strin
                   right product decision — we are not trying to keep people on
                   the page. */}
               <p style={{ color: 'var(--fg-muted)', lineHeight: 'var(--lh-relaxed)' }}>
-                {listing.excerpt}
+                {excerpt}
               </p>
             </>
           ) : null}
@@ -270,6 +285,13 @@ export async function DetailPage({ locale, slug }: { locale: Locale; slug: strin
             </a>
           </p>
         </div>
+      </Section>
+
+      {/* A reader who has got this far has read our argument for one specific
+          role and formed a view about it. That is the most informed feedback
+          anyone on the board can give us, and this is the moment they hold it. */}
+      <Section tight>
+        <FeedbackBand locale={locale} />
       </Section>
 
       <Section tight>

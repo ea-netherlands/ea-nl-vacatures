@@ -153,6 +153,60 @@
   border-color: var(--primary-emphasized);
 }
 
+/* Feedback in the header, drawn as a control rather than a link. It is the one
+   thing this board is asking readers for while it is in beta, and a sixth
+   text link in a row of text links is not asking. The subtle button recipe —
+   white, hairline border, pressable-key inset — is the design system's own
+   secondary control, so it sits beside the solid buttons in the page without
+   competing with them. */
+.navFeedback {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1-5);
+  font-size: var(--text-sm);
+  font-weight: var(--fw-medium);
+  color: var(--slate-700);
+  text-decoration: none;
+  padding: var(--space-1-5) var(--space-3);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  box-shadow: var(--btn-subtle-shadow);
+  transition: background var(--transition-common), color var(--transition-common),
+    box-shadow var(--transition-common);
+}
+.navFeedback:hover {
+  background: var(--primary-subtle);
+  color: var(--primary-fg);
+  border-color: var(--primary-emphasized);
+}
+.navFeedback:active {
+  transform: translateY(1px);
+}
+
+/* The beta pill in the brand lockup. Muted teal on the board's own accent
+   rather than a warning colour: this is a statement about maturity, not an
+   error, and the status palette is reserved for feedback (rule 4). Uppercase
+   with tracking is the one place the board shouts, and it is four characters
+   long. */
+.betaPill {
+  font-family: var(--font-body);
+  font-size: var(--text-2xs);
+  font-weight: var(--fw-bold);
+  line-height: var(--lh-none);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--primary-fg);
+  background: var(--primary-muted);
+  border: 1px solid var(--primary-emphasized);
+  border-radius: var(--radius-full);
+  padding: var(--space-1) var(--space-2);
+  /* Nudged up so it reads as a superscript label on the board's name rather
+     than as a second word in it. */
+  align-self: flex-start;
+  margin-top: var(--space-0-5);
+}
+
 .main {
   flex: 1;
 }
