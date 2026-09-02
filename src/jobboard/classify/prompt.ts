@@ -10,6 +10,7 @@ import {
   CAUSE_AREA_DEFINITIONS,
   EXCLUDED_TOPICS,
   LEVERAGE_DEFINITIONS,
+  PRIORITY_LEVERAGE_TYPES,
   SKILL_DEFINITIONS,
   SKILLS,
   SUB_AREA_DEFINITIONS,
@@ -47,13 +48,28 @@ whole product depends on.
 **Cause relevance (0–3):** how well does the work bear on a problem the effective altruism community treats as large, neglected and tractable?
 
 - **0** — no real connection. The role could exist at almost any employer regardless of cause area.
-- **1** — the employer's mission touches the cause, but this role's actual tasks would be near-identical at an employer with no such mission (generic IT, HR, facilities, finance-administration, executive-assistant work).
+- **1** — the employer's mission touches the cause, but this role's actual tasks would be near-identical at an employer with no such mission (generic IT, HR, facilities, finance-administration, general office and executive-assistant work).
 - **2** — the role's substantive output is part of the organisation's cause-relevant work, but is one contribution among many rather than a distinctive lever (e.g. a policy officer among a large team, a researcher on a well-staffed study).
+
+  One case sits here that used to be forced down to 1. A support role whose
+  *daily substance is the cause work itself* — a chief of staff triaging an AI
+  policy director's decisions, a research manager running the agenda of a named
+  biosecurity group — is not the same as an assistant whose tasks would be
+  identical at an insurer. If the role passes all three tests under
+  \`supporting-a-multiplier\` below, score cause relevance on the substance the
+  person actually handles all day, which will usually be a 2. If it fails any of
+  those tests it is generic support and stays at 1. This carve-out is narrow on
+  purpose: promotion needs a cause score of at least 2, so widening it is the
+  fastest way to fill the board with ops jobs at organisations we like.
 - **3** — the role's substance *is* the cause-relevant work at a point that plausibly shapes how it goes — drafting the policy, running the research programme, making the allocation call.
 
 A role at an EA-identified organisation is not automatically a 3, and a role at an ordinary Dutch employer is not automatically a 0.
 
 **Leverage (0–3):** how much does *this specific role* influence outcomes beyond the work of the individual holding it?
+
+The question underneath this score is: **what resources does this role get to point at the problem?** Resources means money, other people's labour and attention, or the compounding value of an idea — not just the role-holder's own hours. A role that directs a hundred people's work, or a hundred million euros, or a finding that anyone can copy for free, has more of them than a role that directs only itself. That is the whole of what this scale measures.
+
+Two things it deliberately does *not* measure. It is not how good the solution is — a role with enormous leverage pointed at a weak intervention scores high here and should be caught by the cause score instead. And it is not personal fit: score the role as it would be for a competent typical holder, never for an imagined ideal candidate.
 
 - **0** — the role's output is fully consumed by routine operations; nothing about it compounds or shapes what others do.
 - **1** — the role *enables* people who do the leveraged work (generalist IT, internal process support, administrative coordination) without itself shaping the substance of what they produce. This is the default score for internal/support functions at a regulator, ministry, or foundation — being useful to a high-leverage team is not the same as being high leverage.
@@ -62,7 +78,7 @@ A role at an EA-identified organisation is not automatically a 3, and a role at 
 
 Judge the role, not the employer's mission statement.
 
-Pay particular attention to roles at organisations that would not describe themselves as impact-focused at all — a food and agribusiness analyst at a large agricultural lender, an investment officer at a development bank, a policy officer in a ministry. These are often the highest-leverage and least-discovered roles, and they are the main reason this board exists.
+Pay particular attention to ${PRIORITY_LEVERAGE_TYPES.map((l) => `\`${l}\``).join(' and ')} roles at organisations that would not describe themselves as impact-focused at all — a food and agribusiness analyst at a large agricultural lender, an investment officer at a development bank, a policy officer in a ministry. These are often the highest-leverage and least-discovered roles, and they are the main reason this board exists. The other archetypes are just as real, but they are mostly found at organisations that already advertise themselves as mission-driven, where the international boards will surface them anyway.
 
 Also extract, from the ad text: whether Dutch language is required, whether Dutch nationality or a security screening is required, whether visa sponsorship is mentioned, and the seniority level. Dutch public sector ads frequently carry these requirements and readers need to know before clicking.
 
@@ -178,13 +194,64 @@ ${(Object.entries(SKILL_DEFINITIONS) as [Skill, string][])
 
 ## Leverage archetypes
 
-Each job gets exactly one. This one is never shown to readers — it sets the
-quality bar at promotion time — so classify it honestly rather than
-flatteringly.
+Each job gets exactly one: **the mechanism by which this role reaches beyond
+itself.** The label is never shown to readers — it sets the quality bar at
+promotion time — so classify it honestly rather than flatteringly.
 
 ${(Object.entries(LEVERAGE_DEFINITIONS) as [LeverageType, string][])
   .map(([key, def]) => `- \`${key}\` — ${def}`)
   .join('\n')}
+
+### Picking between them
+
+Ask what the role's *output* mainly is, not what the organisation does or what
+the person's background is:
+
+- It decides where money goes → \`capital-allocation\`.
+- It writes, enforces or advises on rules → \`policy-regulation\`.
+- It produces a finding, a method or a technology others can use →
+  \`research-evidence\`.
+- It gets more or better people working on the problem, or builds the
+  infrastructure that does → \`field-building\`.
+- It changes what a large audience thinks → \`spreading-ideas\`.
+- It builds or runs the organisation others work inside →
+  \`organisation-building\`.
+- It amplifies one specific high-impact person or team →
+  \`supporting-a-multiplier\`.
+- It is the object-level work itself → \`direct-work\`.
+
+Prefer \`direct-work\` when nothing else clearly fits. It is the honest default
+and it is not a low score by itself — a direct-work role can still score 2 or 3
+on the leverage scale if the work it does is what shapes the outcome.
+
+### The boundary on \`supporting-a-multiplier\`
+
+Read this one carefully; it is the label most likely to erode the board's bar.
+
+Supporting somebody is leveraged **only when the person or team being supported
+is themselves identifiable and having outsized impact, and the role exists to
+amplify them specifically.** A chief of staff to a minister, an executive
+assistant to a research director whose own work is on the board's problems, a
+research manager whose job is to clear obstacles for a named group — these
+genuinely borrow that person's reach, and the board has been wrongly scoring
+them as ordinary admin.
+
+It is **not** every operations, assistant or coordination job at an organisation
+you happen to rate. Three tests, and it must pass all three:
+
+1. **Named beneficiary.** You can point at the specific person, team or
+   programme being amplified from the ad itself. "Supports the wider
+   organisation" fails.
+2. **Their leverage is real.** That person or team would themselves score 3 on
+   this scale. Borrowed leverage cannot exceed what it is borrowed from.
+3. **Amplification, not throughput.** The role removes constraints on their
+   judgement and reach, rather than processing a queue of work they generate.
+   Diary management and expense processing at scale is throughput.
+
+If it fails any test, it is \`direct-work\` or a 1 on the leverage scale, or
+both. Do not reach for this label because a support role is at an organisation
+you like — that is exactly the "generic support function at a high-impact
+organisation" the cause scale already tells you to score down.
 
 ## Hard constraints
 

@@ -127,17 +127,31 @@ export const CAUSE_SOURCES: Record<CauseArea, readonly Source[]> = {
 /**
  * Sources for the pages that are not cause areas.
  *
- * Keyed by the generator's page key rather than by cause. Only earning to give
- * has one: the method page explains *this board*, which nobody else has
- * written about, but earning to give is a general idea with a long-standing
- * canonical treatment, and writing our own from scratch would be both worse and
- * a quiet claim to originality we have no business making.
+ * Keyed by the generator's page key rather than by cause.
  *
- * The Dutch material on that page — Amsterdam's proprietary trading firms, the
- * 30% ruling — stays ours. That is the half no international resource covers,
- * and it is the reason the page exists at all.
+ * The method page explains *this board*, which nobody else has written about —
+ * but one section of it does not. The leverage section (September 2026) sets
+ * out an idea 80,000 Hours worked out and we adopted wholesale, including the
+ * taxonomy the classifier now scores against, so it is cited like any other
+ * borrowed argument. Earning to give is the same situation: a general idea with
+ * a long-standing canonical treatment, where writing our own from scratch would
+ * be both worse and a quiet claim to originality we have no business making.
+ *
+ * The Dutch material on both pages — Amsterdam's proprietary trading firms, the
+ * 30% ruling, which ministries and regulators and lenders actually matter here
+ * — stays ours. That is the half no international resource covers, and it is
+ * the reason the pages exist at all.
  */
 export const PAGE_SOURCES: Record<string, readonly Source[]> = {
+  method: [
+    {
+      org: '80,000 Hours',
+      title: 'How much leverage does a career path offer?',
+      url: 'https://80000hours.org/articles/leverage/',
+      covers:
+        'the leverage section — the definition, the mechanisms by which a role reaches past its own hours, and the split between leverage and the effectiveness of the solution it is pointed at',
+    },
+  ],
   'earning-to-give': [
     {
       org: '80,000 Hours',
@@ -156,12 +170,79 @@ export const PAGE_SOURCES: Record<string, readonly Source[]> = {
  * is legal rather than stylistic, and a model asked nicely to "avoid copying"
  * will still produce a lightly reworded paraphrase that is plainly derivative.
  */
+/**
+ * Reuse permissions, and what is still not permitted.
+ *
+ * `sourceRules` below used to forbid reproduction outright, because all three
+ * organisations reserve their rights and two prohibit republication in their
+ * terms. It also said what to do about it: "the route is emailing the orgs for
+ * a grant — record it in `sources.ts` — not a workaround." This is that record.
+ *
+ * ## What is granted
+ *
+ * EA Nederland reports having permission from 80,000 Hours to reuse their
+ * material (September 2026). **The specifics below still need filling in**, and
+ * they matter: a grant with no recorded scope is indistinguishable from no
+ * grant to the next person who reads this file, and it cannot be shown to
+ * anyone who asks.
+ *
+ *   grantedBy   — the person or team at 80,000 Hours who agreed
+ *   grantedOn   — the date
+ *   scope       — verbatim republication? excerpts with attribution?
+ *                 translation into Dutch? derivative works?
+ *   evidence    — where the email or message lives
+ *
+ * ## What is NOT granted
+ *
+ * Probably Good and Forethought are untouched by this and remain strictly
+ * off-limits. Probably Good's terms are the most explicit of the three — "You
+ * must not reproduce, distribute, modify, create derivative works of ...
+ * republish" — and Forethought states no licence at all, which means all rights
+ * reserved. Do not let a grant from one organisation quietly become a house
+ * policy about all three; that is exactly the drift this file exists to stop.
+ *
+ * ## What it changes in practice
+ *
+ * Less than it might seem, and that is not a reason to ignore it. The board's
+ * pages are Dutch and 80,000 Hours writes in English, so reuse means
+ * translation, which reintroduces the register problem a beta reader has
+ * already reported ("alsof ze uit het Engels vertaald zijn"). Their prose is
+ * also written for a global audience, and the Dutch specifics are the whole
+ * reason these pages exist. What the grant genuinely buys is the freedom to
+ * quote them directly and at length where their sentence is better than a
+ * summary, instead of writing around it.
+ */
+export const REUSE_GRANTS = [
+  {
+    org: '80,000 Hours',
+    grantedBy: null as string | null,
+    grantedOn: null as string | null,
+    scope: null as string | null,
+    evidence: null as string | null,
+    note: 'Reported by EA NL, September 2026. Details outstanding — see the block comment above.',
+  },
+] as const
+
+/** Organisations with no grant. Nothing here may be reproduced. */
+export const NO_REUSE = ['Probably Good', 'Forethought'] as const
+
 export const sourceRules = (words: readonly [number, number]) => `## Using the source material
 
-You are given the text of the pieces this page is based on. They are reference
-material, NOT copy to be reused. All three organisations reserve their rights
-and two prohibit republication in their terms of service, so treat every one of
-these as binding:
+You are given the text of the pieces this page is based on.
+
+Material from **${NO_REUSE.join(' and ')}** is reference only, NOT copy to be
+reused: they reserve their rights and prohibit republication in their terms of
+service. Every rule below is binding for them.
+
+Material from **${REUSE_GRANTS.map((g) => g.org).join(', ')}** is covered by a
+reuse permission, so rules 1 and 2 are relaxed for that source specifically: you
+may quote it directly, at more than one sentence, where their wording genuinely
+beats a summary. Attribute every such passage in the sentence that carries it.
+Rules 3 to 7 still apply to it in full — most importantly 4 and 7, because a
+page that leans on quotation stops being the thing only we can write. Prefer
+your own sentences by default; reach for theirs when they have said it better.
+
+Treat all of the following as binding:
 
 1. **Write every sentence yourself.** Do not reproduce sentences or distinctive
    phrasings from the sources, and do not produce a paraphrase that follows a

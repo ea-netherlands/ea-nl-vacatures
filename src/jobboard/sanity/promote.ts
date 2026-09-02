@@ -230,6 +230,21 @@ async function loadPromotable(db: Db, limit: number): Promise<PromotableRow[]> {
              and d.action in ('promoted', 'published', 'rejected', 'snoozed')
       where l.closed_at is null
         and d.id is null
+        -- Never queue a vacancy that has already closed. NB: no backticks in
+        -- this comment -- it sits inside a JS template literal, and one would
+        -- end the string.
+        --
+        -- expiresAt defaults to the ad's own deadline, so a listing whose
+        -- deadline passed before a curator reached it was promoted, reviewed,
+        -- published -- and then hidden by that same date the moment it went
+        -- live, because every public query filters on expiresAt > now(). Two
+        -- ANVS nuclear-security roles went through exactly that in September
+        -- 2026: correctly classified, published in good faith, invisible on
+        -- arrival, and both ads already 404 at the source.
+        --
+        -- The curator's time is the scarcest thing in this pipeline, so the
+        -- cheapest fix is not to spend it on a dead vacancy at all.
+        and (l.deadline_at is null or l.deadline_at > now())
         and c.nl_eligible
         and c.primary_cause is not null
         and c.leverage is not null
@@ -352,10 +367,31 @@ export async function runExpiry(options: { dryRun?: boolean; onLog?: (l: string)
   )
   log(`${expired.length} published listings past their expiry date`)
 
-  if (options.dryRun) return { unpublished: 0, found: expired.length }
+  /*
+    Listings the *source* has already closed, ahead of their expiry date.
+
+    Expiry alone was never enough. `expiresAt` is a guess — the ad's stated
+    deadline, or sixty days after posting — and a vacancy that fills early
+    closes long before it. The pipeline knows: ingest marks `closed_at` by set
+    difference for sources that return a complete list, and `checkDeadLinks`
+    HEAD-checks the rest. But that knowledge stopped at the Postgres row.
+    Nothing carried it into Sanity, so a published listing kept its place on the
+    board, with a dead apply link, until its guessed date arrived.
+
+    A reader reported exactly that within hours of the beta going out — an Epoch
+    AI role, gone from Lever, still listed here with a 404 behind the button.
+    The board's whole claim is that a person vouched for every entry; a dead
+    link is the cheapest possible way to lose that.
+  */
+  const closedAtSource = await findClosedAtSource(client, log)
+  const doomed = [...expired]
+  const seen = new Set(expired.map((d) => d._id))
+  for (const doc of closedAtSource) if (!seen.has(doc._id)) doomed.push(doc)
+
+  if (options.dryRun) return { unpublished: 0, found: doomed.length, closedAtSource: closedAtSource.length }
 
   let unpublished = 0
-  for (const doc of expired) {
+  for (const doc of doomed) {
     // Unpublish by moving the document back to a draft: the content survives
     // for the archive view and the URL keeps redirecting rather than 404-ing
     // (§9.8), but it leaves the live board.
@@ -369,5 +405,41 @@ export async function runExpiry(options: { dryRun?: boolean; onLog?: (l: string)
     unpublished++
     log(`unpublished ${doc._id} (${doc.title})`)
   }
-  return { unpublished, found: expired.length }
+  return { unpublished, found: doomed.length, closedAtSource: closedAtSource.length }
+}
+
+/**
+ * Published listings whose pipeline row is closed.
+ *
+ * Joined on `pipelineListingId`, which `runPromotion` writes onto every
+ * document precisely so the published board can be traced back to the row it
+ * came from. Degrades to an empty list rather than throwing: the expiry job
+ * must still retire genuinely expired listings on a machine with no database
+ * reachable, which is the case in a Sanity-only environment.
+ */
+async function findClosedAtSource(
+  client: ReturnType<typeof writeClient>,
+  log: (l: string) => void,
+): Promise<{ _id: string; title: string; expiresAt: string }[]> {
+  const live = await client.fetch<{ _id: string; title: string; pipelineListingId: number | null }[]>(
+    `*[_type == "jobListing" && !(_id in path("drafts.**")) && defined(pipelineListingId)
+       && (!defined(expiresAt) || expiresAt > now())]{_id, title, pipelineListingId}`,
+  )
+  const ids = live.map((d) => d.pipelineListingId).filter((n): n is number => typeof n === 'number')
+  if (!ids.length) return []
+
+  try {
+    const db = await getDb()
+    const { rows } = await db.query<{ id: number }>(
+      'select id from listing where closed_at is not null and id = any($1::int[])',
+      [ids],
+    )
+    const closed = new Set(rows.map((r) => r.id))
+    const hits = live.filter((d) => d.pipelineListingId !== null && closed.has(d.pipelineListingId))
+    log(`${hits.length} published listings the source has already closed`)
+    return hits.map((d) => ({ _id: d._id, title: d.title, expiresAt: '' }))
+  } catch (err) {
+    log(`could not check source closure (${(err as Error).message}) — expiry only`)
+    return []
+  }
 }

@@ -455,3 +455,18 @@
 .heroBack a:hover {
   color: var(--link-hover);
 }
+
+/* The hero's two entry points: the full list, and the cause grid. Wraps to a
+   column on narrow screens so neither button is ever truncated. */
+.heroActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-6);
+}
+
+@media (max-width: 30rem) {
+  .heroActions > * {
+    width: 100%;
+  }
+}

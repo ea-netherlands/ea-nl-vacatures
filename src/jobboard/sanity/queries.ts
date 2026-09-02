@@ -172,7 +172,10 @@ export async function getLiveListings(opts?: {
             leverage == "policy-regulation" => 1,
             leverage == "research-evidence" => 2,
             leverage == "field-building" => 3,
-            4
+            leverage == "spreading-ideas" => 4,
+            leverage == "organisation-building" => 5,
+            leverage == "supporting-a-multiplier" => 6,
+            7
           ) asc, coalesce(postedAt, _createdAt) desc)`
       : `order(coalesce(postedAt, _createdAt) desc)`
 

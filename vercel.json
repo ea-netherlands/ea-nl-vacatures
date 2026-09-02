@@ -26,6 +26,10 @@
       "schedule": "0 9 * * 1"
     },
     {
+      "path": "/api/cron/notify",
+      "schedule": "0 11 * * 1"
+    },
+    {
       "path": "/api/cron/ingest?source=80000hours&source=probablygood&discover=1",
       "schedule": "0 10 * * 1"
     }

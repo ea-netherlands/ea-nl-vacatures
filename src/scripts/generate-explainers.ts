@@ -552,17 +552,40 @@ function toPortableText(markdown: string): Record<string, unknown>[] {
     if (cursor < text.length) {
       children.push({ _type: 'span', _key: `s${n++}`, text: strip(text.slice(cursor)), marks: [] })
     }
+
+    /*
+      Trim the block, not the fragments.
+
+      `strip` used to end in `.trim()`, and it runs on every span — so the
+      trailing space of "Begin bij " and the leading space of " werkt anders"
+      were both eaten, and every inline link on every explainer page rendered
+      welded to the words on either side: "Begin bij80,000 Hours, bijProbably
+      Goodenbij...". Thirty-six of them across seven published pages, all from
+      this one call.
+
+      Whitespace at the edges of a *line* is still noise worth removing, so it
+      is removed here, once, from the ends of the assembled block instead.
+    */
+    const edges = children as { text: string }[]
+    if (edges.length) {
+      edges[0].text = edges[0].text.replace(/^\s+/, '')
+      edges[edges.length - 1].text = edges[edges.length - 1].text.replace(/\s+$/, '')
+    }
+    const kept = edges.filter((c) => c.text !== '') as Record<string, unknown>[]
+
     return {
       _type: 'block',
       _key: `b${blocks.length}`,
       style,
       markDefs,
-      children: children.length ? children : [{ _type: 'span', _key: 's0', text: '', marks: [] }],
+      children: kept.length ? kept : [{ _type: 'span', _key: 's0', text: '', marks: [] }],
       ...(listItem ? { listItem, level: 1 } : {}),
     }
   }
 
-  const strip = (s: string) => s.replace(/\*\*/g, '').replace(/(^|\s)\*(\S)/g, '$1$2').trim()
+  // Emphasis markers only. Deliberately does NOT trim — see the note in
+  // `block` about what that cost.
+  const strip = (s: string) => s.replace(/\*\*/g, '').replace(/(^|\s)\*(\S)/g, '$1$2')
 
   for (const rawLine of markdown.split('\n')) {
     const line = rawLine.trimEnd()

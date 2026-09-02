@@ -110,6 +110,55 @@ the method page (`InternationalFirst`), and a one-line form on every listing pag
 Dutch-language search and never see the index. Copy lives in `content/i18n.ts`
 under `intl*`, not in Sanity, so it cannot quietly disappear from a page.
 
+### Leverage, and where the vocabulary comes from
+
+The board has two tiers and they apply **different tests**, which is worth
+understanding before changing either.
+
+The first tier is about the **effectiveness of the solution**: these
+organisations were vetted by GiveWell, ACE, Founders Pledge or The Life You Can
+Save, or featured by 80,000 Hours. Somebody else did the judging, so every role
+there is listed, support functions included.
+
+The second tier is about **leverage**, and it is ours to defend: how much can
+this role point at the problem beyond the hours of the person doing it? Money,
+rules that bind a sector, other people's work, or an idea that is free to copy.
+This is why a credit analyst at an agricultural lender can outrank a programme
+officer at a charity, and it is the reason most of the board's employers would
+not describe themselves as impact-focused at all.
+
+Both halves come from 80,000 Hours' framework — impact as pressingness of the
+problem × the contribution the path allows × personal fit, with the middle term
+splitting into leverage and solution effectiveness. **Personal fit is
+deliberately not modelled anywhere.** It is the reader's to judge, it often
+matters more than anything the classifier scores, and a board that pretended to
+know it would be lying.
+
+`LEVERAGE_TYPES` in `taxonomy/index.ts` is the mechanism list. It was originally
+invented from the listings we happened to be seeing, which is why it was missing
+three mechanisms until September 2026 — `spreading-ideas`, `organisation-building`
+and `supporting-a-multiplier`. The last of those had been actively scored *down*:
+assistant and chief-of-staff roles were named in the prompt's 1-anchor as generic
+support, which is right for a generic support role and wrong for someone
+deliberately amplifying a person with outsized reach.
+
+Two things guard that from becoming a hole in the bar, and both should survive
+any rewrite: `supporting-a-multiplier` must pass three tests in the prompt (named
+beneficiary, their leverage is genuinely a 3, amplification rather than
+throughput), and the cause-score carve-out that lets such a role reach 2 is
+explicitly narrow — promotion needs cause ≥ 2, so widening it is the fastest
+route to a board full of ops jobs at organisations we happen to like.
+
+The public explanation lives on the method page at `#leverage`, linked from the
+second tier's heading, and its eight mechanisms are the same list minus the three
+entries that are not mechanisms (`direct-work`, `career-capital`, and
+`trusted-recommendation`, which is a provenance signal that lives on this axis
+only because it is what splits the tiers). Keep them in step: if the page and the
+taxonomy disagree, the page is describing a judgement the board does not make.
+
+80,000 Hours' material may **not** be reproduced — see `content/sources.ts`. Every
+sentence of that section is ours; they are cited and linked.
+
 ### The four cause areas
 
 `global-health-wellbeing`, `farmed-animal-welfare`, `global-catastrophic-risks`,
@@ -186,6 +235,7 @@ human decisions to calibrate against.
 | `npm run promote` | Writes the shortlist to Sanity as drafts. `--dry-run` first. |
 | `npm run expire` | Auto-unpublishes past expiry. `--linkcheck` for dead-link detection on crawl sources. |
 | `npm run translate` | Fills the English side of the editorial fields. `--dry` first, `--force` after editing Dutch copy. |
+| `npm run notify` | Mails a digest of untriaged feedback. `--dry` prints it instead. |
 | `npm run grade` | The M3 calibration tool. See below. |
 | `npm run pipeline` | ingest → classify → promote, end to end. |
 | `npm run mirror-glossary` | Refreshes the glossary mirror and distils the style guide. **Run before generating any page.** |
@@ -244,6 +294,27 @@ wished away, in this order:
 3. `--en` composes the English versions separately from the same outline. A
    one-sentence note survives machine translation; a page of argument does not.
 
+### Feedback has to reach a person
+
+The form writes a `suggestion` document and, before September 2026, did nothing
+else — no mail, no webhook. That was tolerable while it was an obscure "tip us"
+link. It stopped being tolerable when the beta began asking every reader for
+feedback on every page: a silent drop-box collecting the reports the beta exists
+to gather is worse than no form, because it looks like listening.
+
+`/api/cron/notify` now mails a weekly digest to `info@effectiefaltruisme.nl` of
+everything still marked `new`. Two choices worth keeping:
+
+- **Weekly, not per-submission.** A launch spike arriving as twenty near-identical
+  mails is how a channel gets muted in week one.
+- **Nothing is sent when the queue is empty.** A recurring "no new suggestions"
+  mail gets archived unopened, which costs the attention the digest is for. The
+  cost is that silence is ambiguous, so the run always logs its own outcome.
+
+Needs `RESEND_API_KEY`. Without it the cron is a no-op that logs how many
+suggestions are waiting rather than throwing — a setup gap should be visible in
+the log, not buried in a red deployment.
+
 ### The short fields are translated, the pages are not
 
 That distinction runs the other way for everything that is one or two sentences
@@ -295,6 +366,8 @@ and in use before the main repo arrives.
    | `expire` | 08:00 daily | Auto-unpublishes past-expiry listings, so the board can't fill with dead links. |
    | `linkcheck` | 09:00 Mondays | Weekly HEAD check on crawl sources, which can't use set-difference closure detection (spec §7.8). |
    | `ingest --discover` | 10:00 Mondays | Employer/ATS discovery from 80k and Probably Good. Poll them at most daily; weekly is plenty (spec §7.6). |
+   | `translate` | 08:30 daily | Fills `whyThisMattersEn`, `excerptEn` and `leverageNoteEn` for anything published since the last run. After `promote` and `expire` on purpose — see below. |
+   | `notify` | 11:00 Mondays | Mails `info@effectiefaltruisme.nl` a digest of feedback still marked `new`. Silent when the queue is empty. |
 
    (`vercel.json`'s own schema rejects unrecognised keys on a cron entry, so this
    table — not an inline `comment` field — is where that reasoning lives.)

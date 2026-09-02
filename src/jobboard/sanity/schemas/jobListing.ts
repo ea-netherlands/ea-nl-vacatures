@@ -257,6 +257,27 @@ export const jobListing = defineType({
       group: 'practical',
       description:
         'Automatically unpublished after this date. Defaults to the closing date, or 60 days after posting.',
+      /*
+        A warning rather than an error, because a date in the past is legitimate
+        on an archived listing — but it is never what a curator wants at the
+        moment they are about to publish.
+    
+        Without it, publishing a listing whose date has already passed succeeds,
+        reports success, and produces a page no reader will ever see: every
+        public query filters on `expiresAt > now()`. Two nuclear-security roles
+        went out that way and the curator's only signal was that they could not
+        find them afterwards. The promotion query now refuses to queue an
+        already-closed vacancy; this catches the ones already sitting in review,
+        and anything a curator edits by hand.
+      */
+      validation: (r) =>
+        r.custom((value) => {
+          if (!value || typeof value !== 'string') return true
+          const when = new Date(value)
+          if (Number.isNaN(when.getTime())) return true
+          if (when.getTime() > Date.now()) return true
+          return 'This date has already passed, so publishing will hide the listing immediately. Extend it, or leave the listing unpublished.'
+        }).warning(),
     }),
 
     // ---- Provenance: read-only, written by the pipeline ----

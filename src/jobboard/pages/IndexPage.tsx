@@ -232,6 +232,29 @@ export async function IndexPage({
           <p className={s.heroStat}>
             {updated ? copy.heroStat(all.length, updated) : copy.browseRoleCount(all.length)}
           </p>
+
+          {/*
+            The two ways in, offered together, above the fold.
+
+            The browse grid below is the better route for someone who does not
+            yet know what they want, and it stays the page's spine. But it is
+            not the better route for everyone, and until now it was the only
+            one with any visual weight: "see all" was a text link below three
+            full sections, so a reader who simply wanted the list had to scroll
+            past the whole argument to find it. A beta reader told us so.
+
+            Both are real choices, so both are buttons. The list first, because
+            it is the one that was missing.
+          */}
+          <p className={s.heroActions}>
+            <Link href={`${r.index}?view=all`} className={`${u.btn} ${u.btnSolid}`}>
+              {copy.browseShowAll(all.length)}
+              <Icon name="arrow-right" />
+            </Link>
+            <a href="#problemareas" className={`${u.btn} ${u.btnSubtle}`}>
+              {copy.heroBrowseCta}
+            </a>
+          </p>
         </Hero>
 
         <Container>
@@ -258,7 +281,7 @@ export async function IndexPage({
             <BetaBand locale={locale} />
           </Section>
 
-          <Section>
+          <Section id="problemareas">
             <h2 className={u.browseHeading}>{copy.browseCauseHeading}</h2>
             <p className={u.browseBody}>{copy.browseCauseBody}</p>
             <CauseGrid locale={locale} counts={counts} />
@@ -382,6 +405,10 @@ export async function IndexPage({
                     heading={copy.tierDutchHeading}
                     body={copy.tierDutchBody}
                     count={copy.tierDutchCount(dutch.length)}
+                    /* Only this tier gets the link. The recommended tier's
+                       criterion — somebody else vetted the organisation — is
+                       self-explanatory in a sentence; leverage is not. */
+                    link={{ href: `${r.method}#leverage`, label: copy.tierDutchLeverageLink }}
                   />
                   <ExpandableCardList listings={dutch} locale={locale} />
                 </>

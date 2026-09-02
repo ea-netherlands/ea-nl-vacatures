@@ -134,7 +134,13 @@ function Header({ locale, switchHref }: { locale: Locale; switchHref: string }) 
             <span className={s.betaPill}>{copy.betaBadge}</span>
           </Link>
           <nav className={s.nav} aria-label={copy.boardName}>
-            <Link href={r.index} className={s.navLink}>
+            {/* `?view=all`, not the bare index. This link is named "all jobs"
+                and used to land on the browse page — a grid of cause tiles with
+                no listing on it. A reader who wants the list had to notice a
+                text link three sections further down, which is exactly the "a
+                lot of clicking" a beta reader reported. The escape hatch
+                existed; nothing pointed at it. */}
+            <Link href={`${r.index}?view=all`} className={s.navLink}>
               {locale === 'nl' ? 'Alle vacatures' : 'All jobs'}
             </Link>
             <Link href={r.method} className={s.navLink}>
@@ -188,7 +194,9 @@ function Footer({ locale }: { locale: Locale }) {
             <p className={s.footerHeading}>{locale === 'nl' ? 'Het bord' : 'The board'}</p>
             <ul className={s.footerList}>
               <li>
-                <Link href={r.index}>{locale === 'nl' ? 'Alle vacatures' : 'All jobs'}</Link>
+                <Link href={`${r.index}?view=all`}>
+                  {locale === 'nl' ? 'Alle vacatures' : 'All jobs'}
+                </Link>
               </li>
               <li>
                 <Link href={r.method}>{locale === 'nl' ? 'Zo kiezen we' : 'How we choose'}</Link>
@@ -543,11 +551,14 @@ export function TierHeading({
   heading,
   body,
   count,
+  link,
 }: {
   icon: IconName
   heading: string
   body: string
   count: string
+  /** Optional "read the longer version" link — the leverage tier uses it. */
+  link?: { href: string; label: string }
 }) {
   return (
     <div className={u.tierHeader}>
@@ -557,6 +568,13 @@ export function TierHeading({
         <span className={u.tierCount}>{count}</span>
       </h2>
       <p className={u.tierBody}>{body}</p>
+      {link ? (
+        <p className={u.tierLink}>
+          <Link href={link.href}>
+            {link.label} <Icon name="arrow-right" />
+          </Link>
+        </p>
+      ) : null}
     </div>
   )
 }

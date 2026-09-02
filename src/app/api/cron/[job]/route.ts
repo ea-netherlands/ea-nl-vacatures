@@ -16,13 +16,14 @@ import { NextResponse } from 'next/server'
 import { runClassification } from '@jobboard/classify/run'
 import { checkDeadLinks, runIngest } from '@jobboard/ingest/run'
 import { runExpiry, runPromotion } from '@jobboard/sanity/promote'
+import { runSuggestionDigest } from '@jobboard/sanity/notify'
 import { runTranslation } from '@jobboard/sanity/translate'
 
 export const dynamic = 'force-dynamic'
 /** Vercel's cron maximum on Pro. Adapters budget against this, minus a margin. */
 export const maxDuration = 300
 
-const JOBS = ['ingest', 'classify', 'promote', 'expire', 'linkcheck', 'translate'] as const
+const JOBS = ['ingest', 'classify', 'promote', 'expire', 'linkcheck', 'translate', 'notify'] as const
 type Job = (typeof JOBS)[number]
 
 /**
@@ -108,6 +109,21 @@ export async function GET(request: Request, { params }: { params: Promise<{ job:
         translate a sentence nobody approved. `force=1` re-does everything,
         which is the switch to reach for after editing Dutch copy in bulk.
       */
+      /*
+        Mails whoever is triaging a digest of untriaged feedback, weekly.
+
+        The only cron here that is not about listings. It exists because the
+        feedback form had no notification at all: submissions landed in Sanity
+        and waited for someone to remember to look, which stopped being viable
+        when the beta started asking every reader for feedback.
+      */
+      case 'notify': {
+        const report = await runSuggestionDigest({
+          dryRun: url.searchParams.get('dryRun') === '1',
+          onLog,
+        })
+        return NextResponse.json({ job, report, logs })
+      }
       case 'translate': {
         const report = await runTranslation({
           dryRun: url.searchParams.get('dryRun') === '1',

@@ -236,6 +236,42 @@ export type ExcludedTopic = (typeof EXCLUDED_TOPICS)[number]['id']
 //     and the latter is what splits the two tiers on the index.
 // Deleting it would cost the board its filter on mediocrity and buy the reader
 // nothing they can see. So: classified, scored, never rendered.
+//
+// ## Where the vocabulary comes from (September 2026)
+//
+// The archetypes were originally ours, invented from the listings we were
+// seeing. They are now aligned to the mechanisms 80,000 Hours sets out in
+// "How much leverage does a career path offer?", because a taxonomy invented
+// from a sample of Dutch job ads will only ever contain the mechanisms that
+// sample happened to include — and ours was missing three of them.
+//
+// Their framing, in our words: the impact of a path comes from how pressing
+// the problem is, how big a contribution the path lets you make, and personal
+// fit. The middle one splits again — into the *leverage* of the role (the
+// value of the resources you get to point at the problem: money, other
+// people's labour, your own) and the *effectiveness of the solution* you point
+// them at. This axis is that first half only. Personal fit is deliberately not
+// modelled anywhere on this board: it is the reader's to judge, not ours.
+//
+// Three archetypes were added because we had no label for them and were
+// therefore systematically failing to surface them:
+//
+//   - `spreading-ideas` — was landing in `field-building`, which is about
+//     building machinery rather than changing minds. Communications and
+//     advocacy roles were scoring as ecosystem plumbing.
+//   - `organisation-building` — was landing in `direct-work`, which lost the
+//     difference between doing the work and building the thing that lets fifty
+//     people do it.
+//   - `supporting-a-multiplier` — had no home at all, and the prompt actively
+//     scored it *down*: assistant and chief-of-staff roles were named in the
+//     1-anchor as generic support. That is right for a generic support role and
+//     wrong for someone deliberately amplifying a person with outsized reach.
+//     See the boundary note in LEVERAGE_DEFINITIONS and in the prompt — this is
+//     the label most likely to erode the bar if it is applied loosely.
+//
+// `trusted-recommendation` is NOT a leverage mechanism and never was; it is a
+// provenance signal that lives on this axis for convenience, because it is what
+// splits the two tiers on the index. Left where it is on purpose.
 // ---------------------------------------------------------------------------
 
 export const LEVERAGE_TYPES = [
@@ -243,6 +279,9 @@ export const LEVERAGE_TYPES = [
   'policy-regulation',
   'research-evidence',
   'field-building',
+  'spreading-ideas',
+  'organisation-building',
+  'supporting-a-multiplier',
   'direct-work',
   'career-capital',
   'earning-to-give',
@@ -267,15 +306,21 @@ export const CLASSIFIER_ASSIGNABLE_LEVERAGE: readonly LeverageType[] = LEVERAGE_
 
 export const LEVERAGE_DEFINITIONS: Record<LeverageType, string> = {
   'capital-allocation':
-    'The role moves or shapes money. Foundation programme officers, development-bank investment officers, VC roles, bank credit and sector research.',
+    'The role moves or shapes money. Foundation programme officers, development-bank investment officers, VC roles, bank credit and sector research, scientific grantmaking. Money is the most transferable resource there is, which is why this archetype and the next one carry the most weight.',
   'policy-regulation':
-    'The role writes, enforces, advises on, or implements rules. Ministry policy officers, regulator staff, standards bodies.',
+    'The role writes, enforces, advises on, or implements the rules a large institution runs on. Ministry policy officers, regulator staff, standards bodies. A senior official may steer a budget of tens or hundreds of millions; improving how that is spent by a few per cent is worth more than most people can produce directly.',
   'research-evidence':
-    'The role produces knowledge that feeds capital allocation and policy. Academic posts, think tanks, technical assessment institutes.',
+    'The role produces knowledge or technology. Academic posts, think tanks, technical assessment institutes, and the engineering that turns a finding into something usable. Discoveries cost almost nothing to copy and they persist, so they reach a scale the researcher never has to fund.',
   'field-building':
-    'The role builds the ecosystem: talent pipelines, coalitions, community infrastructure, movement organisations, effective giving and grantmaking infrastructure.',
+    'The role builds the ecosystem so that other people can work on the problem: talent pipelines, recruitment into high-impact roles, coalitions, community infrastructure, effective giving and grantmaking infrastructure. Finding someone better suited than you for an important job is itself a way of doing that job.',
+  'spreading-ideas':
+    'The role changes what a large number of people understand or believe. Journalism, documentary and media work, public communication, advocacy, and the design, video and marketing craft that carries it. Distinct from field-building: that one builds machinery, this one changes minds, and it reaches far more people per unit of effort.',
+  'organisation-building':
+    'The role builds or runs the organisation itself, so that tens or hundreds of people can work together on the problem more effectively than they could separately. Founders, executives, and the operations and management work that decides whether an organisation functions. Not the same as direct work at that organisation.',
+  'supporting-a-multiplier':
+    'The role makes one identifiable person or team who are themselves having outsized impact meaningfully more effective — chief of staff, executive assistant to a principal whose own leverage is high, a research manager clearing the path for a research group. The leverage is borrowed and it is real, but it is entirely contingent on the person being supported: see the boundary note below, because this is the label most easily abused.',
   'direct-work':
-    'The role does the object-level thing. Programme delivery, engineering at a mission-aligned company, campaigning.',
+    'The role does the object-level thing itself. Programme delivery, engineering at a mission-aligned company, campaigning. This is the baseline the other archetypes are measured against, not a failure — some of the most valuable roles on the board are here, and at some point somebody has to do the work.',
   'career-capital':
     'The role is a stepping stone rather than impactful in itself: it builds skills, credentials or a network that unlock a high-leverage role later. Used sparingly.',
   'earning-to-give':
@@ -285,9 +330,20 @@ export const LEVERAGE_DEFINITIONS: Record<LeverageType, string> = {
 }
 
 /**
- * The scoring rubric rewards these two archetypes at organisations that are
- * not EA-identified, because those are exactly the listings no other board
- * will surface (§5.2).
+ * The archetypes the prompt tells the classifier to look hardest for, at
+ * organisations that are not EA-identified — exactly the listings no other
+ * board will surface (§5.2).
+ *
+ * Read by the prompt (see `classify/prompt`). It previously said the scoring
+ * rubric rewarded these and nothing imported it, so the claim was false and the
+ * behaviour lived only in hand-written prose in the prompt; the prompt now
+ * builds that sentence from this list.
+ *
+ * Deliberately still just these two after the September 2026 widening. Money
+ * and rules are the mechanisms most likely to be sitting unnoticed at a Dutch
+ * employer nobody thinks of as impact-focused. The newer archetypes are real
+ * leverage but they are mostly found at organisations that already advertise
+ * themselves as mission-driven, where other boards will find them too.
  */
 export const PRIORITY_LEVERAGE_TYPES: readonly LeverageType[] = [
   'capital-allocation',
@@ -426,8 +482,11 @@ export const SKILL_TITLES_NL: Record<Skill, string> = {
 export const LEVERAGE_TITLES_NL: Record<LeverageType, string> = {
   'capital-allocation': 'Kapitaalallocatie',
   'policy-regulation': 'Beleid en toezicht',
-  'research-evidence': 'Onderzoek en bewijs',
+  'research-evidence': 'Onderzoek en technologie',
   'field-building': 'Veldopbouw',
+  'spreading-ideas': 'Ideeën verspreiden',
+  'organisation-building': 'Organisaties bouwen',
+  'supporting-a-multiplier': 'Een multiplier ondersteunen',
   'direct-work': 'Direct werk',
   'career-capital': 'Loopbaankapitaal',
   'earning-to-give': 'Earning to give',

@@ -19,6 +19,7 @@ import {
   Container,
   Eyebrow,
   FeedbackBand,
+  FurtherReading,
   Hero,
   InternationalFirst,
   OnwardStep,
@@ -244,6 +245,34 @@ export async function MethodPage({ locale }: { locale: Locale }) {
         </Section>
 
         {/*
+          Movement one: why the choice of problem dominates.
+
+          This now opens the argument, and everything after it is downstream.
+          The page used to begin with our four questions and our five areas —
+          operational detail that answers "what do you do" while never
+          answering "why is this the thing to agonise over". A reader who does
+          not already hold that premise has no reason to read on.
+        */}
+        <Section>
+          <Eyebrow>
+            <Icon name="telescope" />
+            {locale === 'nl' ? 'Eerst dit' : 'First this'}
+          </Eyebrow>
+          <h2 className={s.sectionHeading}>{copy.problemChoiceHeading}</h2>
+          <p className={s.sectionLead}>{copy.problemChoiceLead}</p>
+          <div className={`${s.prose} ${u.introBody}`}>
+            {copy.problemChoiceBody.map((p) => (
+              <p key={p.slice(0, 24)}>{p}</p>
+            ))}
+          </div>
+          <p className={u.sourceNote}>{copy.problemChoiceSourceNote}</p>
+          <FurtherReading
+            href={ONWARD_LINKS.pressingProblems80k}
+            label={copy.problemChoiceLink}
+          />
+        </Section>
+
+        {/*
           The ITN framework is the spine of this page. Using EA NL's existing
           Dutch definitions rather than inventing a frame does double duty: it
           explains the board, and it teaches the single most useful idea a
@@ -292,6 +321,130 @@ export async function MethodPage({ locale }: { locale: Locale }) {
               </p>
             </div>
           </div>
+        </Section>
+
+        {/*
+          Movement two: having argued that the choice matters, name the choice.
+
+          The five areas are rendered from the taxonomy rather than written out,
+          so this cannot fall out of step with what the classifier actually
+          assigns — the failure mode of a hand-written list. Each links to its
+          own explainer.
+        */}
+        <Section>
+          <Eyebrow>
+            <Icon name="filter" />
+            {locale === 'nl' ? 'Onze keuze' : 'Our choice'}
+          </Eyebrow>
+          <h2 className={s.sectionHeading}>{copy.pressingHeading}</h2>
+          <p className={s.sectionLead}>{copy.pressingLead}</p>
+          <ul className={u.mechanismList}>
+            {CAUSE_AREAS.map((cause) => (
+              <li key={cause} className={u.mechanism}>
+                <Link href={r.cause(cause)} className={u.mechanismLabel}>
+                  {copy.causeAreas[cause]}
+                </Link>
+                <span className={u.mechanismExample}>{copy.causeBlurbs[cause]}</span>
+              </li>
+            ))}
+          </ul>
+          <p className={u.sourceNote}>{copy.pressingOutro}</p>
+        </Section>
+
+        {/*
+          Movement three: the half of the question the board used to skip.
+
+          Having a pressing problem is not enough — within any one of them, what
+          an organisation actually does varies enormously in how much it
+          achieves. This is also where the index's two tiers get their
+          justification, so it sits directly before the leverage block that
+          explains the second tier.
+        */}
+        <Section>
+          <Eyebrow>
+            <Icon name="scale" />
+            {locale === 'nl' ? 'En dan de aanpak' : 'Then the approach'}
+          </Eyebrow>
+          <h2 className={s.sectionHeading}>{copy.solutionsHeading}</h2>
+          <p className={s.sectionLead}>{copy.solutionsLead}</p>
+          <div className={`${s.prose} ${u.introBody}`}>
+            {copy.solutionsBody.map((p) => (
+              <p key={p.slice(0, 24)}>{p}</p>
+            ))}
+          </div>
+          <ul className={u.mechanismList}>
+            {copy.solutionsTests.map((t) => (
+              <li key={t.label} className={u.mechanism}>
+                <span className={u.mechanismLabel}>{t.label}</span>
+                <span className={u.mechanismExample}>{t.example}</span>
+              </li>
+            ))}
+          </ul>
+          <p className={u.sourceNote}>{copy.solutionsSourceNote}</p>
+          <FurtherReading href={ONWARD_LINKS.solutions80k} label={copy.solutionsLink} />
+        </Section>
+
+        {/*
+          Leverage, explained properly.
+
+          Immediately after the ITN cards, because the fourth card raises the
+          word and then leaves the reader with a single question mark. The
+          board's whole second tier rests on this idea — it is the reason a bank
+          or a ministry appears on an effective-altruism job board at all — and
+          it was previously used in the hero, in the tier heading and on that
+          card without ever being defined.
+
+          The eight mechanisms are the same list the classifier scores against
+          (LEVERAGE_TYPES, minus direct work, career capital and the provenance
+          label, which are not mechanisms). Keeping them in step is deliberate:
+          if this page and the taxonomy disagree, the page is describing a
+          judgement the board does not actually make.
+
+          The `id` is linked from the second tier heading on the index.
+        */}
+        <Section id="leverage">
+          <Eyebrow>
+            <Icon name="stairs" />
+            {locale === 'nl' ? framework.fourth.nl : framework.fourth.en}
+          </Eyebrow>
+          <h2 className={s.sectionHeading}>{copy.leverageHeading}</h2>
+          <p className={s.sectionLead}>{copy.leverageLead}</p>
+
+          <div className={`${s.prose} ${u.introBody}`}>
+            {copy.leverageBody.map((p) => (
+              <p key={p.slice(0, 24)}>{p}</p>
+            ))}
+          </div>
+
+          <ul className={u.mechanismList}>
+            {copy.leverageMechanisms.map((m) => (
+              <li key={m.label} className={u.mechanism}>
+                <span className={u.mechanismLabel}>{m.label}</span>
+                <span className={u.mechanismExample}>{m.example}</span>
+              </li>
+            ))}
+          </ul>
+
+          {/* The honest limits, stated here rather than left for a reader to
+              discover. Leverage is the board's most persuasive idea and the
+              easiest to over-apply; a version of this page that only sold it
+              would be misrepresenting how we actually decide. */}
+          <div className={u.climateNote}>
+            <h3 className={u.uncertaintyHeading}>
+              <Icon name="scale" />
+              {copy.leverageCaveatHeading}
+            </h3>
+            <div className={u.uncertaintyBody}>
+              {copy.leverageCaveats.map((c) => (
+                <p key={c.slice(0, 24)}>{c}</p>
+              ))}
+            </div>
+          </div>
+
+          {/* Attribution in the body, as a recommendation we mean — not a
+              footnote, and not a claim that they have reviewed any of this. */}
+          <p className={u.sourceNote}>{copy.leverageSourceNote}</p>
+          <FurtherReading href={ONWARD_LINKS.leverage80k} label={copy.leverageSourceLink} />
         </Section>
 
         {explainer ? (
