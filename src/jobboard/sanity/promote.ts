@@ -441,13 +441,16 @@ async function findClosedAtSource(
   client: ReturnType<typeof writeClient>,
   log: (l: string) => void,
 ): Promise<{ _id: string; title: string; expiresAt: string }[]> {
-  const live = await client.fetch<{ _id: string; title: string; pipelineListingId: number | null }[]>(
+  const live = await client.fetch<
+    { _id: string; title: string; applyUrl: string | null; pipelineListingId: number | null }[]
+  >(
     `*[_type == "jobListing" && !(_id in path("drafts.**")) && defined(pipelineListingId)
-       && (!defined(expiresAt) || expiresAt > now())]{_id, title, pipelineListingId}`,
+       && (!defined(expiresAt) || expiresAt > now())]{_id, title, applyUrl, pipelineListingId}`,
   )
   const ids = live.map((d) => d.pipelineListingId).filter((n): n is number => typeof n === 'number')
   if (!ids.length) return []
 
+  let candidates: typeof live
   try {
     const db = await getDb()
     const { rows } = await db.query<{ id: number }>(
@@ -455,11 +458,62 @@ async function findClosedAtSource(
       [ids],
     )
     const closed = new Set(rows.map((r) => r.id))
-    const hits = live.filter((d) => d.pipelineListingId !== null && closed.has(d.pipelineListingId))
-    log(`${hits.length} published listings the source has already closed`)
-    return hits.map((d) => ({ _id: d._id, title: d.title, expiresAt: '' }))
+    candidates = live.filter((d) => d.pipelineListingId !== null && closed.has(d.pipelineListingId))
   } catch (err) {
     log(`could not check source closure (${(err as Error).message}) — expiry only`)
     return []
   }
+  if (!candidates.length) return []
+
+  /*
+    Absence from one fetch is a signal, not proof — so corroborate it.
+
+    Set-difference closure marks a listing closed the moment it is missing from
+    a source's response. That is usually right and occasionally very wrong: a
+    paginated or partially-returned API answer closes everything it failed to
+    mention. On the first real run of this check, six published listings were
+    flagged and four of them still answered 200 at the employer's own site —
+    two at the Centre for Effective Altruism, two at GiveDirectly. Unpublishing
+    those would have removed live vacancies from the board on the strength of
+    one HTTP response.
+
+    So a listing is only retired here when the pipeline says it is gone AND its
+    apply URL is verifiably dead. The two failure modes are not symmetrical: a
+    dead link on the board costs a reader one wasted click and is caught by the
+    weekly link check, while silently deleting a live vacancy costs them the job
+    and we never find out. Anything closed-but-still-answering is left up and
+    logged for a curator to judge.
+  */
+  const { httpFetch } = await import('../lib/http')
+  const confirmed: { _id: string; title: string; expiresAt: string }[] = []
+  let unconfirmed = 0
+
+  for (const doc of candidates) {
+    if (!doc.applyUrl) {
+      unconfirmed++
+      continue
+    }
+    try {
+      const res = await httpFetch(doc.applyUrl, {
+        method: 'HEAD',
+        retries: 1,
+        acceptStatuses: [404, 410, 403, 405],
+      })
+      if (res.status === 404 || res.status === 410) {
+        confirmed.push({ _id: doc._id, title: doc.title, expiresAt: '' })
+      } else {
+        unconfirmed++
+        log(`still answering ${res.status}, left published: ${doc.title}`)
+      }
+    } catch {
+      // A network failure is not evidence the vacancy is gone.
+      unconfirmed++
+    }
+  }
+
+  log(
+    `${candidates.length} published listings absent from their source; ` +
+      `${confirmed.length} confirmed dead, ${unconfirmed} left up pending a human`,
+  )
+  return confirmed
 }
