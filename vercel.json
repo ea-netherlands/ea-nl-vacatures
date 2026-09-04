@@ -27,7 +27,7 @@
     },
     {
       "path": "/api/cron/translate",
-      "schedule": "30 8 * * *"
+      "schedule": "20 */3 * * *"
     },
     {
       "path": "/api/cron/linkcheck",

@@ -31,6 +31,26 @@ export const jobListing = defineType({
     { name: 'provenance', title: 'Provenance' },
   ],
   fields: [
+    /*
+      First field on the first tab, above the job title.
+
+      This is the one thing a curator wants before anything else: the case for
+      why this listing is in front of them at all. It used to sit at the bottom
+      of a separate "Provenance" tab, so every review began by clicking away
+      from the form to find the argument and then clicking back to act on it.
+      Read-only, never shown publicly — it is the classifier talking to the
+      curator, not to a reader.
+    */
+    defineField({
+      name: 'llmReasoning',
+      title: 'Why the classifier passed this through',
+      type: 'text',
+      rows: 5,
+      group: 'editorial',
+      readOnly: true,
+      description:
+        'The classifier’s own argument, for triage. Not shown to readers, and not a substitute for reading the ad — it is what to check, not what to trust.',
+    }),
     defineField({
       name: 'title',
       title: 'Job title',
@@ -302,14 +322,7 @@ export const jobListing = defineType({
       group: 'provenance',
       readOnly: true,
     }),
-    defineField({
-      name: 'llmReasoning',
-      title: 'Why the classifier passed this through',
-      type: 'text',
-      group: 'provenance',
-      readOnly: true,
-      description: 'Context for the curator. Never shown publicly.',
-    }),
+
   ],
   orderings: [
     {
