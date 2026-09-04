@@ -2,8 +2,16 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "crons": [
     {
-      "path": "/api/cron/ingest",
+      "path": "/api/cron/ingest?kind=ats&kind=ea-board",
       "schedule": "0 5 * * *"
+    },
+    {
+      "path": "/api/cron/ingest?kind=crawl&concurrency=2",
+      "schedule": "20 5 * * *"
+    },
+    {
+      "path": "/api/cron/ingest?source=academictransfer&concurrency=1",
+      "schedule": "40 5 * * *"
     },
     {
       "path": "/api/cron/classify",

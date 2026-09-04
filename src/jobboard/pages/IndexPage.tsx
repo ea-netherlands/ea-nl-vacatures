@@ -53,7 +53,7 @@ import {
   TierHeading,
 } from '../components/Chrome'
 import { CauseGrid, SkillGrid, countFacets } from '../components/BrowseGrid'
-import { ExpandableCardList } from '../components/ExpandableCardList'
+import { ExpandableCardList, TierJump } from '../components/ExpandableCardList'
 import { Icon } from '../components/Icon'
 import { ONWARD_LINKS, routes, t, type Locale } from '../content/i18n'
 import { getLiveListings } from '../sanity/queries'
@@ -383,11 +383,20 @@ export async function IndexPage({
             />
           ) : (
             <>
+              {/* Both tiers named and counted before either list starts, so a
+                  reader knows the second one exists without us truncating the
+                  first to tell them. */}
+              <TierJump
+                locale={locale}
+                recommended={recommended.length}
+                dutch={dutch.length}
+              />
+
               {/* A tier with nothing in it — because a filter excluded it —
                   renders nothing at all: an explanation of an empty list is
                   worse than no heading. */}
               {recommended.length > 0 ? (
-                <>
+                <div id="tier-recommended">
                   <TierHeading
                     icon="circle-check"
                     heading={copy.tierRecommendedHeading}
@@ -395,11 +404,11 @@ export async function IndexPage({
                     count={copy.tierRecommendedCount(recommended.length)}
                   />
                   <ExpandableCardList listings={recommended} locale={locale} />
-                </>
+                </div>
               ) : null}
 
               {dutch.length > 0 ? (
-                <>
+                <div id="tier-dutch">
                   <TierHeading
                     icon="building"
                     heading={copy.tierDutchHeading}
@@ -411,7 +420,7 @@ export async function IndexPage({
                     link={{ href: `${r.method}#leverage`, label: copy.tierDutchLeverageLink }}
                   />
                   <ExpandableCardList listings={dutch} locale={locale} />
-                </>
+                </div>
               ) : null}
             </>
           )}

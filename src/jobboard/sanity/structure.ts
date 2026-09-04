@@ -37,8 +37,22 @@ export const structure: StructureResolver = (S) =>
   S.list()
     .title('Job board')
     .items([
-      // Drafts, ordered by score descending — the highest-scoring listing a
-      // curator has not yet looked at is the first thing they see.
+      /*
+        Drafts, ordered by score descending — the highest-scoring listing a
+        curator has not yet looked at is the first thing they see.
+
+        Expired drafts are excluded. Reviewing one is wasted work twice over:
+        the vacancy has closed, and publishing it produces a page no reader can
+        reach, because every public query filters on the same date. That used to
+        happen regularly — the fallback expiry ran from the employer's posting
+        date rather than from when we first saw the listing, so ATS roles with
+        months-old posting dates arrived pre-expired. Fixed in `promote.ts`, but
+        the queue should not surface them even if it recurs.
+
+        They are not deleted, just moved out of the way — see "Expired drafts"
+        below, which is where to look if something has vanished from Review
+        unexpectedly.
+      */
       S.listItem()
         .title('Review')
         .icon(icon('hourglass'))
@@ -46,9 +60,26 @@ export const structure: StructureResolver = (S) =>
           S.documentList()
             .title('Awaiting review')
             .apiVersion('2024-10-01')
-            .filter(`_type == "jobListing" && ${IS_DRAFT}`)
+            .filter(
+              `_type == "jobListing" && ${IS_DRAFT} && (!defined(expiresAt) || expiresAt > now())`,
+            )
             .defaultOrdering([{ field: 'llmScore', direction: 'desc' }])
             .menuItemGroups([{ id: 'sort', title: 'Sort' }]),
+        ),
+
+      // The ones Review now hides, so nothing disappears without a place to
+      // find it. Extend the date here and the listing returns to the queue.
+      S.listItem()
+        .title('Expired drafts')
+        .icon(icon('clock-exclamation'))
+        .child(
+          S.documentList()
+            .title('Drafts whose closing date has passed')
+            .apiVersion('2024-10-01')
+            .filter(
+              `_type == "jobListing" && ${IS_DRAFT} && defined(expiresAt) && expiresAt <= now()`,
+            )
+            .defaultOrdering([{ field: 'expiresAt', direction: 'desc' }]),
         ),
 
       S.listItem()

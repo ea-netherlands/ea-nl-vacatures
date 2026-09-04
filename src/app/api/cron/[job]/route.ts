@@ -61,10 +61,24 @@ export async function GET(request: Request, { params }: { params: Promise<{ job:
 
   try {
     switch (job as Job) {
+      /*
+        `?kind=` is what keeps the fast feeds alive.
+
+        One run for all thirty-six sources meant `academictransfer` — ten-second
+        crawl delay, up to twenty-five detail pages, so 250s against a 240s
+        budget — could eat the entire window on its own, and the sources behind
+        it in the queue were skipped every single time. They are now scheduled
+        separately in vercel.json, each with its own budget, and sources within
+        a run go six at a time.
+      */
       case 'ingest': {
         const sourceIds = url.searchParams.getAll('source')
+        const kinds = url.searchParams.getAll('kind')
+        const concurrency = Number(url.searchParams.get('concurrency') ?? 6)
         const report = await runIngest({
           sourceIds: sourceIds.length ? sourceIds : undefined,
+          kinds: kinds.length ? kinds : undefined,
+          concurrency: Number.isFinite(concurrency) ? concurrency : 6,
           budgetMs,
           discover: url.searchParams.get('discover') === '1',
           onLog,

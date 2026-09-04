@@ -25,6 +25,27 @@ import type {
 export type IngestOptions = {
   /** Restrict to these source ids. Empty means all enabled sources. */
   sourceIds?: string[]
+  /**
+   * Restrict to these source kinds — 'ats' | 'crawl' | 'ea-board' | 'gov-api'.
+   *
+   * This is how the slow crawls stop starving the fast feeds. The thirty ATS
+   * sources are one quick API call each; `academictransfer` observes a verified
+   * ten-second crawl delay over up to twenty-five detail pages, so it needs
+   * upward of 250s against a 240s budget and could consume an entire run on its
+   * own. Splitting them across separate cron slots gives each its own budget,
+   * rather than having them compete for one.
+   */
+  kinds?: string[]
+  /**
+   * How many sources to run at once. Default 6.
+   *
+   * Safe because politeness is enforced per host in `lib/http` — sources that
+   * share a host (the seven Ashby boards, the five Greenhouse ones) serialise
+   * on that lock and keep their inter-request gap, while sources on different
+   * hosts genuinely overlap. The work is almost entirely network wait, so this
+   * is where the wall-clock actually comes from.
+   */
+  concurrency?: number
   /** Wall-clock budget in ms. Vercel's default cron timeout is 300s. */
   budgetMs?: number
   /** Skip closure detection — useful when running one source in isolation. */
@@ -87,22 +108,72 @@ export async function runIngest(options: IngestOptions = {}): Promise<IngestRepo
   const budgetMs = options.budgetMs ?? 240_000
   const deadline = Date.now() + budgetMs
 
+  /*
+    Least-recently-run first, NOT alphabetically.
+
+    This loop has a wall-clock budget and skips whatever is left when the budget
+    runs out. Ordering by `s.id` meant the same sources were at the front of the
+    queue on every single run, so once the early ones grew past the budget the
+    tail was never reached again — not "less often", never. By 4 September 2026
+    every ATS source had last run on 19 August, all reporting success with zero
+    failures, while `80000hours` — first alphabetically — was still updating
+    daily. Kairos had posted new roles that the board simply never fetched.
+
+    A source that missed its turn now goes to the front of the next one, so the
+    budget starves everything evenly instead of starving the same half forever.
+    `nulls first` puts a newly seeded source ahead of the queue, which is what
+    you want the first time it runs.
+  */
+  const filters: string[] = ['s.enabled']
+  const params: unknown[] = []
+  if (options.sourceIds?.length) {
+    params.push(options.sourceIds)
+    filters.push(`s.id = any($${params.length})`)
+  }
+  if (options.kinds?.length) {
+    params.push(options.kinds)
+    filters.push(`s.kind = any($${params.length})`)
+  }
+
   const { rows: sources } = await db.query<SourceRecord>(
-    options.sourceIds?.length
-      ? `select s.*, e.name as employer_name from source s
-           left join employer e on e.id = s.employer_id
-          where s.enabled and s.id = any($1) order by s.id`
-      : `select s.*, e.name as employer_name from source s
-           left join employer e on e.id = s.employer_id
-          where s.enabled order by s.id`,
-    options.sourceIds?.length ? [options.sourceIds] : [],
+    `select s.*, e.name as employer_name from source s
+       left join employer e on e.id = s.employer_id
+      where ${filters.join(' and ')}
+      order by s.last_run_at asc nulls first, s.id`,
+    params as never[],
   )
 
   const results: SourceResult[] = []
   const discovered: EmployerDiscovery[] = []
 
-  for (const source of sources) {
+  /*
+    A worker pool over the source queue, rather than one at a time.
+
+    Almost all of this work is waiting on somebody else's HTTP server, so
+    running one source at a time left the budget mostly idle while thirty-five
+    feeds waited their turn. Politeness is not weakened by this: `lib/http`
+    serialises per host and holds each host's verified inter-request gap, so
+    the seven Ashby boards still queue behind one another and only genuinely
+    unrelated hosts overlap.
+
+    Workers pull from a shared cursor, so a slow source delays only itself.
+    Each checks the deadline before starting rather than mid-flight — a source
+    that has begun is allowed to finish, because adapters resume from their own
+    cursors and a half-written fetch is worse than a slightly late one.
+  */
+  const concurrency = Math.max(1, Math.min(options.concurrency ?? 6, sources.length || 1))
+  let cursor = 0
+
+  const runOne = async (source: SourceRecord) => {
     if (Date.now() >= deadline) {
+      // Reported as `ok` because nothing failed, which is exactly how this
+      // went unnoticed for a fortnight: a skipped source looks identical to a
+      // healthy one in the report and in `consecutive_failures`. The log line
+      // now says how stale the source is, so a run that keeps missing the same
+      // feed is visible in the cron output rather than only in the data.
+      const stale = source.last_run_at
+        ? `last ran ${Math.round((Date.now() - new Date(source.last_run_at).getTime()) / 864e5)}d ago`
+        : 'never run'
       results.push({
         sourceId: source.id,
         ok: true,
@@ -111,9 +182,9 @@ export async function runIngest(options: IngestOptions = {}): Promise<IngestRepo
         updated: 0,
         closed: 0,
         skipped: 1,
-        logs: ['skipped: run budget exhausted, will pick up next run'],
+        logs: [`skipped: run budget exhausted (${stale}), first in line next run`],
       })
-      continue
+      return
     }
     const result = await runSource(db, source, { ...options, deadline })
     results.push(result)
@@ -135,6 +206,35 @@ export async function runIngest(options: IngestOptions = {}): Promise<IngestRepo
       }
     }
   }
+
+  await Promise.all(
+    Array.from({ length: concurrency }, async () => {
+      while (cursor < sources.length) {
+        const source = sources[cursor++]
+        // One source failing must not abandon the workers behind it;
+        // `runSource` already records its own failure, so this is a backstop
+        // for anything thrown outside it.
+        try {
+          await runOne(source)
+        } catch (err) {
+          results.push({
+            sourceId: source.id,
+            ok: false,
+            fetched: 0,
+            inserted: 0,
+            updated: 0,
+            closed: 0,
+            skipped: 0,
+            error: (err as Error).message,
+            logs: [`unhandled: ${(err as Error).message}`],
+          })
+        }
+      }
+    }),
+  )
+
+  // Workers finish out of order; the report should not.
+  results.sort((a, b) => a.sourceId.localeCompare(b.sourceId))
 
   if (options.discover && discovered.length) {
     await recordDiscoveries(db, discovered)

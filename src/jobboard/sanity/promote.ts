@@ -44,6 +44,7 @@ type PromotableRow = {
   description: string | null
   location_raw: string | null
   posted_at: string | null
+  first_seen_at: string | null
   deadline_at: string | null
   salary_min: string | null
   salary_max: string | null
@@ -137,10 +138,29 @@ export async function runPromotion(options: PromoteOptions = {}): Promise<Promot
       // re-run updates the same draft instead of creating a second one.
       const docId = `drafts.jobListing-${row.id}`
 
+      /*
+        The fallback window runs from when WE first saw the listing, not from
+        when the employer posted it.
+
+        It used to run from `posted_at`, which is the employer's own date. On an
+        ATS feed that is routinely months old — a rolling "Expression of
+        Interest" can carry a posting date from years back — so the sixty-day
+        window was already spent before a curator ever opened the listing. The
+        result was a queue of drafts that published and vanished in the same
+        moment, and a curator repeatedly editing the date by hand to undo it.
+        One Kairos role had to be pushed forward manually; forty-four of the
+        seventy listings had no deadline at all and were all exposed to it.
+
+        `first_seen_at` says something we actually know: the source was still
+        advertising this role on that date. Roles that close earlier are caught
+        by closure detection and by `runExpiry`, so this only has to be a
+        backstop rather than a guess at the employer's intentions.
+      */
+      const expiryBase = row.first_seen_at ?? row.posted_at
       const expiresAt =
         row.deadline_at ??
         new Date(
-          (row.posted_at ? new Date(row.posted_at).getTime() : Date.now()) +
+          (expiryBase ? new Date(expiryBase).getTime() : Date.now()) +
             DEFAULT_EXPIRY_DAYS * 864e5,
         ).toISOString()
 
@@ -207,7 +227,7 @@ export async function runPromotion(options: PromoteOptions = {}): Promise<Promot
 async function loadPromotable(db: Db, limit: number): Promise<PromotableRow[]> {
   const { rows } = await db.query<PromotableRow>(
     `select l.id, l.title, l.employer_id, l.employer_name, l.apply_url, l.description,
-            l.location_raw, l.posted_at, l.deadline_at, l.salary_min, l.salary_max,
+            l.location_raw, l.posted_at, l.first_seen_at, l.deadline_at, l.salary_min, l.salary_max,
             l.salary_currency, l.salary_period, l.mentions_30_percent_ruling, l.source_id,
             c.primary_cause, c.secondary_causes, c.sub_area, c.skills,
             c.leverage, c.cause_score,

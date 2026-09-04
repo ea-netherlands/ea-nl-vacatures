@@ -401,6 +401,13 @@ type Strings = {
   tierDutchCount: (n: number) => string
   tierExpand: (n: number) => string
   tierCollapse: string
+  /**
+   * Label on the contents strip above the two tiers.
+   *
+   * Replaces what truncation used to do — telling a reader the list has two
+   * distinct halves — without hiding the first half to say it.
+   */
+  tierJumpLabel: string
   filtersHeading: string
   clearFilters: string
   emptyHeading: string
@@ -759,6 +766,7 @@ const nl: Strings = {
   tierDutchCount: (n) => (n === 1 ? '1 vacature' : `${n} vacatures`),
   tierExpand: (n) => `Toon alle ${n} vacatures`,
   tierCollapse: 'Toon minder',
+  tierJumpLabel: 'In deze lijst:',
   filtersHeading: 'Filter',
   clearFilters: 'Wis filters',
   emptyHeading: 'Geen vacatures met deze filters',
@@ -1191,6 +1199,7 @@ const en: Strings = {
   tierDutchCount: (n) => (n === 1 ? '1 role' : `${n} roles`),
   tierExpand: (n) => `Show all ${n} roles`,
   tierCollapse: 'Show fewer',
+  tierJumpLabel: 'In this list:',
   filtersHeading: 'Filter',
   clearFilters: 'Clear filters',
   emptyHeading: 'No jobs match these filters',

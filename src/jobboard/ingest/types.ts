@@ -49,6 +49,8 @@ export type SourceRecord = {
   employer_name: string | null
   enabled: boolean
   returns_complete_set: boolean
+  /** Drives the ingest queue order — least-recently-run goes first. */
+  last_run_at: string | null
 }
 
 /**
