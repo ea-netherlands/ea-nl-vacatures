@@ -37,19 +37,14 @@
  * into a red deployment.
  */
 
+import { MAIL_FROM, sendMail } from '../lib/mail'
 import { writeClient } from './client'
-
-const RESEND_ENDPOINT = 'https://api.resend.com/emails'
 
 /** Where the digest goes. Overridable so a test run can go somewhere else. */
 export const DIGEST_TO = process.env.FEEDBACK_DIGEST_TO ?? 'info@effectiefaltruisme.nl'
 
-/**
- * Must be a domain verified in Resend. Defaults to the board's own subdomain
- * rather than a generic sender so a reply lands somewhere a person reads.
- */
-export const DIGEST_FROM =
-  process.env.FEEDBACK_DIGEST_FROM ?? 'Vacaturebord <vacatures@effectiefaltruisme.nl>'
+/** Must be a domain verified in Resend; see lib/mail. */
+export const DIGEST_FROM = MAIL_FROM
 
 const STUDIO_URL = `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://vacatures.effectiefaltruisme.nl'}/studio`
 
@@ -173,16 +168,7 @@ export async function runSuggestionDigest(
     return { ...base, skippedReason: 'RESEND_API_KEY not set', preview: body }
   }
 
-  const res = await fetch(RESEND_ENDPOINT, {
-    method: 'POST',
-    headers: { authorization: `Bearer ${key}`, 'content-type': 'application/json' },
-    body: JSON.stringify({ from: DIGEST_FROM, to: [DIGEST_TO], subject, text: body }),
-  })
-
-  if (!res.ok) {
-    const detail = await res.text().catch(() => '')
-    throw new Error(`Resend returned ${res.status}: ${detail.slice(0, 300)}`)
-  }
+  await sendMail({ from: DIGEST_FROM, to: [DIGEST_TO], subject, text: body })
 
   log(`sent "${subject}" to ${DIGEST_TO}`)
   return { ...base, sent: true, preview: body }

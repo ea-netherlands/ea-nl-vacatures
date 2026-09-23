@@ -21,8 +21,8 @@
 import Anthropic from '@anthropic-ai/sdk'
 
 export const TRIAGE_MODEL = process.env.TRIAGE_MODEL ?? 'claude-haiku-4-5'
-export const DRAFTING_MODEL = process.env.DRAFTING_MODEL ?? 'claude-opus-5'
-export const PROSE_MODEL = process.env.PROSE_MODEL ?? 'claude-opus-5'
+export const DRAFTING_MODEL = process.env.DRAFTING_MODEL ?? 'claude-opus-5-5'
+export const PROSE_MODEL = process.env.PROSE_MODEL ?? 'claude-opus-5-5'
 
 let client: Anthropic | null = null
 

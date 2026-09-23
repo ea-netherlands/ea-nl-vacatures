@@ -26,6 +26,8 @@ import { buildNoteSystemPrompt, buildTriageUserPrompt, TRIAGE_SYSTEM_PROMPT } fr
 import { NOTE_SCHEMA, TRIAGE_SCHEMA, type TriageResult } from './schema'
 import { stage1, type Stage1Input } from './stage1'
 import { loadGlossaryForPrompt, loadStyleGuide } from '../content/style'
+import { sourceRankSql } from '../ingest/dedup'
+import { loadCuratorCalibration } from '../review/calibration'
 
 export type ClassifyOptions = {
   limit?: number
@@ -82,6 +84,11 @@ export async function runClassification(
   const styleGuide = await loadStyleGuide()
   const glossary = await loadGlossaryForPrompt()
   const noteSystem = buildNoteSystemPrompt(styleGuide, glossary)
+  // The curator's latest accept/reject calls, with their reasons. Built once
+  // per run so the system prompt stays byte-identical and cacheable.
+  const calibration = await loadCuratorCalibration(db)
+  const triageSystem = TRIAGE_SYSTEM_PROMPT + calibration
+  if (calibration) log('triage prompt includes recent curator decisions')
 
   for (const c of candidates) {
     if (Date.now() >= deadline) {
@@ -109,7 +116,7 @@ export async function runClassification(
         // The system prompt is byte-identical across every listing in a run,
         // so caching it turns a few thousand copies into one write plus reads.
         cacheSystem: true,
-        system: TRIAGE_SYSTEM_PROMPT,
+        system: triageSystem,
         user: buildTriageUserPrompt({
           title: c.title,
           employerName: c.employer_name,
@@ -180,6 +187,7 @@ export async function runClassification(
       // Draft the editorial note only for listings that will reach a curator.
       // This is the expensive model, and the set is much smaller (§8.4).
       let draftNote = raw.draftNoteNl
+      let noteModel: string | null = null
       if (promotable && !options.skipNotes) {
         try {
           const { value, usage: noteUsage } = await structuredCall<{ noteNl: string }>({
@@ -203,9 +211,15 @@ export async function runClassification(
               .filter((l) => l !== null)
               .join('\n'),
             schema: NOTE_SCHEMA,
-            maxTokens: 2000,
+            // Adaptive thinking at high effort counts against max_tokens. At
+            // 2000 the call routinely stopped mid-thought and threw, and the
+            // cheaper triage draft was kept — paying for Opus, getting Haiku.
+            maxTokens: 16_000,
           })
-          if (value.noteNl?.trim()) draftNote = value.noteNl.trim()
+          if (value.noteNl?.trim()) {
+            draftNote = value.noteNl.trim()
+            noteModel = DRAFTING_MODEL
+          }
           report.usage.input += noteUsage.input
           report.usage.output += noteUsage.output
           report.usage.cacheRead += noteUsage.cacheRead
@@ -247,7 +261,9 @@ export async function runClassification(
            raw_response = excluded.raw_response`,
         [
           c.id,
-          TRIAGE_MODEL,
+          // Both models, when both were used, so a bad note can be traced to
+          // the model that wrote it rather than to the one that scored it.
+          noteModel ? `${TRIAGE_MODEL} + ${noteModel}` : TRIAGE_MODEL,
           raw.nlEligible,
           gated.primaryCause,
           gated.secondaryCauses,
@@ -309,6 +325,7 @@ async function loadCandidates(db: Db, options: ClassifyOptions): Promise<Candida
             e.leverage_note      as employer_leverage_note,
             e.e2g_allowlisted, e.e2g_salary_presumed, e.recommender_allowlisted
        from listing l
+       join source s on s.id = l.source_id
        left join employer e on e.id = l.employer_id
        left join classification c on c.listing_id = l.id
        left join decision d
@@ -318,6 +335,22 @@ async function loadCandidates(db: Db, options: ClassifyOptions): Promise<Candida
         and d.id is null                      -- never re-surface a human decision
         and ($2 or c.listing_id is null)      -- unclassified unless forced
         and ($3::bigint[] is null or l.id = any($3))
+        -- Do not pay to classify a copy of a role we already have a better
+        -- copy of: a higher-ranked source for the same dedup key, or one of
+        -- equal rank that is already classified or older. The surviving row is
+        -- the one with the real description (dedup.ts, pickCanonical).
+        and not exists (
+          select 1
+            from listing l2
+            join source s2 on s2.id = l2.source_id
+            left join classification c2 on c2.listing_id = l2.id
+           where l2.dedup_key = l.dedup_key
+             and l2.id <> l.id
+             and l2.closed_at is null
+             and (${sourceRankSql('s2.kind')} > ${sourceRankSql('s.kind')}
+                  or (${sourceRankSql('s2.kind')} = ${sourceRankSql('s.kind')}
+                      and (c2.listing_id is not null or l2.id < l.id)))
+        )
       order by l.first_seen_at desc
       limit $1`,
     [limit, options.force ?? false, options.ids?.length ? options.ids : null],

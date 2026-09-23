@@ -199,9 +199,12 @@ export const lever: SourceAdapter = {
         postedAt: toDate(j.createdAt),
         deadlineAt: null,
       },
-      categories.compensation ?? j.salaryRange?.currency
-        ? `${j.salaryRange?.min ?? ''} ${j.salaryRange?.max ?? ''} ${j.salaryRange?.currency ?? ''}`
-        : null,
+      // Parenthesised on purpose: `a ?? b ? x : y` parses as `(a ?? b) ? x : y`,
+      // which replaced Lever's own compensation text with an empty template.
+      categories.compensation ??
+        (j.salaryRange?.currency
+          ? `${j.salaryRange?.min ?? ''} ${j.salaryRange?.max ?? ''} ${j.salaryRange?.currency ?? ''}`
+          : null),
       j.salaryRange
         ? {
             salaryMin: j.salaryRange.min ?? null,
@@ -374,7 +377,12 @@ export const smartrecruiters: SourceAdapter = {
         `https://api.smartrecruiters.com/v1/companies/${encodeURIComponent(companyId)}/postings?limit=${limit}&offset=${offset}`,
       )
       if (!page) {
-        ctx.log(`smartrecruiters: postings feed not enabled for ${companyId}`)
+        if (offset > 0) {
+          ctx.log(`smartrecruiters: page at offset ${offset} unavailable for ${companyId}`)
+          ctx.markIncomplete(`smartrecruiters: page at offset ${offset} unavailable`)
+        } else {
+          ctx.log(`smartrecruiters: postings feed not enabled for ${companyId}`)
+        }
         return
       }
       const items = page.content ?? []
@@ -546,6 +554,7 @@ export const workday: SourceAdapter = {
       )
       if (!res.ok) {
         ctx.log(`workday: ${res.status} for ${host}/${tenant}/${site} — check tenant/site/host`)
+        if (offset > 0) ctx.markIncomplete(`workday: ${res.status} at offset ${offset}`)
         return
       }
       const data = (await res.json()) as {
@@ -567,6 +576,7 @@ export const workday: SourceAdapter = {
       }
       if (postings.length < limit || offset + limit >= (data.total ?? 0)) return
     }
+    ctx.markIncomplete('workday: hit the 400-posting cap')
   },
   normalise(raw, config) {
     const j = raw.payload as Record<string, any>
@@ -677,6 +687,7 @@ export const successfactors: SourceAdapter = {
     for (let page = 0; page < 20; page++) {
       if (outOfTime(ctx)) {
         ctx.log(`successfactors: out of time at page ${page}`)
+        ctx.markIncomplete(`successfactors: deadline reached at page ${page}`)
         return
       }
       const res = await httpFetch(`https://${host}/services/recruiting/v1/jobs`, {
@@ -717,6 +728,7 @@ export const successfactors: SourceAdapter = {
 
       if (typeof data.totalJobs === 'number' && (page + 1) * perPage >= data.totalJobs) return
     }
+    ctx.markIncomplete('successfactors: hit the 20-page cap')
   },
   normalise(raw, config) {
     const { job, url, descriptionHtml } = raw.payload as {

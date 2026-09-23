@@ -38,7 +38,33 @@
  */
 
 import { DRAFTING_MODEL, structuredCall } from '../lib/anthropic'
+import { sha256 } from '../lib/text'
 import { writeClient } from './client'
+
+/**
+ * Short hash of a Dutch source text, stored beside the English it produced.
+ *
+ * "Translate only when the English is empty" meant the classifier's draft note
+ * was translated within hours of promotion, and when a curator then rewrote
+ * the Dutch the English never followed: /en showed a sentence nobody approved.
+ * A field is now stale when its recorded source no longer matches the Dutch.
+ * A field with English but no recorded source predates this and is treated as
+ * stale once, which is the only way to catch the ones that already drifted.
+ */
+export function sourceHash(text: string): string {
+  return sha256(text.trim()).slice(0, 16)
+}
+
+export function needsTranslation(
+  dutch: string | null | undefined,
+  english: string | null | undefined,
+  recorded: string | null | undefined,
+  force: boolean,
+): dutch is string {
+  if (!dutch?.trim()) return false
+  if (force || !english?.trim()) return true
+  return recorded !== sourceHash(dutch)
+}
 
 /** How many fields go into one model call. */
 const DEFAULT_BATCH = 8
@@ -51,6 +77,7 @@ type Job = {
   text: string
   kind: Kind
   label: string
+  hash: string
 }
 
 export type TranslationReport = {
@@ -154,6 +181,7 @@ type ListingRow = {
   whyThisMattersEn?: string | null
   excerpt?: string | null
   excerptEn?: string | null
+  translatedFrom?: { whyThisMattersEn?: string; excerptEn?: string } | null
 }
 
 type EmployerRow = {
@@ -161,6 +189,7 @@ type EmployerRow = {
   name?: string | null
   leverageNoteNl?: string | null
   leverageNoteEn?: string | null
+  translatedFrom?: { leverageNoteEn?: string } | null
 }
 
 export async function runTranslation(
@@ -170,6 +199,14 @@ export async function runTranslation(
     force?: boolean
     limit?: number
     batchSize?: number
+    /**
+     * Wall-clock budget. Up to fifteen sequential Opus batches can outrun a
+     * 300s function, and the job used to write everything at the end — so a
+     * killed run paid for every translation and saved none, then did it again
+     * three hours later. It now writes after each batch and stops when the
+     * budget is spent; the rest is picked up next run.
+     */
+    budgetMs?: number
     onLog?: (line: string) => void
   } = {},
 ): Promise<TranslationReport> {
@@ -177,6 +214,7 @@ export async function runTranslation(
   const force = options.force ?? false
   const limit = options.limit ?? Infinity
   const batchSize = options.batchSize ?? DEFAULT_BATCH
+  const deadline = Date.now() + (options.budgetMs ?? Infinity)
   const client = writeClient()
 
   // Drafts included on purpose: a curator reviewing an unpublished listing in
@@ -184,45 +222,55 @@ export async function runTranslation(
   const listings = await client.fetch<ListingRow[]>(
     `*[_type == "jobListing"]{
        _id, title, "employerName": employer->name,
-       whyThisMattersNl, whyThisMattersEn, excerpt, excerptEn
+       whyThisMattersNl, whyThisMattersEn, excerpt, excerptEn, translatedFrom
      }`,
   )
   const employers = await client.fetch<EmployerRow[]>(
-    `*[_type == "employer" && defined(leverageNoteNl)]{ _id, name, leverageNoteNl, leverageNoteEn }`,
+    `*[_type == "employer" && defined(leverageNoteNl)]{ _id, name, leverageNoteNl, leverageNoteEn, translatedFrom }`,
   )
 
   const jobs: Job[] = []
 
   for (const l of listings) {
     const where = [l.title, l.employerName].filter(Boolean).join(' at ') || l._id
-    if (l.whyThisMattersNl?.trim() && (force || !l.whyThisMattersEn?.trim())) {
+    if (
+      needsTranslation(
+        l.whyThisMattersNl,
+        l.whyThisMattersEn,
+        l.translatedFrom?.whyThisMattersEn,
+        force,
+      )
+    ) {
       jobs.push({
         docId: l._id,
         field: 'whyThisMattersEn',
         text: l.whyThisMattersNl.trim(),
         kind: 'note',
         label: where,
+        hash: sourceHash(l.whyThisMattersNl),
       })
     }
-    if (l.excerpt?.trim() && (force || !l.excerptEn?.trim())) {
+    if (needsTranslation(l.excerpt, l.excerptEn, l.translatedFrom?.excerptEn, force)) {
       jobs.push({
         docId: l._id,
         field: 'excerptEn',
         text: l.excerpt.trim(),
         kind: 'excerpt',
         label: where,
+        hash: sourceHash(l.excerpt),
       })
     }
   }
 
   for (const e of employers) {
-    if (e.leverageNoteNl?.trim() && (force || !e.leverageNoteEn?.trim())) {
+    if (needsTranslation(e.leverageNoteNl, e.leverageNoteEn, e.translatedFrom?.leverageNoteEn, force)) {
       jobs.push({
         docId: e._id,
         field: 'leverageNoteEn',
         text: e.leverageNoteNl.trim(),
         kind: 'employer-note',
         label: e.name ?? e._id,
+        hash: sourceHash(e.leverageNoteNl),
       })
     }
   }
@@ -248,42 +296,53 @@ export async function runTranslation(
   }
   if (!selected.length) return base
 
-  // Patches are grouped per document so a listing whose note and excerpt are
-  // both new is written once, not twice.
-  const patches = new Map<string, Record<string, string>>()
   const errors: string[] = []
   let translated = 0
+  const patched = new Set<string>()
 
   for (let i = 0; i < selected.length; i += batchSize) {
+    if (Date.now() >= deadline) {
+      log(`out of time after ${translated} fields; the rest go next run`)
+      break
+    }
     const batch = selected.slice(i, i + batchSize)
     log(`translating ${i + 1}–${i + batch.length} of ${selected.length}…`)
+    let results: Map<string, string>
     try {
-      const results = await translateBatch(batch)
-      for (const job of batch) {
-        const english = results.get(`${job.docId}:${job.field}`)
-        if (!english) {
-          errors.push(`${job.docId} ${job.field}: model returned nothing`)
-          continue
-        }
-        const fields = patches.get(job.docId) ?? {}
-        fields[job.field] = english
-        patches.set(job.docId, fields)
-        translated++
-      }
+      results = await translateBatch(batch)
     } catch (err) {
       errors.push(`batch ${i}: ${(err as Error).message}`)
+      continue
+    }
+
+    // Grouped per document so a listing whose note and excerpt are both new is
+    // written once, and written now — not at the end of the run.
+    const patches = new Map<string, Record<string, string>>()
+    for (const job of batch) {
+      const english = results.get(`${job.docId}:${job.field}`)
+      if (!english) {
+        errors.push(`${job.docId} ${job.field}: model returned nothing`)
+        continue
+      }
+      const fields = patches.get(job.docId) ?? {}
+      fields[job.field] = english
+      fields[`translatedFrom.${job.field}`] = job.hash
+      patches.set(job.docId, fields)
+    }
+    for (const [docId, fields] of patches) {
+      try {
+        await client
+          .patch(docId)
+          .setIfMissing({ translatedFrom: {} })
+          .set(fields)
+          .commit()
+        patched.add(docId)
+        translated += Object.keys(fields).filter((k) => !k.startsWith('translatedFrom.')).length
+      } catch (err) {
+        errors.push(`${docId}: ${(err as Error).message}`)
+      }
     }
   }
 
-  let written = 0
-  for (const [docId, fields] of patches) {
-    try {
-      await client.patch(docId).set(fields).commit()
-      written++
-    } catch (err) {
-      errors.push(`${docId}: ${(err as Error).message}`)
-    }
-  }
-
-  return { ...base, translated, documentsPatched: written, errors }
+  return { ...base, translated, documentsPatched: patched.size, errors }
 }

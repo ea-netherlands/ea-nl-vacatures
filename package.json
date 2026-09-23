@@ -17,12 +17,13 @@
     "promote": "tsx src/scripts/promote.ts",
     "translate": "tsx src/scripts/translate.ts",
     "notify": "tsx src/scripts/notify.ts",
+    "review-digest": "tsx src/scripts/review-digest.ts",
     "expire": "tsx src/scripts/expire.ts",
     "grade": "tsx src/scripts/grade.ts",
     "pipeline": "tsx src/scripts/pipeline.ts",
     "mirror-glossary": "tsx src/scripts/mirror-glossary.ts",
     "generate-explainers": "tsx src/scripts/generate-explainers.ts",
-    "test": "tsx --test src/jobboard/pipeline.test.ts"
+    "test": "tsx --test 'src/jobboard/**/*.test.ts'"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.115.0",

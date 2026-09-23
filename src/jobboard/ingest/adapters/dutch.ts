@@ -126,6 +126,7 @@ export const wvnSitemap: SourceAdapter = {
     for (const url of Object.keys(cache)) if (!live.has(url)) delete cache[url]
 
     let fetched = 0
+    let outOfTimeLogged = false
     for (const entry of wanted) {
       // Unchanged pages are re-emitted from the sitemap alone so closure
       // detection still sees them as live, without re-fetching the body.
@@ -133,9 +134,17 @@ export const wvnSitemap: SourceAdapter = {
         yield { externalId: entry.loc, payload: { url: entry.loc, unchanged: true } }
         continue
       }
+      // Out of time: stop fetching, but keep walking the list so the unchanged
+      // pages behind the cursor are still reported as seen. This used to
+      // `break`, which dropped them from the fetch and let closure detection
+      // mark every one of them closed.
       if (Date.now() >= ctx.deadline) {
-        ctx.log(`wvn: out of time after ${fetched} page fetches; resuming next run`)
-        break
+        if (!outOfTimeLogged) {
+          ctx.log(`wvn: out of time after ${fetched} page fetches; resuming next run`)
+          ctx.markIncomplete('wvn: deadline reached before every changed page was fetched')
+          outOfTimeLogged = true
+        }
+        continue
       }
       try {
         const html = await fetchText(entry.loc)
@@ -152,6 +161,7 @@ export const wvnSitemap: SourceAdapter = {
         yield { externalId: entry.loc, payload: { url: entry.loc, posting, body } }
       } catch (err) {
         ctx.log(`wvn: failed ${entry.loc}: ${(err as Error).message}`)
+        ctx.markIncomplete(`wvn: ${entry.loc} failed to fetch`)
       }
     }
 
@@ -254,6 +264,7 @@ export const csoApi: SourceAdapter = {
     }
 
     const pageSize = Number(config.pageSize ?? 100)
+    let authRetries = 0
     for (let page = 0; page < 50; page++) {
       const apiKey = await csoApiKey(baseUrl, username, password)
       const body = {
@@ -279,11 +290,19 @@ export const csoApi: SourceAdapter = {
       if (res.status === 401 || res.status === 403) {
         // Key expired mid-run, or another process claimed the single allowed
         // key. Drop it and let the next iteration re-authenticate.
+        // Retry the SAME page: a bare `continue` advanced the offset and
+        // silently skipped a page of results, which closure then closed.
         csoKey = null
         ctx.log('cso-api: key rejected, re-authenticating')
         await sleep(1000)
+        if (++authRetries > 3) {
+          ctx.markIncomplete('cso-api: key rejected repeatedly')
+          return
+        }
+        page--
         continue
       }
+      authRetries = 0
       const data = (await res.json()) as { jobs?: Record<string, unknown>[]; Jobs?: unknown[] }
       const jobs = (data.jobs ?? (data.Jobs as Record<string, unknown>[]) ?? []) as Record<
         string,
@@ -295,9 +314,11 @@ export const csoApi: SourceAdapter = {
       if (jobs.length < pageSize) return
       if (Date.now() >= ctx.deadline) {
         ctx.log('cso-api: out of time; resuming next run')
+        ctx.markIncomplete('cso-api: deadline reached mid-pagination')
         return
       }
     }
+    ctx.markIncomplete('cso-api: hit the 50-page cap')
   },
   normalise(raw, config) {
     const j = raw.payload as Record<string, any>
@@ -627,6 +648,7 @@ export const partos: SourceAdapter = {
     for (const url of links) {
       if (Date.now() >= ctx.deadline) {
         ctx.log('partos: out of time; resuming next run')
+        ctx.markIncomplete('partos: deadline reached before every vacancy page was fetched')
         return
       }
       try {
@@ -637,7 +659,11 @@ export const partos: SourceAdapter = {
           continue
         }
         const title = page.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)?.[1] ?? ''
-        if (!title) continue
+        if (!title) {
+          // Linked from the index, so it exists; we just could not read it.
+          ctx.markIncomplete(`partos: no title parsed at ${url}`)
+          continue
+        }
         // Keep only the vacancy body, not the site-wide footer blocks that
         // follow it ("Actueel", "Voor leden", "Meest bezocht", "Contact").
         const body = page.split(/<h2[^>]*>\s*(?:Actueel|Voor leden|Meest bezocht|Contact)\s*</i)[0]
@@ -647,6 +673,7 @@ export const partos: SourceAdapter = {
         }
       } catch (err) {
         ctx.log(`partos: failed ${url}: ${(err as Error).message}`)
+        ctx.markIncomplete(`partos: ${url} failed to fetch`)
       }
     }
   },

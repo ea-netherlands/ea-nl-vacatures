@@ -15,6 +15,7 @@
 import type { Db } from '../db/client'
 import { getDb } from '../db/client'
 import { recordDecision } from '../classify/run'
+import { sourceRankSql } from '../ingest/dedup'
 import { slugify } from '../lib/text'
 import { meetsPromotionThreshold } from '../taxonomy'
 import { isSanityConfigured, writeClient } from './client'
@@ -30,6 +31,8 @@ export type PromoteReport = {
   promoted: number
   skippedAlreadyPromoted: number
   skippedBelowThreshold: number
+  /** Another copy of the same role (same dedup key) is already in the queue or decided. */
+  skippedDuplicate: number
   employersCreated: number
   errors: { listingId: number; message: string }[]
   dryRun: boolean
@@ -52,6 +55,7 @@ type PromotableRow = {
   salary_period: string | null
   mentions_30_percent_ruling: boolean
   source_id: string
+  dedup_key: string
   primary_cause: string | null
   secondary_causes: string[]
   sub_area: string | null
@@ -86,6 +90,7 @@ export async function runPromotion(options: PromoteOptions = {}): Promise<Promot
     promoted: 0,
     skippedAlreadyPromoted: 0,
     skippedBelowThreshold: 0,
+    skippedDuplicate: 0,
     employersCreated: 0,
     errors: [],
     dryRun: options.dryRun ?? false,
@@ -104,8 +109,17 @@ export async function runPromotion(options: PromoteOptions = {}): Promise<Promot
 
   const client = options.dryRun ? null : writeClient()
   const employerCache = new Map<string, string>()
+  // The query already drops rows whose duplicate was decided on in an earlier
+  // run; this catches two copies of one role arriving in the same batch.
+  // Rows are ordered best-first, so the first copy seen is the one to keep.
+  const promotedKeys = new Set<string>()
 
   for (const row of rows) {
+    if (promotedKeys.has(row.dedup_key)) {
+      report.skippedDuplicate++
+      log(`skipped #${row.id} — duplicate of a listing already promoted this run`)
+      continue
+    }
     // Re-check the threshold here rather than trusting the query alone: the
     // gate enforcement in classify may have nulled a label after scoring, and a
     // listing with no cause or no leverage is not publishable.
@@ -126,6 +140,7 @@ export async function runPromotion(options: PromoteOptions = {}): Promise<Promot
             `(${row.primary_cause}/${row.leverage}, score ${row.total_score})`,
         )
         report.promoted++
+        promotedKeys.add(row.dedup_key)
         continue
       }
 
@@ -135,7 +150,7 @@ export async function runPromotion(options: PromoteOptions = {}): Promise<Promot
 
       const slugBase = slugify(`${row.title}-${row.employer_name}`)
       // A deterministic document id keyed on the pipeline listing means a
-      // re-run updates the same draft instead of creating a second one.
+      // re-run finds the same draft instead of creating a second one.
       const docId = `drafts.jobListing-${row.id}`
 
       /*
@@ -164,7 +179,10 @@ export async function runPromotion(options: PromoteOptions = {}): Promise<Promot
             DEFAULT_EXPIRY_DAYS * 864e5,
         ).toISOString()
 
-      await client!.createOrReplace({
+      // createIfNotExists, not createOrReplace: if the decision insert below
+      // ever fails, the next run reaches this listing again, and replacing
+      // would overwrite whatever the curator had already edited in the draft.
+      await client!.createIfNotExists({
         _id: docId,
         _type: 'jobListing',
         title: row.title,
@@ -213,6 +231,7 @@ export async function runPromotion(options: PromoteOptions = {}): Promise<Promot
         docId,
       )
       report.promoted++
+      promotedKeys.add(row.dedup_key)
       log(`promoted #${row.id} → ${docId}`)
     } catch (err) {
       const message = (err as Error).message
@@ -229,7 +248,7 @@ async function loadPromotable(db: Db, limit: number): Promise<PromotableRow[]> {
     `select l.id, l.title, l.employer_id, l.employer_name, l.apply_url, l.description,
             l.location_raw, l.posted_at, l.first_seen_at, l.deadline_at, l.salary_min, l.salary_max,
             l.salary_currency, l.salary_period, l.mentions_30_percent_ruling, l.source_id,
-            c.primary_cause, c.secondary_causes, c.sub_area, c.skills,
+            l.dedup_key, c.primary_cause, c.secondary_causes, c.sub_area, c.skills,
             c.leverage, c.cause_score,
             c.leverage_score, c.total_score, c.language_requirement,
             c.work_authorisation, c.security_screening, c.security_note,
@@ -241,6 +260,7 @@ async function loadPromotable(db: Db, limit: number): Promise<PromotableRow[]> {
             e.ats                 as employer_ats,
             e.e2g_allowlisted     as employer_e2g
        from listing l
+       join source s on s.id = l.source_id
        join classification c on c.listing_id = l.id
        left join employer e on e.id = l.employer_id
        left join decision d
@@ -271,7 +291,18 @@ async function loadPromotable(db: Db, limit: number): Promise<PromotableRow[]> {
         and cardinality(c.skills) > 0
         and c.total_score >= 4
         and c.cause_score >= 2
-      order by c.total_score desc, l.first_seen_at desc
+        -- The same role from another source, already queued or decided on.
+        -- Without this an 80k copy and the employer's own ATS copy of one job
+        -- both reached the curator, and rejecting one left the other waiting.
+        and not exists (
+          select 1
+            from listing l2
+            join decision d2 on d2.listing_id = l2.id
+           where l2.dedup_key = l.dedup_key
+             and l2.id <> l.id
+             and d2.action in ('promoted', 'published', 'rejected', 'snoozed')
+        )
+      order by c.total_score desc, ${sourceRankSql('s.kind')} desc, l.first_seen_at desc
       limit $1`,
     [limit],
   )
