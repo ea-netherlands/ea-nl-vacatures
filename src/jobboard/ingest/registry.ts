@@ -27,6 +27,15 @@ export function getAdapter(id: string): SourceAdapter {
   return adapter
 }
 
+/**
+ * Adds an adapter at runtime. For tests, which drive the real runner against a
+ * scripted source, and for one-off probes — production adapters are listed
+ * above so a deploy never depends on registration order.
+ */
+export function registerAdapter(adapter: SourceAdapter): void {
+  BY_ID.set(adapter.id, adapter)
+}
+
 export function adapterIds(): string[] {
   return [...BY_ID.keys()].sort()
 }

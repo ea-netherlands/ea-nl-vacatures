@@ -1,0 +1,251 @@
+/* The review dashboard. Every value from theme.css; the button, card, badge
+   and field recipes come from ui.module.css and are not restyled here. */
+
+.page {
+  padding-block: var(--space-12) var(--space-20);
+}
+
+.title {
+  font-size: var(--text-4xl);
+  line-height: var(--lh-tight);
+  margin-bottom: var(--space-3);
+}
+
+.lead {
+  color: var(--fg-muted);
+  max-width: 60ch;
+  margin-bottom: var(--space-8);
+}
+
+.tally {
+  font-size: var(--text-sm);
+  font-weight: var(--fw-medium);
+  color: var(--fg-muted);
+  padding-block: var(--space-3);
+  border-top: var(--rule-dashed);
+  border-bottom: var(--rule-dashed);
+  margin-bottom: var(--space-6);
+}
+
+.list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+/* A card here is a workspace, not a link: no hover lift. */
+.item,
+.item:hover {
+  box-shadow: var(--card-elevated-shadow);
+  border-color: var(--border);
+  scroll-margin-top: var(--space-6);
+}
+.item:target {
+  border-color: var(--primary-emphasized);
+  box-shadow: var(--card-elevated-shadow), var(--focus-ring);
+}
+
+.itemHead {
+  margin-bottom: var(--space-4);
+}
+
+.itemTitle {
+  font-size: var(--text-xl);
+  line-height: var(--lh-snug);
+  margin-bottom: var(--space-2);
+}
+
+.noteField {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.noteLabel {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  font-size: var(--text-sm);
+  font-weight: var(--fw-medium);
+  color: var(--fg-muted);
+}
+
+.count {
+  font-weight: var(--fw-regular);
+  color: var(--fg-subtle);
+}
+
+.countBad {
+  font-weight: var(--fw-regular);
+  color: var(--fg-error);
+}
+
+/* The note is the product, so it reads like the note on the board does. */
+.note {
+  border-left: 2px solid var(--primary-emphasized);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.actions button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.adLink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1-5);
+  margin-left: auto;
+  font-size: var(--text-sm);
+  color: var(--link);
+}
+.adLink:hover {
+  color: var(--link-hover);
+}
+
+@media (max-width: 40rem) {
+  .actions > button {
+    flex: 1 1 auto;
+  }
+  .adLink {
+    margin-left: 0;
+  }
+}
+
+.hint {
+  font-size: var(--text-sm);
+  color: var(--fg-muted);
+  margin-top: var(--space-2);
+}
+
+.error {
+  font-size: var(--text-sm);
+  color: var(--fg-error);
+  background: var(--bg-error);
+  border-radius: var(--radius-input);
+  padding: var(--space-2) var(--space-3);
+  margin-top: var(--space-3);
+}
+
+.reason {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  border: none;
+  border-top: var(--rule-dashed);
+  margin: var(--space-5) 0 0;
+  padding: var(--space-5) 0 0;
+}
+
+.reasonLegend {
+  font-size: var(--text-sm);
+  font-weight: var(--fw-medium);
+  color: var(--fg-muted);
+  padding: 0;
+  margin-bottom: var(--space-3);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  font-size: var(--text-sm);
+  padding: var(--space-1-5) var(--space-3);
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-emphasized);
+  color: var(--fg-muted);
+  background: var(--bg);
+  cursor: pointer;
+  transition: background var(--transition-common), border-color var(--transition-common);
+}
+.chip:hover {
+  background: var(--bg-subtle);
+}
+.chip:focus-within {
+  box-shadow: var(--focus-ring);
+}
+
+.chipActive,
+.chipActive:hover {
+  background: var(--primary-muted);
+  border-color: var(--primary-emphasized);
+  color: var(--primary-fg);
+}
+
+/* Visually hidden, still reachable by keyboard and screen readers. */
+.chipInput {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+
+.details {
+  margin-top: var(--space-5);
+  padding-top: var(--space-4);
+  border-top: var(--rule-dashed);
+  font-size: var(--text-sm);
+  color: var(--fg-muted);
+  line-height: var(--lh-relaxed);
+}
+.details summary {
+  cursor: pointer;
+  font-weight: var(--fw-medium);
+  color: var(--primary-fg);
+}
+.details p {
+  margin-top: var(--space-3);
+  max-width: 70ch;
+}
+
+.detailsHeading {
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: var(--fw-semibold);
+  color: var(--fg);
+  margin-top: var(--space-4);
+}
+
+.done {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-card);
+  background: var(--bg-subtle);
+  color: var(--fg-muted);
+  font-size: var(--text-sm);
+}
+
+.doneTitle {
+  font-weight: var(--fw-medium);
+  color: var(--fg);
+}
+
+.doneWhat a {
+  color: var(--link);
+}
+
+.empty {
+  padding: var(--space-8);
+  border: var(--rule-dashed);
+  border-radius: var(--radius-card);
+  color: var(--fg-muted);
+  text-align: center;
+}

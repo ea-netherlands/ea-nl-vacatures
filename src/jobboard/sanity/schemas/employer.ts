@@ -82,6 +82,15 @@ export const employer = defineType({
       description: 'Machine-translated from the Dutch on publish.',
     }),
     defineField({
+      name: 'translatedFrom',
+      title: 'Translation source hashes',
+      type: 'object',
+      group: 'editorial',
+      hidden: true,
+      readOnly: true,
+      fields: [{ name: 'leverageNoteEn', type: 'string' }],
+    }),
+    defineField({
       name: 'causeAreas',
       title: 'Cause areas',
       type: 'array',

@@ -3,7 +3,7 @@ import { absolute } from '@jobboard/lib/seo'
 
 export default function robots(): MetadataRoute.Robots {
   return {
-    rules: [{ userAgent: '*', allow: '/', disallow: ['/api/', '/studio'] }],
+    rules: [{ userAgent: '*', allow: '/', disallow: ['/api/', '/studio', '/review'] }],
     sitemap: absolute('/sitemap.xml'),
   }
 }

@@ -18,12 +18,22 @@ import { checkDeadLinks, runIngest } from '@jobboard/ingest/run'
 import { runExpiry, runPromotion } from '@jobboard/sanity/promote'
 import { runSuggestionDigest } from '@jobboard/sanity/notify'
 import { runTranslation } from '@jobboard/sanity/translate'
+import { runReviewDigest } from '@jobboard/review/digest'
 
 export const dynamic = 'force-dynamic'
 /** Vercel's cron maximum on Pro. Adapters budget against this, minus a margin. */
 export const maxDuration = 300
 
-const JOBS = ['ingest', 'classify', 'promote', 'expire', 'linkcheck', 'translate', 'notify'] as const
+const JOBS = [
+  'ingest',
+  'classify',
+  'promote',
+  'expire',
+  'linkcheck',
+  'translate',
+  'notify',
+  'review-digest',
+] as const
 type Job = (typeof JOBS)[number]
 
 /**
@@ -58,6 +68,11 @@ export async function GET(request: Request, { params }: { params: Promise<{ job:
   }
   // Leave headroom so the handler can still write its own response.
   const budgetMs = Math.max(30_000, (maxDuration - 30) * 1000)
+  // A non-numeric ?limit= used to reach SQL as NaN and fail the query.
+  const limitParam = (fallback: number) => {
+    const n = Number(url.searchParams.get('limit') ?? fallback)
+    return Number.isFinite(n) && n > 0 ? Math.floor(n) : fallback
+  }
 
   try {
     switch (job as Job) {
@@ -87,7 +102,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ job:
       }
       case 'classify': {
         const report = await runClassification({
-          limit: Number(url.searchParams.get('limit') ?? 200),
+          limit: limitParam(200),
           skipNotes: url.searchParams.get('skipNotes') === '1',
           budgetMs,
           onLog,
@@ -96,7 +111,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ job:
       }
       case 'promote': {
         const report = await runPromotion({
-          limit: Number(url.searchParams.get('limit') ?? 50),
+          limit: limitParam(50),
           dryRun: url.searchParams.get('dryRun') === '1',
           onLog,
         })
@@ -110,7 +125,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ job:
         return NextResponse.json({ job, report, logs })
       }
       case 'linkcheck': {
-        const report = await checkDeadLinks(Number(url.searchParams.get('limit') ?? 100))
+        const report = await checkDeadLinks(limitParam(100))
         return NextResponse.json({ job, report, logs })
       }
       /*
@@ -138,11 +153,23 @@ export async function GET(request: Request, { params }: { params: Promise<{ job:
         })
         return NextResponse.json({ job, report, logs })
       }
+      /*
+        The curator's morning mail: what the pipeline promoted since the last
+        one, and a signed link to the review dashboard. Runs after `promote`.
+      */
+      case 'review-digest': {
+        const report = await runReviewDigest({
+          dryRun: url.searchParams.get('dryRun') === '1',
+          onLog,
+        })
+        return NextResponse.json({ job, report, logs })
+      }
       case 'translate': {
         const report = await runTranslation({
           dryRun: url.searchParams.get('dryRun') === '1',
           force: url.searchParams.get('force') === '1',
-          limit: Number(url.searchParams.get('limit') ?? 120),
+          limit: limitParam(120),
+          budgetMs,
           onLog,
         })
         return NextResponse.json({ job, report, logs })

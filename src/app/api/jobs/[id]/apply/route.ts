@@ -12,7 +12,7 @@
  * a rough proxy for newcomer versus community reader (§3).
  */
 
-import { NextResponse } from 'next/server'
+import { after, NextResponse } from 'next/server'
 import { getDb } from '@jobboard/db/client'
 import { getListingById } from '@jobboard/sanity/queries'
 import { DEFAULT_LOCALE, LOCALES, type Locale } from '@jobboard/content/i18n'
@@ -48,8 +48,11 @@ export async function GET(
   }
 
   // Log without blocking the redirect: a database hiccup must never stop a
-  // reader reaching the employer's page.
-  void (async () => {
+  // reader reaching the employer's page. `after()` rather than a bare
+  // fire-and-forget promise: on serverless the instance can be frozen the
+  // moment the response is sent, and the insert went with it — undercounting
+  // the one engagement metric this board has.
+  after(async () => {
     try {
       const db = await getDb()
       const referrer = request.headers.get('referer')
@@ -71,7 +74,7 @@ export async function GET(
     } catch {
       // Swallowed on purpose — see above.
     }
-  })()
+  })
 
   return NextResponse.redirect(destination.toString(), {
     status: 302,

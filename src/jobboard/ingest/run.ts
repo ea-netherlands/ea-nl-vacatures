@@ -87,13 +87,15 @@ function makeCache(db: Db, sourceId: string): AdapterCache {
       return (store[key] as T) ?? null
     },
     async set(key: string, value: unknown) {
+      // Merge into `__cache` rather than jsonb_set on a two-level path:
+      // jsonb_set only creates the LAST key, so on a source seeded without a
+      // `__cache` object the write silently did nothing and the crawl never
+      // remembered its position.
       await db.query(
         `update source
-            set config = jsonb_set(
-              coalesce(config, '{}'::jsonb),
-              array['__cache', $2],
-              $3::jsonb,
-              true
+            set config = coalesce(config, '{}'::jsonb) || jsonb_build_object(
+              '__cache',
+              coalesce(config->'__cache', '{}'::jsonb) || jsonb_build_object($2::text, $3::jsonb)
             )
           where id = $1`,
         [sourceId, key, JSON.stringify(value ?? null)],
@@ -198,6 +200,9 @@ export async function runIngest(options: IngestOptions = {}): Promise<IngestRepo
             deadline,
             log: (m) => result.logs.push(m),
             cache: makeCache(db, source.id),
+            // Discovery never drives closure, so an incomplete harvest only
+            // means fewer employers found this week.
+            markIncomplete: () => {},
           })
           discovered.push(...found)
         } catch (err) {
@@ -281,11 +286,15 @@ async function runSource(
     logs,
   }
 
+  let incomplete: string | null = null
   const ctx: AdapterContext = {
     source,
     log,
     deadline: options.deadline,
     cache: makeCache(db, source.id),
+    markIncomplete: (reason) => {
+      incomplete ??= reason
+    },
   }
 
   const seenExternalIds: string[] = []
@@ -329,15 +338,26 @@ async function runSource(
         continue
       }
 
-      const wrote = await upsertListing(db, source, normalised)
-      if (wrote === 'inserted') result.inserted++
-      else result.updated++
+      // One bad row (an unknown employer id, an Invalid Date) used to throw out
+      // of the loop and fail the whole source, every run, until the data was
+      // fixed. It still counts as seen, so it cannot trigger closure either.
+      try {
+        const wrote = await upsertListing(db, source, normalised)
+        if (wrote === 'inserted') result.inserted++
+        else result.updated++
+      } catch (err) {
+        log(`upsert failed for ${raw.externalId}: ${(err as Error).message}`)
+        result.skipped++
+      }
     }
 
-    // Closure detection (§7.8) — only for sources that return a complete set.
-    // All the ATS APIs do; a partial crawl does not, and marking listings
+    // Closure detection (§7.8) — only for sources that return a complete set,
+    // and only when this particular fetch actually finished. All the ATS APIs
+    // return a complete set; a partial crawl does not, and marking listings
     // closed from a truncated crawl would silently empty the board.
-    if (!options.skipClosure && source.returns_complete_set && result.fetched > 0) {
+    if (incomplete) {
+      log(`closure detection skipped: fetch incomplete (${incomplete})`)
+    } else if (!options.skipClosure && source.returns_complete_set && result.fetched > 0) {
       const { rows } = await db.query<{ count: string }>(
         `update listing
             set closed_at = now()
@@ -383,11 +403,19 @@ async function upsertListing(
   source: SourceRecord,
   n: NormalisedListing,
 ): Promise<'inserted' | 'updated'> {
-  const employerId = n.employerId ?? source.employer_id ?? null
   // A single-tenant ATS board (one employer per source) often never repeats
   // the company name in its own job payloads, so fall back to the watchlist
   // employer's canonical name rather than surfacing a blank employer.
   const employerName = n.employerName?.trim() || source.employer_name || n.employerName
+  /*
+    Aggregator rows (80k, Probably Good) arrive with no employer id, while the
+    ATS row for the same role carries the watchlist slug. The dedup key hashes
+    whichever it has, so the two copies of one job never collided and both
+    were classified and promoted. Resolving the name against the watchlist
+    here gives both rows the same employer, and therefore the same key.
+  */
+  const employerId =
+    n.employerId ?? source.employer_id ?? (await employerIdByName(db, employerName))
   const dedupKey = computeDedupKey({
     applyUrl: n.applyUrl,
     title: n.title,
@@ -453,6 +481,16 @@ async function upsertListing(
   // PGlite does not expose xmax, so fall back to treating an absent flag as an
   // update; the distinction is only used for run reporting.
   return rows[0]?.inserted ? 'inserted' : 'updated'
+}
+
+/** Exact, case-insensitive name match against the watchlist; null if none. */
+async function employerIdByName(db: Db, name: string | null): Promise<string | null> {
+  if (!name?.trim()) return null
+  const { rows } = await db.query<{ id: string }>(
+    `select id from employer where lower(name) = lower($1) order by active desc, id limit 1`,
+    [name.trim()],
+  )
+  return rows[0]?.id ?? null
 }
 
 /**

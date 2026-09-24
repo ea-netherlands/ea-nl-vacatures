@@ -90,6 +90,17 @@ export type AdapterContext = {
   deadline: number
   /** Small persistent key/value store for crawl cursors and page caches. */
   cache: AdapterCache
+  /**
+   * Call when this run did not see everything the source currently lists — a
+   * deadline hit mid-crawl, a page that failed to fetch, a pagination cap.
+   *
+   * Closure detection treats "absent from this fetch" as "closed", which is
+   * only true of a fetch that finished. Before this existed, a wvn crawl that
+   * ran out of time stopped re-emitting the unchanged pages behind its cursor,
+   * and every listing after that point was marked closed. The runner skips
+   * closure for the whole source when this has been called.
+   */
+  markIncomplete: (reason: string) => void
 }
 
 export interface AdapterCache {

@@ -160,3 +160,22 @@ create table if not exists grade (
   graded_by    text,
   graded_at    timestamptz not null default now()
 );
+
+-- Added September 2026 with the review dashboard. A curator rejection can now
+-- carry a reason category ("not-leverage", "wrong-cause", ...) as well as free
+-- text, so the classifier can be shown its recent misses by kind, and the M3
+-- report can count them. Null for every pipeline decision.
+alter table decision add column if not exists category text;
+
+create index if not exists decision_curator_idx on decision (created_at desc) where actor <> 'pipeline';
+
+-- One row per daily review digest actually sent. "New since the last mail" is
+-- computed against the latest row, so a skipped day widens the window rather
+-- than losing listings from it.
+create table if not exists review_digest (
+  id           bigserial primary key,
+  sent_at      timestamptz not null default now(),
+  recipients   text[] not null,
+  new_count    int not null,
+  waiting_count int not null
+);

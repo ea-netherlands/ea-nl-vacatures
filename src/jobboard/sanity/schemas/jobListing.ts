@@ -110,7 +110,7 @@ export const jobListing = defineType({
       group: 'editorial',
       readOnly: true,
       description:
-        'Machine-translated by `npm run translate`. Not human-reviewed by default — see §12. There is exactly one note for a curator to write, and it is the Dutch one. Edit the Dutch and re-run with --force to refresh this.',
+        'Machine-translated by `npm run translate`. Not human-reviewed by default — see §12. There is exactly one note for a curator to write, and it is the Dutch one. Edit the Dutch and this refreshes on the next translate run.',
     }),
     defineField({
       name: 'excerpt',
@@ -321,6 +321,21 @@ export const jobListing = defineType({
       type: 'number',
       group: 'provenance',
       readOnly: true,
+    }),
+    // Written by `npm run translate`: a hash of the Dutch each English field was
+    // translated from, so an edited Dutch note is re-translated rather than
+    // left beside an English version of the sentence it replaced.
+    defineField({
+      name: 'translatedFrom',
+      title: 'Translation source hashes',
+      type: 'object',
+      group: 'provenance',
+      hidden: true,
+      readOnly: true,
+      fields: [
+        { name: 'whyThisMattersEn', type: 'string' },
+        { name: 'excerptEn', type: 'string' },
+      ],
     }),
 
   ],

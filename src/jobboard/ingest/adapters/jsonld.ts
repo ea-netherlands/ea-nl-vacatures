@@ -218,6 +218,7 @@ export const jsonldCareers: SourceAdapter = {
     for (const url of urls) {
       if (Date.now() >= ctx.deadline) {
         ctx.log(`jsonld-careers: out of time, ${urls.length} urls remaining next run`)
+        ctx.markIncomplete('jsonld-careers: deadline reached before every page was fetched')
         return
       }
       try {
@@ -230,6 +231,7 @@ export const jsonldCareers: SourceAdapter = {
         yield { externalId: url, payload: { posting, url } }
       } catch (err) {
         ctx.log(`jsonld-careers: failed ${url}: ${(err as Error).message}`)
+        ctx.markIncomplete(`jsonld-careers: ${url} failed to fetch`)
       }
     }
   },

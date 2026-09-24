@@ -65,11 +65,12 @@ is a folder copy plus a handful of route entries (spec §6.2a).
 ```
 src/jobboard/
   theme/theme.css        THE MERGE SWAP POINT — every design value, scoped to .jb-root
-  taxonomy/              the four cause areas, leverage archetypes, the e2g gate
+  taxonomy/              the five cause areas, leverage archetypes, the e2g gate
   db/                    schema.sql + a dual-mode client (pg | PGlite)
   ingest/adapters/       one file per source family; adapters are pure
   classify/              stage one (deterministic) and stage two (the model)
-  sanity/                schemas, the review queue, the promotion job
+  sanity/                schemas, the Studio review queue, the promotion job
+  review/                the daily digest, the /review dashboard, curator calibration
   content/               glossary mirror, style guide, interface strings
   components/            the board's UI, CSS Modules only
   pages/                 one implementation per page, shared by both locales
@@ -159,11 +160,11 @@ taxonomy disagree, the page is describing a judgement the board does not make.
 80,000 Hours' material may **not** be reproduced — see `content/sources.ts`. Every
 sentence of that section is ours; they are cited and linked.
 
-### The four cause areas
+### The five cause areas
 
 `global-health-wellbeing`, `farmed-animal-welfare`, `global-catastrophic-risks`,
-`better-futures`. That is the whole vocabulary — see `taxonomy/index.ts`, which
-documents what changed from the earlier eight and why.
+`better-futures`, `movement-building`. That is the whole vocabulary — see
+`taxonomy/index.ts`, which documents what changed from the earlier eight and why.
 
 Two consequences worth knowing:
 
@@ -172,9 +173,13 @@ Two consequences worth knowing:
   power and which values get locked in is `better-futures`. This is a real
   judgement call on some listings, so the prompt states the boundary explicitly
   and tells the model to use `secondaryCauses` when a role touches both.
-- **Effective giving, meta and career capital are not cause areas.** Meta work is
-  categorised by the problem it serves. "This is a stepping stone" is a statement
-  about leverage, so `career-capital` lives on the leverage axis.
+- **Movement building is deliberately narrow.** It holds cause-general work only —
+  community building and consumer-facing effective giving that serve every
+  problem at once. Meta work aimed at one problem (an AI-safety fellowship, a
+  single charity's fundraising) is filed under that problem; the three
+  exclusions are spelled out in `CAUSE_AREA_DEFINITIONS`.
+- **Career capital is not a cause area.** "This is a stepping stone" is a
+  statement about leverage, so `career-capital` lives on the leverage axis.
 
 ### Climate is out of scope, with a referral
 
@@ -222,7 +227,33 @@ Thousands ingested → tens promoted → a handful published, with every drop lo
 in `decision` so the thresholds can be tuned rather than guessed at.
 
 Nothing is auto-published in v1. Revisit that only once there are a few hundred
-human decisions to calibrate against.
+human decisions to calibrate against — which the review dashboard below now
+records, one `decision` row per publish or reject.
+
+### The daily review loop
+
+The queue is the one step a person has to do, and for most of September 2026
+nothing told that person it had filled: the newest listing on the live board
+sat three weeks old while the crons kept promoting drafts. So:
+
+1. **07:30 UTC, every day anything is waiting** — `/api/cron/review-digest` mails
+   `REVIEW_DIGEST_TO` the roles promoted since the last digest, plus anything
+   older still waiting. Silent when the queue is empty.
+2. **The link opens `/review`**, already signed in for 30 days. It is a signed,
+   expiring token (`review/auth.ts`), and following it never changes anything
+   but a cookie — mail scanners fetch every link in a message.
+3. **One click per role.** *Publish* publishes the draft with the note as shown
+   (edit it in place first if it needs it). *Reject* removes it. *Tell us why*
+   rejects with a category and a sentence.
+4. **The reasons go back into the classifier.** Each classify run appends the
+   latest 25 curator rejections and 10 publishes to the triage system prompt
+   (`review/calibration.ts`), framed as examples, with the rubric winning any
+   conflict. When the same reason keeps recurring, write it into the rubric in
+   `classify/prompt.ts` — that is where a durable change belongs.
+
+The Studio still works exactly as before for anything the dashboard does not
+cover: editing fields other than the note, drafts of already-published
+listings, expired drafts.
 
 ### Commands
 
@@ -236,11 +267,12 @@ human decisions to calibrate against.
 | `npm run expire` | Auto-unpublishes past expiry. `--linkcheck` for dead-link detection on crawl sources. |
 | `npm run translate` | Fills the English side of the editorial fields. `--dry` first, `--force` after editing Dutch copy. |
 | `npm run notify` | Mails a digest of untriaged feedback. `--dry` prints it instead. |
+| `npm run review-digest` | Mails the curator the roles waiting for review, with a dashboard link. `--dry` prints it instead. |
 | `npm run grade` | The M3 calibration tool. See below. |
 | `npm run pipeline` | ingest → classify → promote, end to end. |
 | `npm run mirror-glossary` | Refreshes the glossary mirror and distils the style guide. **Run before generating any page.** |
 | `npm run generate-explainers` | Generates the explainer layer, Dutch-first. |
-| `npm test` | 39 tests over the deterministic core. |
+| `npm test` | The deterministic core, plus closure and dedup run through the real ingest runner on an in-memory database. |
 
 ### Calibrate the thresholds before trusting the queue (M3)
 
@@ -320,14 +352,14 @@ the log, not buried in a red deployment.
 That distinction runs the other way for everything that is one or two sentences
 long. `npm run translate` fills `whyThisMattersEn`, `excerptEn` and
 `leverageNoteEn` from their Dutch originals, and `/api/cron/translate` does the
-same nightly at 08:30, after `promote` and `expire`.
+same every three hours.
 
-It runs after publication rather than at promotion time on purpose: the pipeline
-writes the *classifier's* draft note, which a curator rewrites before publishing,
-so translating earlier would translate a sentence nobody approved. The cost is a
-window between publishing and the next run, during which `/en` falls back to the
-Dutch — which is what it did permanently before this existed. Edit a Dutch note
-and the English one goes stale until `--force`.
+Each English field records a hash of the Dutch it came from (`translatedFrom`,
+hidden in the Studio). Edit a Dutch note, on the dashboard or in the Studio, and
+the next run re-translates it; before September 2026 it only translated empty
+fields, so a curator's rewrite left the classifier's draft wording on `/en`
+indefinitely. Between an edit and the next run, `/en` shows the previous
+English.
 
 **English explainer pages do not exist yet.** `/en/jobs/causes/*` and the method
 page render their listings with a callout saying the explainer is still being
@@ -355,18 +387,23 @@ and in use before the main repo arrives.
 1. Create the GitHub repo and a **new** Sanity project (not the main site's).
 2. Add the DNS record and deploy to Vercel.
 3. Set the environment from `.env.example`. `CRON_SECRET` is not optional — the
-   pipeline endpoints are otherwise public.
+   pipeline endpoints are otherwise public. For the daily review mail, also set
+   `REVIEW_DIGEST_TO` and `RESEND_API_KEY` (and ideally `REVIEW_SECRET`), then
+   run `npm run migrate` once against the production database.
 4. `vercel.json` already carries the cron schedule:
 
    | Cron | Schedule | Why |
    |---|---|---|
-   | `ingest` | 05:00 daily | Tier-1 watchlist and the government sitemap, before the working day. |
+   | `ingest` (ATS, EA boards) | 05:00 daily | The watchlist's ATS feeds and the EA boards, before the working day. |
+   | `ingest` (crawls) | 05:20 daily | The government sitemap and Partos, two at a time. |
+   | `ingest` (AcademicTransfer) | 05:40 daily | On its own, because its ten-second crawl delay would starve everything else. |
    | `classify` | 06:30 daily | After ingest, so the queue is fresh. |
    | `promote` | 07:00 daily | Shortlist into Sanity as drafts. Nothing is auto-published (spec §8.3). |
+   | `review-digest` | 07:30 daily | Mails `REVIEW_DIGEST_TO` what is waiting, with a signed link to `/review`. Silent when the queue is empty. |
    | `expire` | 08:00 daily | Auto-unpublishes past-expiry listings, so the board can't fill with dead links. |
    | `linkcheck` | 09:00 Mondays | Weekly HEAD check on crawl sources, which can't use set-difference closure detection (spec §7.8). |
    | `ingest --discover` | 10:00 Mondays | Employer/ATS discovery from 80k and Probably Good. Poll them at most daily; weekly is plenty (spec §7.6). |
-   | `translate` | 08:30 daily | Fills `whyThisMattersEn`, `excerptEn` and `leverageNoteEn` for anything published since the last run. After `promote` and `expire` on purpose — see below. |
+   | `translate` | :20 past every third hour | Fills `whyThisMattersEn`, `excerptEn` and `leverageNoteEn`, and re-translates any whose Dutch has changed since. Writes after each batch and stops at the time budget. |
    | `notify` | 11:00 Mondays | Mails `info@effectiefaltruisme.nl` a digest of feedback still marked `new`. Silent when the queue is empty. |
 
    (`vercel.json`'s own schema rejects unrecognised keys on a cron entry, so this
