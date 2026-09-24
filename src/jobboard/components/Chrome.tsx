@@ -124,7 +124,7 @@ function Header({ locale, switchHref }: { locale: Locale; switchHref: string }) 
         <div className={s.headerInner}>
           <Link href={r.index} className={s.brand}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/img/ean-logo.svg" alt="Effectief Altruïsme Nederland" className={s.brandLogo} />
+            <img src="/vacatures-static/img/ean-logo.svg" alt="Effectief Altruïsme Nederland" className={s.brandLogo} />
             <span className={s.brandDivider} aria-hidden="true" />
             <span className={s.brandName}>{copy.boardName}</span>
             {/* The one beta signal that is on literally every page, including
@@ -184,7 +184,7 @@ function Footer({ locale }: { locale: Locale }) {
           <div className={s.footerBrand}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/img/ean-logo.svg"
+              src="/vacatures-static/img/ean-logo.svg"
               alt="Effectief Altruïsme Nederland"
               className={s.footerLogo}
             />

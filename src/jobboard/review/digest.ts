@@ -33,7 +33,7 @@
 
 import { getDb } from '../db/client'
 import { isMailConfigured, sendMail } from '../lib/mail'
-import { SITE_URL } from '../lib/seo'
+import { ADMIN_ORIGIN } from '../lib/seo'
 import { issueToken, LINK_TTL_MS } from './auth'
 import { loadReviewQueue, type ReviewItem } from './queue'
 
@@ -76,7 +76,9 @@ export type ReviewDigestReport = {
 /** The signed link. `anchor` scrolls the dashboard to one listing. */
 export function dashboardLink(anchor?: string): string {
   const token = issueToken('link', LINK_TTL_MS)
-  const url = new URL('/api/review/session', SITE_URL)
+  // The board's own host, not SITE_URL: the main site does not forward
+  // /api/review, so a link on the main domain would 404.
+  const url = new URL('/api/review/session', ADMIN_ORIGIN)
   url.searchParams.set('t', token)
   if (anchor) url.searchParams.set('focus', anchor)
   return url.toString()

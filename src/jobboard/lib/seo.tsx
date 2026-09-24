@@ -17,6 +17,20 @@ export const SITE_URL = (
   process.env.NEXT_PUBLIC_SITE_URL ?? 'https://vacatures.effectiefaltruisme.nl'
 ).replace(/\/$/, '')
 
+/**
+ * Where the board's own, non-public pages live: the Studio, the review
+ * dashboard and the API routes the crons and the dashboard call.
+ *
+ * Kept separate from SITE_URL on purpose. Once the public pages are served
+ * from effectiefaltruisme.nl/vacatures (the main site forwards those paths
+ * here; see next.config.ts), SITE_URL names the main domain. But the main site
+ * only forwards the public paths, so a Studio or dashboard link built from
+ * SITE_URL would 404 there. These stay on the board's own host.
+ */
+export const ADMIN_ORIGIN = (
+  process.env.BOARD_ADMIN_URL ?? 'https://vacatures.effectiefaltruisme.nl'
+).replace(/\/$/, '')
+
 export function absolute(path: string): string {
   return `${SITE_URL}${path.startsWith('/') ? path : `/${path}`}`
 }

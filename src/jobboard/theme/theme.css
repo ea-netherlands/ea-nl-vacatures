@@ -19,56 +19,56 @@
        if the host app already registers the same families. --- */
 @font-face {
   font-family: 'Sentient';
-  src: url('/fonts/Sentient-Regular.woff2') format('woff2');
+  src: url('/vacatures-static/fonts/Sentient-Regular.woff2') format('woff2');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
   font-family: 'Sentient';
-  src: url('/fonts/Sentient-Medium.woff2') format('woff2');
+  src: url('/vacatures-static/fonts/Sentient-Medium.woff2') format('woff2');
   font-weight: 500;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
   font-family: 'Sentient';
-  src: url('/fonts/Sentient-Bold.woff2') format('woff2');
+  src: url('/vacatures-static/fonts/Sentient-Bold.woff2') format('woff2');
   font-weight: 700;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
   font-family: 'Atkinson Hyperlegible Next';
-  src: url('/fonts/AtkinsonHyperlegibleNext-Regular.woff2') format('woff2');
+  src: url('/vacatures-static/fonts/AtkinsonHyperlegibleNext-Regular.woff2') format('woff2');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
   font-family: 'Atkinson Hyperlegible Next';
-  src: url('/fonts/AtkinsonHyperlegibleNext-RegularItalic.woff2') format('woff2');
+  src: url('/vacatures-static/fonts/AtkinsonHyperlegibleNext-RegularItalic.woff2') format('woff2');
   font-weight: 400;
   font-style: italic;
   font-display: swap;
 }
 @font-face {
   font-family: 'Atkinson Hyperlegible Next';
-  src: url('/fonts/AtkinsonHyperlegibleNext-Medium.woff2') format('woff2');
+  src: url('/vacatures-static/fonts/AtkinsonHyperlegibleNext-Medium.woff2') format('woff2');
   font-weight: 500;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
   font-family: 'Atkinson Hyperlegible Next';
-  src: url('/fonts/AtkinsonHyperlegibleNext-SemiBold.woff2') format('woff2');
+  src: url('/vacatures-static/fonts/AtkinsonHyperlegibleNext-SemiBold.woff2') format('woff2');
   font-weight: 600;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
   font-family: 'Atkinson Hyperlegible Next';
-  src: url('/fonts/AtkinsonHyperlegibleNext-Bold.woff2') format('woff2');
+  src: url('/vacatures-static/fonts/AtkinsonHyperlegibleNext-Bold.woff2') format('woff2');
   font-weight: 700;
   font-style: normal;
   font-display: swap;
@@ -274,7 +274,7 @@ body {
   --duration-moderate: 0.2s;
   --transition-common: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 
-  --pattern-url: url('/img/pattern.png');
+  --pattern-url: url('/vacatures-static/img/pattern.png');
   --pattern-size: 400px auto;
   --pattern-opacity: 0.4;
 

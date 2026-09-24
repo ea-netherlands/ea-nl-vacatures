@@ -16,6 +16,10 @@ import { after, NextResponse } from 'next/server'
 import { getDb } from '@jobboard/db/client'
 import { getListingById } from '@jobboard/sanity/queries'
 import { DEFAULT_LOCALE, LOCALES, type Locale } from '@jobboard/content/i18n'
+// SITE_URL, not the request's own host: served through the main site, this
+// route sees the deployment's *.vercel.app address, which readers should
+// never be sent to.
+import { SITE_URL } from '@jobboard/lib/seo'
 
 export const dynamic = 'force-dynamic'
 
@@ -32,7 +36,7 @@ export async function GET(
 
   const listing = await getListingById(id)
   if (!listing?.applyUrl) {
-    return NextResponse.redirect(new URL(locale === 'nl' ? '/vacatures' : '/en/jobs', url), 302)
+    return NextResponse.redirect(new URL(locale === 'nl' ? '/vacatures' : '/en/jobs', SITE_URL), 302)
   }
 
   // Only ever redirect to an absolute http(s) destination. An open redirect on
@@ -44,7 +48,7 @@ export async function GET(
       throw new Error('unsupported protocol')
     }
   } catch {
-    return NextResponse.redirect(new URL(locale === 'nl' ? '/vacatures' : '/en/jobs', url), 302)
+    return NextResponse.redirect(new URL(locale === 'nl' ? '/vacatures' : '/en/jobs', SITE_URL), 302)
   }
 
   // Log without blocking the redirect: a database hiccup must never stop a
