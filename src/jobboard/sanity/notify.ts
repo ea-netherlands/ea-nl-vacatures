@@ -38,6 +38,7 @@
  */
 
 import { MAIL_FROM, sendMail } from '../lib/mail'
+import { ADMIN_ORIGIN } from '../lib/seo'
 import { writeClient } from './client'
 
 /** Where the digest goes. Overridable so a test run can go somewhere else. */
@@ -46,7 +47,7 @@ export const DIGEST_TO = process.env.FEEDBACK_DIGEST_TO ?? 'info@effectiefaltrui
 /** Must be a domain verified in Resend; see lib/mail. */
 export const DIGEST_FROM = MAIL_FROM
 
-const STUDIO_URL = `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://vacatures.effectiefaltruisme.nl'}/studio`
+const STUDIO_URL = `${ADMIN_ORIGIN}/studio`
 
 /** Curator-facing, so Dutch — same convention as the Studio option titles. */
 const KIND_LABELS: Record<string, string> = {
