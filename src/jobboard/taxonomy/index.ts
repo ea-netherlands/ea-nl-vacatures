@@ -26,7 +26,12 @@
  * 3. AI work now splits across two areas rather than having one of its own.
  *    `global-catastrophic-risks` takes the failure modes that end in
  *    catastrophe; `better-futures` takes the ones where humanity survives and
- *    the outcome is still bad. That split is a real judgement call on some
+ *    the outcome is still bad. Since October 2026 the regulation and oversight
+ *    of AI (AI Act work, AI supervisors, AI standards) sits on the first side,
+ *    under `ai-safety`: it is how a government acts on catastrophic AI risk,
+ *    and readers looking for "AI safety" jobs in the Netherlands mostly mean
+ *    these. Power, competition, vendor dependence and rights stay on the second.
+ *    That split is a real judgement call on some
  *    listings, which is why `secondaryCauses` exists — see the prompt.
  */
 
@@ -62,9 +67,9 @@ export const CAUSE_AREA_DEFINITIONS: Record<CauseArea, string> = {
   'farmed-animal-welfare':
     'The suffering of animals in food production. Farmed animal advocacy, animal law and enforcement, cultivated meat and fermentation, the protein transition, and the corporate and finance roles that shape all of it. Not general nature or biodiversity work.',
   'global-catastrophic-risks':
-    'Events that could kill a very large share of humanity or permanently end its prospects. AI takeover, misalignment and catastrophic misuse; pandemics, biosurveillance and dual-use research governance; nuclear security and great-power conflict.',
+    'Events that could kill a very large share of humanity or permanently end its prospects. AI takeover, misalignment and catastrophic misuse, including the regulation and oversight of AI meant to prevent them; pandemics, biosurveillance and dual-use research governance; nuclear security and great-power conflict.',
   'better-futures':
-    'Whether the long-run future goes well *given* that humanity survives. Who holds power over transformative AI and whose values get locked in; the quality and resilience of democratic institutions; the moral circle, including digital minds; space governance. The concern here is not extinction but a surviving world that is much worse than it could have been.',
+    'Whether the long-run future goes well *given* that humanity survives. Who holds power over transformative AI and whose values get locked in (but regulating AI systems themselves is global-catastrophic-risks); the quality and resilience of democratic institutions; the moral circle, including digital minds; space governance. The concern here is not extinction but a surviving world that is much worse than it could have been.',
   'movement-building':
     'Growing the number of people who take these problems seriously and act on them, and the number who give effectively. Community building at the Centre for Effective Altruism, Effectief Altruïsme Nederland, the School for Moral Ambition and equivalents; consumer-facing effective giving at Giving What We Can, Doneer Effectief, De Geefrevolutie (formerly the Tien Procent Club). The boundary is deliberately narrow, and three exclusions carry it: (1) it is NOT "any job at an EA organisation" — a researcher at GiveWell or a campaigner at an ACE-recommended charity is filed under the problem their work serves; (2) fundraising or advocacy for a single operating charity\u2019s own programme is that charity\u2019s problem area, not this one; (3) field building aimed at ONE problem belongs to that problem, not here — an AI-safety fellowship, talent pipeline or research incubator such as Kairos is global-catastrophic-risks work, because the field it grows is AI safety rather than the movement as a whole. What lands here is cause-general: the community and the giving infrastructure that serve every problem on the board at once.',
 }
@@ -137,10 +142,10 @@ export const SUB_AREA_DEFINITIONS: Record<SubArea, string> = {
   'animal-law': 'Animal law, welfare regulation, inspection and enforcement.',
   'alternative-protein': 'Cultivated meat, precision fermentation and plant-based protein — science, engineering and commercial roles.',
   'protein-transition-policy': 'Policy, subsidy and investment that shapes what protein gets produced.',
-  'ai-safety': 'Preventing AI systems from causing catastrophe: alignment, interpretability, evaluations, control, and catastrophic misuse. The failure mode is that things end very badly. Governance work aimed at who *holds power* rather than at catastrophe belongs in ai-governance.',
+  'ai-safety': 'Preventing AI systems from causing catastrophe, by technical means or by regulation: alignment, interpretability, evaluations, control and catastrophic misuse, AND the regulation and oversight of AI itself — writing, implementing and enforcing AI law such as the AI Act, AI supervision at regulators such as the RDI and the Autoriteit Persoonsgegevens, AI standards and auditing regimes. Regulation counts here because rules on what AI systems may do, and the capacity to enforce them, are how a government acts on catastrophic AI risk; that holds for the teams that set AI policy at a ministry, not only for the drafters. Governance work aimed at who *holds power* — market concentration, dependence on a few vendors, rights — belongs in ai-governance.',
   'biosecurity': 'Pandemic preparedness, biosurveillance, dual-use research governance, and biological weapons.',
   'nuclear-security': 'Nuclear weapons policy, arms control, escalation risk and great-power conflict.',
-  'ai-governance': 'Who ends up holding power over transformative AI and whose values get entrenched: AI regulation, competition and compute policy, standards, auditing regimes. The failure mode is a surviving world that is much worse than it could have been. Work aimed squarely at preventing catastrophe belongs in ai-safety.',
+  'ai-governance': 'Who ends up holding power over transformative AI and whose values get entrenched: competition and market concentration in AI, compute and data-market policy, the state\u2019s dependence on a handful of technology vendors, digital and fundamental rights, long-run lock-in. The failure mode is a surviving world that is much worse than it could have been. Regulating and supervising AI systems themselves — the AI Act, AI oversight, AI standards and audits — belongs in ai-safety.',
   'democratic-institutions':
     'The quality, integrity and resilience of democratic institutions, including information environments. Unlike every other area on this board, DOMESTIC Dutch work counts here, and counts fully — a constitutional-law adviser in a ministry, a role at an advisory council such as the Raad voor het Openbaar Bestuur, work on electoral integrity or on the rules that constrain executive power. The reason for the exception: global health is judged by whose welfare the work serves, and a Dutch hospital serves Dutch people, whereas institutional quality is the precondition for a country handling every other problem on this board well — and it is decided nationally. The Netherlands also writes rules that reach far past it, through the EU. The bar is leverage, not location: this covers roles that SHAPE the rules and institutions, not roles that administer them. A raadadviseur on constitutional law belongs here; a communications officer or an HR-integrity adviser at the same ministry does not.',
   'moral-circle': 'Extending moral consideration — wild animals, invertebrates, digital minds.',
