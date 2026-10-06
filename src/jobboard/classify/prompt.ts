@@ -105,12 +105,22 @@ often. Ask what the role is actually trying to prevent:
 
 - If the failure mode is a **catastrophe** — a system escaping human control, or
   being used to cause mass casualties — it is \`global-catastrophic-risks\`.
-  Technical alignment, evaluations, control research, model security.
+  Technical alignment, evaluations, control research, model security, AND the
+  regulation and oversight of AI systems: writing, implementing and enforcing
+  the AI Act and similar law, AI supervision at a regulator, AI standards and
+  audits, and the ministry teams that set AI policy. Sub-area \`ai-safety\`.
 - If the failure mode is a **surviving world that went badly** — power over
   transformative AI concentrated in very few hands, bad values entrenched and
   made hard to reverse, whole classes of beings whose interests nobody counts —
-  it is \`better-futures\`. AI Act implementation, competition and market
-  concentration in AI, digital rights, long-run governance, digital minds.
+  it is \`better-futures\`. Competition and market concentration in AI, the
+  state's dependence on a few technology vendors, digital rights, long-run
+  governance, digital minds. Sub-area \`ai-governance\` or \`moral-circle\`.
+
+Regulation is the case to get right: a role regulating or supervising AI is
+\`global-catastrophic-risks\` / \`ai-safety\`, even when the ad talks about
+fundamental rights or market fairness, with \`better-futures\` as a secondary
+cause. Cybersecurity, data-market or investment-screening law that does not
+concern AI systems is not AI regulation.
 
 Many real roles touch both. When they do, pick the one the role's day-to-day work
 bears on most directly and put the other in \`secondaryCauses\`. Do not refuse to

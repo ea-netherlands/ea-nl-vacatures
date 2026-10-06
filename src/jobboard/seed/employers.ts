@@ -246,7 +246,7 @@ export const SEED_EMPLOYERS: SeedEmployer[] = [
     website: 'https://autoriteitpersoonsgegevens.nl',
     careersUrl: 'https://www.werkenvoornederland.nl/organisaties/autoriteit-persoonsgegevens',
     ats: null,
-    causeAreas: ['better-futures'],
+    causeAreas: ['global-catastrophic-risks', 'better-futures'],
     leverageNote:
       'Deelt de coördinerende rol in AI-toezicht met de RDI onder de conceptuitvoeringswet, en is daarnaast de restcategorie-toezichthouder voor domeinen zonder eigen toezichthouder. Handhaaft de verboden praktijken uit de AI-verordening. Bouwt zichtbaar op. Vermoedelijk de AI-governancewerkgever met de grootste hefboom in het land.',
     watchlistTier: 1,
@@ -273,7 +273,7 @@ export const SEED_EMPLOYERS: SeedEmployer[] = [
     website: 'https://www.rdi.nl',
     careersUrl: 'https://www.werkenvoornederland.nl',
     ats: null,
-    causeAreas: ['better-futures'],
+    causeAreas: ['global-catastrophic-risks', 'better-futures'],
     leverageNote:
       'Samen met de AP coördinerend AI-toezichthouder, en de technische pijler: markttoezicht op AI in producten, en aanmeldende autoriteit voor conformiteitsbeoordelingsinstanties.',
     watchlistTier: 1,
@@ -331,7 +331,7 @@ export const SEED_EMPLOYERS: SeedEmployer[] = [
     name: 'AFM, DNB, IGJ en Inspectie van het Onderwijs',
     careersUrl: 'https://www.werkenvoornederland.nl',
     ats: null,
-    causeAreas: ['better-futures'],
+    causeAreas: ['global-catastrophic-risks', 'better-futures'],
     leverageNote:
       'Sectorale toezichthouders onder de AI-verordening. Het Nederlandse model is bewust gedecentraliseerd, dus AI-kennis is bij al deze organisaties nodig.',
     watchlistTier: 3,

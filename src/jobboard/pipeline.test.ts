@@ -361,6 +361,14 @@ test('every cause area has sub-areas, and AI work is split across two of them', 
   assert.match(better, /AI/)
 })
 
+test('regulating AI is ai-safety, not ai-governance', () => {
+  // Decided October 2026: AI Act work, AI supervisors and AI standards are how a
+  // government acts on catastrophic AI risk, so they sit under ai-safety. If a
+  // later edit hands regulation back to ai-governance, this should fail first.
+  assert.match(SUB_AREA_DEFINITIONS['ai-safety'], /AI Act/)
+  assert.doesNotMatch(SUB_AREA_DEFINITIONS['ai-governance'], /^[^—]*AI regulation/)
+})
+
 test('enforceGates strips a cause label that is no longer in the vocabulary', () => {
   // A model handed a stale prompt, or a listing classified before the revision,
   // must not be able to reintroduce a retired label.
