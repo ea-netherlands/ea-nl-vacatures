@@ -36,7 +36,15 @@ import {
 import { splitStatements } from './db/migrate'
 import { detectAts } from './ingest/adapters/ea-boards'
 import { extractSuccessfactorsBody } from './ingest/adapters/ats'
-import { orgCodeFromUrl, extractWvnBody, partosFacts } from './ingest/adapters/dutch'
+import {
+  orgCodeFromUrl,
+  extractWvnBody,
+  isPartosStub,
+  linkedAdFacts,
+  partos,
+  partosFacts,
+  partosVacancyHtml,
+} from './ingest/adapters/dutch'
 import { extractJsonLd, findJobPosting } from './ingest/adapters/jsonld'
 import { SEED_EMPLOYERS } from './seed/employers'
 import {
@@ -736,6 +744,93 @@ test('a Partos vacancy with no outbound link reports no employer, not a social h
 
   assert.equal(partosFacts(page).employerHost, null)
   assert.equal(partosFacts(page).applyUrl, null)
+})
+
+test('a one-line Partos pointer is a stub; a real Partos ad is not', () => {
+  /*
+    MCNV's supervisory-board vacancy on Partos was one sentence and a link to
+    mcnv.org. The classifier scored that sentence, called MCNV a membership
+    network, and underrated the role. A stub must be recognised so the adapter
+    follows the link instead.
+  */
+  const stub = partosVacancyHtml(`
+    <html><body><nav>Wat we doen · Vacatures · Leden</nav>
+      <main id="main">
+        <h1>MCNV looking for a Supervisory Board member – Financial expert</h1>
+        <p>MCNV is looking for a financial expert to join our Supervisory Board.
+        For details, please use this link:
+        <a href="https://mcnv.org/vacancy-supervisory-board-member-finance/">https://mcnv.org/vacancy-supervisory-board-member-finance/</a></p>
+      </main>
+      <h2>Actueel</h2><p>Nieuws</p>
+    </body></html>`)
+  assert.ok(isPartosStub(stub))
+  assert.ok(!stub.includes('Wat we doen'), 'the Partos menu is not part of the vacancy')
+
+  const real = partosVacancyHtml(
+    `<main id="main"><h1>Advocacy Team Lead</h1><p>${'Je leidt het advocacyteam. '.repeat(60)}</p></main>`,
+  )
+  assert.ok(!isPartosStub(real))
+})
+
+test('a followed employer page yields its own name, its text and its vacancy PDF', () => {
+  const html = `
+    <html><head>
+      <meta property="og:site_name" content="MCNV - For health and development in South East Asia"/>
+    </head><body>
+      <header><nav><a href="/donate">Donate</a></nav></header>
+      <main>
+        <h1>Vacancy: Supervisory Board member (Finance)</h1>
+        <p>MCNV is looking for a Supervisory Board member serving as financial expert.</p>
+        <a href="/wp-content/uploads/2026/09/annual-report.pdf">Annual report</a>
+        <a href="/wp-content/uploads/2026/09/MCNV_Vacancy_SB-Financial-Expert.pdf">Download</a>
+      </main>
+      <footer>KvK 41198048</footer>
+    </body></html>`
+  const facts = linkedAdFacts(html, 'https://mcnv.org/vacancy-supervisory-board-member-finance/')
+  assert.equal(facts.siteName, 'MCNV')
+  assert.match(facts.text, /financial expert/)
+  assert.ok(!facts.text.includes('Donate'))
+  assert.ok(!facts.text.includes('KvK'))
+  assert.deepEqual(facts.pdfUrls, [
+    'https://mcnv.org/wp-content/uploads/2026/09/MCNV_Vacancy_SB-Financial-Expert.pdf',
+    'https://mcnv.org/wp-content/uploads/2026/09/annual-report.pdf',
+  ])
+})
+
+test('a Partos stub takes its employer name and description from the followed ad', () => {
+  const listing = partos.normalise(
+    {
+      externalId: 'https://www.partos.nl/vacature/mcnv-supervisory-board/',
+      payload: {
+        url: 'https://www.partos.nl/vacature/mcnv-supervisory-board/',
+        title: 'MCNV looking for a Supervisory Board member',
+        html: '<p>MCNV is looking for a financial expert. See our link.</p>',
+        facts: {
+          applyUrl: 'https://mcnv.org/vacancy-supervisory-board-member-finance/',
+          employerHost: 'mcnv.org',
+          employerNameHint: null,
+          deadline: null,
+          location: null,
+        },
+        linked: {
+          url: 'https://mcnv.org/vacancy-supervisory-board-member-finance/',
+          siteName: 'MCNV',
+          text: 'The Supervisory Board approves the annual workplans and budget.',
+          fetchedAt: 0,
+        },
+      },
+    },
+    {},
+  )
+  // Not the bare domain, which is what reached the board before.
+  assert.equal(listing?.employerName, 'MCNV')
+  assert.match(listing?.description ?? '', /financial expert/)
+  assert.match(listing?.description ?? '', /approves the annual workplans and budget/)
+})
+
+test('the triage prompt tells the classifier not to score board seats down for being part-time', () => {
+  assert.match(TRIAGE_SYSTEM_PROMPT, /### Board seats/)
+  assert.match(TRIAGE_SYSTEM_PROMPT, /raad van toezicht/)
 })
 
 test('JSON-LD extraction finds a JobPosting nested under mainEntity', () => {

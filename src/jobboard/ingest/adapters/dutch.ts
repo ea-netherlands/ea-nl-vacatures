@@ -628,6 +628,123 @@ export function partosFacts(html: string): {
   return { applyUrl, employerHost, employerNameHint, deadline, location }
 }
 
+/**
+ * Below this many characters of vacancy text, a Partos page is a pointer to the
+ * employer's own ad rather than an ad. Measured October 2026: ordinary Partos
+ * ads run 3,000–11,000 characters; MCNV's supervisory-board vacancy was 282 —
+ * one sentence and a link. The classifier scored that sentence, misidentified
+ * MCNV as a membership network, and underrated the role.
+ */
+export const PARTOS_STUB_MAX_CHARS = 1000
+
+/** How long a followed employer page is trusted before it is fetched again. */
+const LINKED_AD_TTL_MS = 7 * 24 * 60 * 60 * 1000
+
+/** At most this many PDFs are read from one employer page, and none bigger than this. */
+const LINKED_PDF_LIMIT = 2
+const LINKED_PDF_MAX_BYTES = 5_000_000
+
+/**
+ * The vacancy itself: `<main id="main">`, minus the site-wide blocks that
+ * follow it ("Actueel", "Voor leden", "Meest bezocht", "Contact"). Taking the
+ * whole page used to put the Partos navigation menu at the top of every
+ * description the classifier read.
+ */
+export function partosVacancyHtml(page: string): string {
+  const main = page.match(/<main id="main"[^>]*>([\s\S]*?)<\/main>/i)?.[1] ?? page
+  return main.split(/<h2[^>]*>\s*(?:Actueel|Voor leden|Meest bezocht|Contact)\s*</i)[0]
+}
+
+export function isPartosStub(vacancyHtml: string): boolean {
+  const text = htmlToText(vacancyHtml).replace(/https?:\/\/\S+/g, '').replace(/\s+/g, ' ')
+  return text.trim().length < PARTOS_STUB_MAX_CHARS
+}
+
+/**
+ * What a followed employer page tells us: the organisation's own name, the ad
+ * text, and any PDFs it points at — small organisations often publish the
+ * real vacancy as a PDF and put one line on the page.
+ */
+export function linkedAdFacts(
+  html: string,
+  pageUrl: string,
+): { siteName: string | null; text: string; pdfUrls: string[] } {
+  // "MCNV - For health and development in South East Asia" → "MCNV".
+  const ogName = html.match(/<meta[^>]+property="og:site_name"[^>]+content="([^"]+)"/i)?.[1]
+  const siteName = ogName ? htmlToText(ogName).split(/\s+[-–|]\s+/)[0].trim() || null : null
+
+  const content =
+    html.match(/<main[^>]*>([\s\S]*?)<\/main>/i)?.[1] ??
+    html.match(/<article[^>]*>([\s\S]*?)<\/article>/i)?.[1] ??
+    html.match(/<body[^>]*>([\s\S]*?)<\/body>/i)?.[1] ??
+    html
+  const text = htmlToText(
+    content.replace(/<(header|nav|footer|aside|form)\b[\s\S]*?<\/\1>/gi, ' '),
+  ).slice(0, 20_000)
+
+  const pdfUrls: string[] = []
+  for (const m of content.matchAll(/href="([^"]+\.pdf)(?:[?#][^"]*)?"/gi)) {
+    try {
+      const url = new URL(m[1], pageUrl).toString()
+      if (!pdfUrls.includes(url)) pdfUrls.push(url)
+    } catch {
+      /* skip unparseable hrefs */
+    }
+  }
+  // A vacancy PDF first, then whatever else the page links.
+  pdfUrls.sort(
+    (a, b) =>
+      Number(/vacan|vacature|job|functie/i.test(b)) - Number(/vacan|vacature|job|functie/i.test(a)),
+  )
+  return { siteName, text, pdfUrls: pdfUrls.slice(0, LINKED_PDF_LIMIT) }
+}
+
+export type LinkedAd = { url: string; siteName: string | null; text: string; fetchedAt: number }
+
+async function pdfText(url: string): Promise<string> {
+  const res = await httpFetch(url)
+  const size = Number(res.headers.get('content-length') ?? 0)
+  if (size > LINKED_PDF_MAX_BYTES) return ''
+  const bytes = new Uint8Array(await res.arrayBuffer())
+  if (bytes.byteLength > LINKED_PDF_MAX_BYTES) return ''
+  const { extractText } = await import('unpdf')
+  const { text } = await extractText(bytes, { mergePages: true })
+  return text.trim()
+}
+
+/**
+ * Follow a stub's link to the employer's own ad, once a week at most. Failure
+ * is not fatal: the listing still arrives with what Partos showed.
+ */
+async function fetchLinkedAd(url: string, ctx: AdapterContext): Promise<LinkedAd | null> {
+  const cacheKey = `partos:linked:${url}`
+  const cached = await ctx.cache.get<LinkedAd>(cacheKey)
+  if (cached && Date.now() - cached.fetchedAt < LINKED_AD_TTL_MS) return cached
+  try {
+    const facts = linkedAdFacts(await fetchText(url), url)
+    const parts = [facts.text]
+    for (const pdfUrl of facts.pdfUrls) {
+      try {
+        const text = await pdfText(pdfUrl)
+        if (text) parts.push(text)
+      } catch (err) {
+        ctx.log(`partos: could not read ${pdfUrl}: ${(err as Error).message}`)
+      }
+    }
+    const linked: LinkedAd = {
+      url,
+      siteName: facts.siteName,
+      text: parts.filter(Boolean).join('\n\n').replace(/\n{3,}/g, '\n\n'),
+      fetchedAt: Date.now(),
+    }
+    await ctx.cache.set(cacheKey, linked)
+    return linked
+  } catch (err) {
+    ctx.log(`partos: could not follow ${url}: ${(err as Error).message}`)
+    return cached
+  }
+}
+
 export const partos: SourceAdapter = {
   id: 'partos',
   async *fetch(config, ctx) {
@@ -664,12 +781,15 @@ export const partos: SourceAdapter = {
           ctx.markIncomplete(`partos: no title parsed at ${url}`)
           continue
         }
-        // Keep only the vacancy body, not the site-wide footer blocks that
-        // follow it ("Actueel", "Voor leden", "Meest bezocht", "Contact").
-        const body = page.split(/<h2[^>]*>\s*(?:Actueel|Voor leden|Meest bezocht|Contact)\s*</i)[0]
+        const body = partosVacancyHtml(page)
+        const facts = partosFacts(page)
+        // A one-line pointer gives the classifier nothing to judge, so read
+        // the employer's own ad instead.
+        const linked =
+          facts.applyUrl && isPartosStub(body) ? await fetchLinkedAd(facts.applyUrl, ctx) : null
         yield {
           externalId: url,
-          payload: { url, title, html: body, facts: partosFacts(page) },
+          payload: { url, title, html: body, facts, linked },
         }
       } catch (err) {
         ctx.log(`partos: failed ${url}: ${(err as Error).message}`)
@@ -684,6 +804,7 @@ export const partos: SourceAdapter = {
       title?: string
       html?: string
       facts?: ReturnType<typeof partosFacts>
+      linked?: LinkedAd | null
     }
     if (p.posting) {
       const listing = normaliseJobPosting(p.posting, {
@@ -700,18 +821,30 @@ export const partos: SourceAdapter = {
     const domainMap =
       (config.domainToEmployer as Record<string, { id: string; name: string }> | undefined) ?? {}
     const known = facts?.employerHost ? domainMap[facts.employerHost] : undefined
+    const linked = p.linked ?? null
+    // htmlToText leaves the blank lines of an empty layout grid behind; on a
+    // Partos page that is dozens of them, which the classifier pays for.
+    const partosText = htmlToText(p.html).replace(/\n{3,}/g, '\n\n')
 
     return {
       externalId: raw.externalId,
       employerId: known?.id ?? null,
-      // Prefer the watchlist name, then the organisation's own heading, then the
-      // bare hostname. The hostname fallback is deliberate: it is honest, and it
-      // still tells the classifier which organisation this is.
-      employerName: known?.name ?? facts?.employerNameHint ?? facts?.employerHost ?? '',
+      // Prefer the watchlist name, then the organisation's own heading, then
+      // the name its own site gives itself, then the bare hostname. The
+      // hostname fallback is deliberate: it is honest, and it still tells the
+      // classifier which organisation this is.
+      employerName:
+        known?.name ??
+        facts?.employerNameHint ??
+        linked?.siteName ??
+        facts?.employerHost ??
+        '',
       title: htmlToText(p.title ?? '').trim(),
       // Link to the employer's own page, not to Partos.
       applyUrl: facts?.applyUrl ?? p.url,
-      description: htmlToText(p.html),
+      description: linked?.text
+        ? `${partosText}\n\nVacature op de site van de werkgever (${linked.url}):\n\n${linked.text}`
+        : partosText,
       descriptionHtml: null,
       locationRaw: facts?.location ?? null,
       country: 'NL',
