@@ -45,7 +45,13 @@ import {
   partosFacts,
   partosVacancyHtml,
 } from './ingest/adapters/dutch'
-import { extractJsonLd, findJobPosting } from './ingest/adapters/jsonld'
+import {
+  extractJsonLd,
+  findJobPosting,
+  parseDutchClosingDate,
+  plainPageText,
+  postingFromPlainPage,
+} from './ingest/adapters/jsonld'
 import { SEED_EMPLOYERS } from './seed/employers'
 import {
   CAUSE_AREAS,
@@ -900,4 +906,70 @@ test('splitStatements ignores semicolons in strings and comments', () => {
   const statements = splitStatements(sql)
   assert.equal(statements.length, 2)
   assert.match(statements[1], /create table b/)
+})
+
+// ---------------------------------------------------------------------------
+// Plain-page fallback for careers pages with no JobPosting markup
+// ---------------------------------------------------------------------------
+
+/** Shaped like De Geefrevolutie's Framer article pages, October 2026. */
+const PLAIN_VACANCY_HTML = `
+<nav><a href="./">Doe mee</a><a href="./">Doe mee</a></nav>
+<p>Geschreven door</p><p>De Geefrevolutie</p><p>30 sep 2026</p>
+<h2><span>Campaign Lead</span></h2><h2><span>Campaign Lead</span></h2>
+<p>Word jij onze nieuwe collega?</p>
+<p>Je wordt het middelpunt van een nieuwe maandelijkse geefcampagne.</p>
+<p>Uren: 32 - 36 per week</p>
+<p>Salarisindicatie: € 3.800 – € 4.500 bruto per maand op basis van 36 uur</p>
+<p>Start: Uiterlijk 1 januari</p>
+<p>Vacature sluit op 18 oktober</p>
+<p>Snel naar</p>
+<p>Bakhuizen van den Brinkhof 36</p><p>1065 BA Amsterdam</p><p>ANBI/RSIN: 8649.21.780</p>`
+
+const PLAIN_CONFIG = {
+  titlePattern: '^\\d{1,2} [a-z]{3,9}\\.? \\d{4}\\n+(.+)$',
+  stopPattern: '^Snel naar$',
+}
+
+test('plainPageText drops page-builder debris and repeated breakpoint copies', () => {
+  const text = plainPageText('<p>Campaign Lead</p><p>Campaign Lead</p><p>•</p><p>\')">\'</p><p>Next</p>')
+  assert.equal(text, 'Campaign Lead\n\nNext')
+})
+
+test('a plain vacancy page yields title, closing date and pay, not footer numbers', () => {
+  const now = new Date('2026-10-06T12:00:00Z')
+  const posting = postingFromPlainPage(PLAIN_VACANCY_HTML, PLAIN_CONFIG, now)
+  assert.ok(posting)
+  assert.equal(posting.title, 'Campaign Lead')
+  assert.equal(posting.validThrough, '2026-10-18T21:59:00.000Z')
+  assert.equal(posting.baseSalary?.value?.minValue, 3800)
+  assert.equal(posting.baseSalary?.value?.maxValue, 4500)
+  assert.equal(posting.baseSalary?.value?.unitText, 'MONTH')
+  // Navigation above the title and the footer below the stop marker are gone.
+  assert.ok(!posting.description?.includes('Doe mee'))
+  assert.ok(!posting.description?.includes('1065'))
+})
+
+test('the plain-page fallback is opt-in: a page with no markup is still no JobPosting', () => {
+  assert.equal(findJobPosting(PLAIN_VACANCY_HTML), null)
+})
+
+test('parseDutchClosingDate reads the closing date, never the start date', () => {
+  const now = new Date('2026-10-06T12:00:00Z')
+  // "Uiterlijk 1 januari" is when the job starts; the ad closes on the 18th.
+  assert.equal(
+    parseDutchClosingDate('Start: Uiterlijk 1 januari\nDe vacature sluit op 18 oktober 2026', now)?.toISOString(),
+    '2026-10-18T21:59:00.000Z',
+  )
+  assert.equal(parseDutchClosingDate('Reageren kan tot 3 november', now)?.toISOString(), '2026-11-03T21:59:00.000Z')
+  assert.equal(parseDutchClosingDate('Geen deadline genoemd', now), null)
+})
+
+test('parseDutchClosingDate rolls a year-less date into next year only when it must', () => {
+  // A December ad closing "15 januari" means next January.
+  const december = new Date('2026-12-10T12:00:00Z')
+  assert.equal(parseDutchClosingDate('Vacature sluit op 15 januari', december)?.getUTCFullYear(), 2027)
+  // A date a few weeks past stays in this year, so the listing reads as closed.
+  const november = new Date('2026-11-20T12:00:00Z')
+  assert.equal(parseDutchClosingDate('Vacature sluit op 18 oktober', november)?.getUTCFullYear(), 2026)
 })

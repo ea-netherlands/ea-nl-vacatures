@@ -16,7 +16,7 @@ import type { Db } from '../db/client'
 import { getDb } from '../db/client'
 import { recordDecision } from '../classify/run'
 import { sourceRankSql } from '../ingest/dedup'
-import { slugify } from '../lib/text'
+import { slugify, urlWithoutQuery } from '../lib/text'
 import { meetsPromotionThreshold } from '../taxonomy'
 import { isSanityConfigured, writeClient } from './client'
 
@@ -109,6 +109,7 @@ export async function runPromotion(options: PromoteOptions = {}): Promise<Promot
 
   const client = options.dryRun ? null : writeClient()
   const employerCache = new Map<string, string>()
+  const alreadyOnBoard = client ? await listingsAlreadyInSanity(client, rows) : new Map<string, string>()
   // The query already drops rows whose duplicate was decided on in an earlier
   // run; this catches two copies of one role arriving in the same batch.
   // Rows are ordered best-first, so the first copy seen is the one to keep.
@@ -130,6 +131,21 @@ export async function runPromotion(options: PromoteOptions = {}): Promise<Promot
       !meetsPromotionThreshold(row.cause_score, row.leverage_score)
     ) {
       report.skippedBelowThreshold++
+      continue
+    }
+
+    const existing = alreadyOnBoard.get(urlWithoutQuery(row.apply_url))
+    if (existing) {
+      await recordDecision(
+        db,
+        row.id,
+        'promoted',
+        'pipeline',
+        `already in Sanity as ${existing} (added by hand before the pipeline found it)`,
+        existing,
+      )
+      report.skippedAlreadyPromoted++
+      log(`skipped #${row.id} — ${row.title}: already in Sanity as ${existing}`)
       continue
     }
 
@@ -241,6 +257,30 @@ export async function runPromotion(options: PromoteOptions = {}): Promise<Promot
   }
 
   return report
+}
+
+/**
+ * Sanity documents that already carry one of these rows' apply URLs, keyed by
+ * that URL without its query string.
+ *
+ * A curator sometimes puts a vacancy on the board by hand before any source
+ * reads it — De Geefrevolutie's first two roles, October 2026, went up that
+ * way the same day their careers page was wired into the pipeline. Without
+ * this, the pipeline finds the same role the next morning and queues a second
+ * copy for review: dedup only compares pipeline rows with each other, and a
+ * hand-made document has no pipeline row to collide with.
+ */
+async function listingsAlreadyInSanity(
+  client: ReturnType<typeof writeClient>,
+  rows: PromotableRow[],
+): Promise<Map<string, string>> {
+  if (!rows.length) return new Map()
+  const docs = await client.fetch<{ _id: string; applyUrl: string | null }[]>(
+    '*[_type == "jobListing" && defined(applyUrl) && !defined(pipelineListingId)]{_id, applyUrl}',
+  )
+  const byUrl = new Map<string, string>()
+  for (const d of docs) if (d.applyUrl) byUrl.set(urlWithoutQuery(d.applyUrl), d._id)
+  return byUrl
 }
 
 async function loadPromotable(db: Db, limit: number): Promise<PromotableRow[]> {

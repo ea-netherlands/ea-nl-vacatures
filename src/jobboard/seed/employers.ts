@@ -651,12 +651,14 @@ export const SEED_EMPLOYERS: SeedEmployer[] = [
     id: 'tien-procent-club',
     name: 'De Geefrevolutie',
     website: 'https://www.geefrevolutie.nl',
+    careersUrl: 'https://www.geefrevolutie.nl/werken-bij',
+    city: 'Amsterdam',
     ats: null,
     causeAreas: ['movement-building', 'global-health-wellbeing', 'farmed-animal-welfare'],
     leverageNote: 'De Nederlandse gemeenschap rond de geefbelofte.',
-    watchlistTier: 3,
-    active: false,
-    verify: true,
+    watchlistTier: 2,
+    notes:
+      'Vacancies are plain Framer article pages with no JobPosting markup; polled daily by `jsonld:geefrevolutie` through the plain-page fallback. The first two roles (Partnership Manager, Campaign Lead Het Effectientje) were added to Sanity by hand on 6 October 2026.',
   },
 
   // ===========================================================================
@@ -1895,6 +1897,28 @@ export const SEED_SOURCES: SeedSource[] = [
     },
     notes:
       'Homerun has no public feed — every endpoint needs a Bearer token — so this reads JobPosting markup from the career page instead (§7.2).',
+  },
+  {
+    id: 'jsonld:geefrevolutie',
+    kind: 'crawl',
+    adapter: 'jsonld-careers',
+    employerId: 'tien-procent-club',
+    returnsCompleteSet: false,
+    config: {
+      indexUrl: 'https://www.geefrevolutie.nl/werken-bij',
+      // The werken-bij page links only to vacancies. The same /artikelen/ path
+      // also holds their stories, so never point this at /artikelen itself.
+      linkPattern: 'href="(\\./artikelen/[^"#?]+)"',
+      employerId: 'tien-procent-club',
+      employerName: 'De Geefrevolutie',
+      plainPages: {
+        // Framer article layout: byline date, then the title on the next line.
+        titlePattern: '^\\d{1,2} [a-z]{3,9}\\.? \\d{4}\\n+(.+)$',
+        stopPattern: '^Snel naar$',
+      },
+    },
+    notes:
+      'No JobPosting markup on any page (checked October 2026), so this relies on the plain-page fallback in the jsonld-careers adapter. If titles start arriving wrong, the Framer layout has changed — check titlePattern first.',
   },
   {
     id: 'teamtailor:founders-pledge',
