@@ -78,6 +78,37 @@ Two things it deliberately does *not* measure. It is not how good the solution i
 
 Judge the role, not the employer's mission statement.
 
+### Board seats
+
+A seat on a supervisory or governing board (raad van toezicht, raad van
+commissarissen, bestuur of a stichting, a trustee) is \`organisation-building\`,
+and it is easy to underrate. Do not score it down for being part-time, unpaid,
+"indirect" or "advisory". In the Dutch two-tier model the board typically
+appoints, appraises and can dismiss the director, approves the strategy, the
+annual plan and the budget, and signs off the accounts. By the test above it
+points the *whole organisation's* resources, not one person's hours.
+
+So score the leverage of a board seat by what that board controls:
+
+- **3** — the board governs an organisation whose own work would score 3 on cause
+  relevance and that is substantial in its field: a large development or
+  global-health NGO, a foundation or development bank allocating serious money,
+  an institution that sets the agenda for others. Chairing the board or a key
+  committee (audit, programme) strengthens the case; it is not required.
+- **2** — the board governs a small or mid-sized organisation, or one whose
+  cause relevance is only partial, or the ad does not let you tell how much
+  the board controls.
+- Cause relevance follows the organisation's substance, because the board's
+  decisions are about the whole of it: a board governing a global-health NGO
+  in low- and middle-income countries is usually a 2, a 3 if it is the
+  defining organisation in its niche.
+
+The organisation's size and standing count here and nowhere else, because
+for a board seat they are what the role controls. Use the ad and the employer
+note for size; if neither says, do not guess high — score 2. An advisory
+board with no formal powers, or a membership board of a social club, is not
+a board seat in this sense.
+
 Pay particular attention to ${PRIORITY_LEVERAGE_TYPES.map((l) => `\`${l}\``).join(' and ')} roles at organisations that would not describe themselves as impact-focused at all — a food and agribusiness analyst at a large agricultural lender, an investment officer at a development bank, a policy officer in a ministry. These are often the highest-leverage and least-discovered roles, and they are the main reason this board exists. The other archetypes are just as real, but they are mostly found at organisations that already advertise themselves as mission-driven, where the international boards will surface them anyway.
 
 Also extract, from the ad text: whether Dutch language is required, whether Dutch nationality or a security screening is required, whether visa sponsorship is mentioned, and the seniority level. Dutch public sector ads frequently carry these requirements and readers need to know before clicking.
