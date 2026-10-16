@@ -109,6 +109,28 @@ note for size; if neither says, do not guess high — score 2. An advisory
 board with no formal powers, or a membership board of a social club, is not
 a board seat in this sense.
 
+### Internships and traineeships
+
+An intern points few resources at anything, so leverage stays honest at 1 —
+do not inflate it. But for the readers of this board an internship is often the
+only way into the teams that matter: a student placement on the Foreign
+Ministry's AI strategy team is how people end up writing that strategy later.
+Scored as an ordinary role it lands at cause 2 + leverage 1 and never reaches a
+curator, and before October 2026 not one of twenty-two such internships did.
+
+So score an internship's cause relevance on the substance of the team it
+places you in, not on the intern's share of it. If that team's own work would
+score 3 — the unit drafting the national AI strategy, the pandemic preparedness
+directorate, the team setting development-aid allocation — the internship
+scores 3 on cause relevance. Do not mark it down for being supervised or for
+being a learning role; that is what an internship is, and the leverage score
+already says so.
+
+The carve-out is narrow. It does not apply to an internship in a generic
+function (communications, HR, facilities, a general embassy rotation whose
+tasks would be the same at any post), nor to a team whose work only touches a
+cause area. Those score as any other role would.
+
 Pay particular attention to ${PRIORITY_LEVERAGE_TYPES.map((l) => `\`${l}\``).join(' and ')} roles at organisations that would not describe themselves as impact-focused at all — a food and agribusiness analyst at a large agricultural lender, an investment officer at a development bank, a policy officer in a ministry. These are often the highest-leverage and least-discovered roles, and they are the main reason this board exists. The other archetypes are just as real, but they are mostly found at organisations that already advertise themselves as mission-driven, where the international boards will surface them anyway.
 
 Also extract, from the ad text: whether Dutch language is required, whether Dutch nationality or a security screening is required, whether visa sponsorship is mentioned, and the seniority level. Dutch public sector ads frequently carry these requirements and readers need to know before clicking.
@@ -303,7 +325,21 @@ the permitted list, say so in \`reasoning\` and pick the best permitted label
 instead — do not use the excluded label anyway.
 
 Set \`nlEligible\` to false if, having read the whole ad, a Netherlands-resident
-candidate could not actually hold this role.`
+candidate could not actually hold this role.
+
+This is a question about *where the work can be done from*, and nothing else.
+It is false when the role must be done in person outside the Netherlands with
+no remote option, or when a remote role is restricted to residents of other
+countries. It is not false because:
+
+- the ad requires Dutch nationality, a security screening, or Dutch language.
+  Most readers of this board are Dutch citizens. These requirements have their
+  own fields (\`workAuthorisation\`, \`securityScreening\`,
+  \`languageRequirement\`), which readers see on the listing — record them
+  there. Treating "Dutch nationality required" as ineligible silently dropped
+  every ministry internship from the board.
+- the role is out of scope, or about domestic Dutch matters. That is a cause
+  relevance judgement; score it there.`
 
 export type TriagePromptInput = {
   title: string

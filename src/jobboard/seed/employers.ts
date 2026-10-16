@@ -1299,6 +1299,23 @@ export const SEED_EMPLOYERS: SeedEmployer[] = [
     verify: true,
   },
   {
+    id: 'ambitious-impact',
+    name: 'Ambitious Impact',
+    website: 'https://www.ambitiousimpact.com',
+    careersUrl: 'https://www.ambitiousimpact.com/careers',
+    city: 'London',
+    ats: null,
+    // Its research splits by cause (global health, animal welfare); talent,
+    // marketing and operations serve the incubator as a whole.
+    causeAreas: ['global-health-wellbeing', 'farmed-animal-welfare', 'movement-building'],
+    leverageNote:
+      'Het incubatieprogramma achter ruim zestig goededoelenorganisaties, waarvan verschillende door GiveWell en Animal Charity Evaluators worden aanbevolen.',
+    recommenderAllowlisted: true,
+    watchlistTier: 1,
+    notes:
+      'Formerly Charity Entrepreneurship. Hires remote-friendly from a London hub. The careers page links each role to a PDF on Google Drive and an application form on Tally; no feed, no JobPosting markup. Polled by `aim:careers` (October 2026).',
+  },
+  {
     id: 'givewell',
     name: 'GiveWell',
     website: 'https://www.givewell.org',
@@ -1897,6 +1914,20 @@ export const SEED_SOURCES: SeedSource[] = [
     },
     notes:
       'Homerun has no public feed — every endpoint needs a Bearer token — so this reads JobPosting markup from the career page instead (§7.2).',
+  },
+  {
+    id: 'aim:careers',
+    kind: 'crawl',
+    adapter: 'aim-careers',
+    employerId: 'ambitious-impact',
+    returnsCompleteSet: true,
+    config: {
+      careersUrl: 'https://www.ambitiousimpact.com/careers',
+      employerId: 'ambitious-impact',
+      employerName: 'Ambitious Impact',
+    },
+    notes:
+      'Reads the Squarespace list section on the careers page, then each linked Google Drive PDF (and each PDF in a linked Drive folder). If it reports no list items, the page was redesigned — check aimCareerItems first.',
   },
   {
     id: 'jsonld:geefrevolutie',
