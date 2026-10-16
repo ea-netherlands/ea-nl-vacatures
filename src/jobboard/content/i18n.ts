@@ -111,7 +111,15 @@ export function isFeedbackKind(value: unknown): value is FeedbackKind {
 
 /** External destinations for the onward step (§4). */
 export const ONWARD_LINKS = {
-  introCourse: 'https://effectiefaltruisme.nl/introductiecursus',
+  // The two steps the website itself offers, October 2026: the free self-paced
+  // course (about 100 minutes, English only, no sign-up) and the selective
+  // five-week EA Fellowship. /introductiecursus now redirects to the
+  // fellowship, which is why the course has its own link.
+  freeCourse: 'https://effectiefaltruisme.nl/en/courses/pressing-problems',
+  fellowship: {
+    nl: 'https://effectiefaltruisme.nl/ea-fellowship',
+    en: 'https://effectiefaltruisme.nl/en/ea-fellowship',
+  },
   // The site itself now routes its own "Nieuwsbrief" nav label to /contact
   // rather than a dedicated signup page — matched here rather than left 404ing.
   newsletter: 'https://effectiefaltruisme.nl/contact',
@@ -206,30 +214,6 @@ type Strings = {
   // Index — hero and the browse grid (rebuilt August 2026)
   heroTitle: string
   heroLead: string
-  /**
-   * The reasoning behind the board's claim, in plain language.
-   *
-   * Deliberately never names the framework it is built on. A reader who has
-   * never heard of any of this should be able to follow every sentence, and a
-   * reader who has should recognise it without being told — importance,
-   * neglectedness and tractability in the first block, leverage in the second,
-   * counterfactual impact in the third.
-   */
-  /**
-   * The reasoning, in one line under the hero.
-   *
-   * Says "leverage" — "hefboom" in Dutch — rather than talking around it. The
-   * house rule bans *unexplained* jargon, not vocabulary: hefboom is defined in
-   * EA NL's own glossary, the method page is structured on it, and the index's
-   * own tier heading already reads "Functies met een hefboom". Avoiding the
-   * word here while using it two screens down was inconsistent, and the
-   * paraphrase was longer and vaguer than the term it replaced.
-   *
-   * The long-form argument still lives on the method page; this links there.
-   */
-  heroWhy: string
-  heroWhyLink: string
-  heroWhatIsImpact: string
 
   // Earning to give, promoted to its own band on the index (August 2026)
   e2gBandHeading: string
@@ -315,8 +299,6 @@ type Strings = {
   readProblemChoice: string
   readCareerGuide: string
   readCareerPlanning: string
-  heroStat: (n: number, newest: string) => string
-  heroBrowseCta: string
   browseCauseHeading: string
   browseCauseBody: string
   browseSkillHeading: string
@@ -494,7 +476,7 @@ type Strings = {
   onwardHeading: string
   onwardBody: string
   onwardCourse: string
-  onwardNewsletter: string
+  onwardFellowship: string
 
   // Footer / misc
   languageSwitch: string
@@ -565,10 +547,6 @@ const nl: Strings = {
   heroTitle: 'De banen in Nederland waarmee je het meeste goed doet',
   heroLead:
     'Een korte, met de hand samengestelde lijst, met bij elke vacature onze reden erbij.',
-  heroWhy:
-    'Functies met een echte hefboom op problemen die groot zijn, weinig aandacht krijgen en op te lossen zijn. Werk waarin je meer verandert dan het werk van één persoon — en waarbij het uitmaakt dat jij het doet, en niet iemand die er toch al zat.',
-  heroWhyLink: 'Zo redeneren we',
-  heroWhatIsImpact: 'Wat telt als goed doen?',
 
   e2gBandHeading: 'Of verdien goed, en geef weg wat je overhoudt',
   e2gBandBody:
@@ -681,13 +659,10 @@ const nl: Strings = {
   readProblemChoice: 'Waarom je keuze van probleem zoveel uitmaakt',
   readCareerGuide: 'De loopbaangids van 80,000 Hours',
   readCareerPlanning: 'Een loopbaanplan in het kort',
-  heroStat: (n, newest) =>
-    `${n === 1 ? '1 vacature' : `${n} vacatures`} · nieuwste van ${newest}`,
-  heroBrowseCta: 'Kies een probleemgebied',
-  browseCauseHeading: 'Waar wil je aan werken?',
+  browseCauseHeading: 'Kies op probleemgebied',
   browseCauseBody:
     'Vijf probleemgebieden die we volgen omdat ze groot, verwaarloosd en aan te pakken zijn. Kies een gebied, of ga meteen naar het onderwerp dat je zoekt.',
-  browseSkillHeading: 'Geen voorkeur? Kies op vaardigheid',
+  browseSkillHeading: 'Kies op vaardigheid',
   browseSkillBody:
     'Als het je niet uitmaakt aan welk probleem je werkt, maar je wel weet waar je goed in bent.',
   browseSkillAside: 'Dezelfde indeling die Probably Good gebruikt.',
@@ -800,9 +775,8 @@ const nl: Strings = {
     dutch:
       'Functies bij ministeries, toezichthouders, banken en universiteiten waarin je meer aan een probleem kunt richten dan je eigen uren.',
   },
-  browseBandHeading: 'Drie soorten plekken',
-  browseBandBody:
-    'We delen het bord in drieën, omdat elke soort hier om een andere reden staat.',
+  browseBandHeading: 'Kies op soort vacature',
+  browseBandBody: 'Drie soorten, die hier elk om een andere reden staan.',
   filterBand: 'Soort',
   programmeBadge: 'Programma',
   programmeWeeks: (n) => (n === 1 ? '1 week' : `${n} weken`),
@@ -871,11 +845,11 @@ const nl: Strings = {
   e2gOnwardHeading: 'Als je deze kant op gaat',
   e2gCompensation: 'Beloning',
 
-  onwardHeading: 'Nieuwsgierig geworden?',
+  onwardHeading: 'Wil je eerst meer weten?',
   onwardBody:
-    'Als je wilt weten hoe we tot deze lijst komen, hebben we een korte introductiecursus en een nieuwsbrief. Geen van beide kost je iets.',
-  onwardCourse: 'Bekijk de introductiecursus',
-  onwardNewsletter: 'Meld je aan voor de nieuwsbrief',
+    'Begin met onze gratis cursus van zo’n 100 minuten: zes korte delen, in je eigen tempo en zonder aanmelding (Engelstalig). Wil je daarna verder, meld je dan aan voor de EA Fellowship: vijf weken lezen en praten in een kleine groep. Ook gratis, maar selectief.',
+  onwardCourse: 'Start de gratis cursus',
+  onwardFellowship: 'Meld je aan voor de fellowship',
 
   languageSwitch: 'English',
   expiredHeading: 'Deze vacature is gesloten',
@@ -1024,10 +998,6 @@ const en: Strings = {
   heroTitle: 'The most socially impactful jobs in the Netherlands',
   heroLead:
     'A short, hand-picked list, with our reason written down for every vacancy on it.',
-  heroWhy:
-    'Roles with real leverage on problems that are large, neglected and actually solvable. Work where what you do changes more than one person’s work — and where it matters that you take it, rather than someone who would have been there anyway.',
-  heroWhyLink: 'How we reason',
-  heroWhatIsImpact: 'What counts as doing good?',
 
   e2gBandHeading: 'Or earn well, and give away what you do not need',
   e2gBandBody:
@@ -1139,12 +1109,10 @@ const en: Strings = {
   readProblemChoice: 'Why your choice of problem matters so much',
   readCareerGuide: 'The 80,000 Hours career guide',
   readCareerPlanning: 'Career planning, in short',
-  heroStat: (n, newest) => `${n === 1 ? '1 job' : `${n} jobs`} · newest from ${newest}`,
-  heroBrowseCta: 'Pick a problem area',
-  browseCauseHeading: 'What do you want to work on?',
+  browseCauseHeading: 'Browse by problem area',
   browseCauseBody:
     'Five problem areas we track because they are large, neglected and tractable. Pick an area, or go straight to the topic you came for.',
-  browseSkillHeading: 'No preference? Browse by skill',
+  browseSkillHeading: 'Browse by skill',
   browseSkillBody:
     'For when the problem matters less to you than what you are good at.',
   browseSkillAside: 'The same categories Probably Good uses.',
@@ -1257,8 +1225,8 @@ const en: Strings = {
     dutch:
       'Roles at ministries, regulators, banks and universities that let you point more at a problem than your own hours.',
   },
-  browseBandHeading: 'Three kinds of opening',
-  browseBandBody: 'The board is split three ways, because each kind is here for a different reason.',
+  browseBandHeading: 'Browse by kind of role',
+  browseBandBody: 'Three kinds, each here for a different reason.',
   filterBand: 'Kind',
   programmeBadge: 'Programme',
   programmeWeeks: (n) => (n === 1 ? '1 week' : `${n} weeks`),
@@ -1326,11 +1294,11 @@ const en: Strings = {
   e2gOnwardHeading: 'If you go this way',
   e2gCompensation: 'Pay',
 
-  onwardHeading: 'Curious?',
+  onwardHeading: 'Want to understand this first?',
   onwardBody:
-    'If you want to know how we arrive at this list, we run a short intro course and a newsletter. Neither costs anything.',
-  onwardCourse: 'See the intro course',
-  onwardNewsletter: 'Sign up for the newsletter',
+    'Start with our free course: about 100 minutes in six short units, at your own pace, with no sign-up. To go further, apply for the EA Fellowship: five weeks of reading and discussion in a small group. Also free, but selective.',
+  onwardCourse: 'Start the free course',
+  onwardFellowship: 'Apply for the fellowship',
 
   languageSwitch: 'Nederlands',
   expiredHeading: 'This job has closed',
