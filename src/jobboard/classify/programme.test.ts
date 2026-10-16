@@ -52,17 +52,21 @@ test('programmePaid and programmeTravelCovered say false only when the ad does',
   assert.equal(programmeTravelCovered('Office access at Constellation.'), null)
 })
 
-test('the rule: six months or less, paid, travel covered — and anything unknown is undecided', () => {
+test('the rule: six months or less and paid — and anything unknown is undecided', () => {
   assert.equal(shortProgrammeVerdict({ weeks: 13, paid: true, travelCovered: true }).eligible, true)
-  assert.equal(shortProgrammeVerdict({ weeks: 26, paid: true, travelCovered: true }).eligible, true)
+  assert.equal(shortProgrammeVerdict({ weeks: 26, paid: true, travelCovered: null }).eligible, true)
   assert.equal(shortProgrammeVerdict({ weeks: 27, paid: true, travelCovered: true }).eligible, false)
   assert.equal(shortProgrammeVerdict({ weeks: 104, paid: null, travelCovered: null }).eligible, false)
   assert.equal(shortProgrammeVerdict({ weeks: 13, paid: false, travelCovered: true }).eligible, false)
-  assert.equal(shortProgrammeVerdict({ weeks: 13, paid: true, travelCovered: false }).eligible, false)
 
-  const undecided = shortProgrammeVerdict({ weeks: 13, paid: true, travelCovered: null })
+  // Travel is recorded, not required.
+  const noTravel = shortProgrammeVerdict({ weeks: 13, paid: true, travelCovered: false })
+  assert.equal(noTravel.eligible, true)
+  assert.match(noTravel.reason, /travel not covered/)
+
+  const undecided = shortProgrammeVerdict({ weeks: 13, paid: null, travelCovered: true })
   assert.equal(undecided.eligible, null)
-  assert.match(undecided.reason, /does not state travel/)
+  assert.match(undecided.reason, /does not state pay$/)
 })
 
 test('the classifier only fills gaps; what the ad text says wins', () => {
@@ -71,7 +75,7 @@ test('the classifier only fills gaps; what the ad text says wins', () => {
     { weeks: 13, paid: true, travelCovered: true },
   )
   // Still undecided after both reads → the run treats it as not eligible.
-  const merged = mergeTerms({ weeks: 13, paid: null, travelCovered: null }, { weeks: null, paid: true, travelCovered: null })
+  const merged = mergeTerms({ weeks: null, paid: null, travelCovered: null }, { weeks: null, paid: true, travelCovered: null })
   assert.equal(shortProgrammeVerdict(merged).eligible, null)
 })
 

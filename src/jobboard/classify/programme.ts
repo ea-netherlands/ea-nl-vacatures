@@ -11,20 +11,25 @@
  * The rule, deliberately mechanical so it cannot drift into a judgement call:
  *
  *   a programme counts as NL-eligible wherever it is held when it runs for
- *   six months or less, it is paid (a stipend or salary), and travel is covered.
+ *   six months or less and it is paid (a stipend or salary).
  *
- * Each part is there for a reason. Six months is roughly where "going away for
- * a bit" becomes "moving", with a lease to break and a tax residence to think
- * about. Pay and travel are what make it possible for someone who is not
- * already well off: an unpaid three months in California is a programme for
- * people with savings, and the board should not quietly present it as open to
- * everyone.
+ * Six months is roughly where "going away for a bit" becomes "moving", with a
+ * lease to break and a tax residence to think about. Pay is what makes it
+ * possible for someone who is not already well off: an unpaid three months in
+ * California is a programme for people with savings, and the board should not
+ * quietly present it as open to everyone.
+ *
+ * Travel cover was part of the first draft and was dropped at James's call
+ * (16 October 2026): a stipend usually covers a flight, and requiring the ad to
+ * say so would drop good programmes over a sentence their page left out. It is
+ * still read and stored — a curator, and later a reader, will want to know —
+ * but it no longer decides anything.
  *
  * The facts are read from the ad text by pattern first. Where the text does not
  * say, stage one lets the listing through and the classifier reads the same
- * three facts; `run.ts` then applies this same function to the merged facts, so
- * the model extracts and the code decides. Anything still unknown after both is
- * not eligible — the same round-down the scoring prompt asks for.
+ * facts; `run.ts` then applies this same function to the merged facts, so the
+ * model extracts and the code decides. Anything still unknown after both is not
+ * eligible — the same round-down the scoring prompt asks for.
  */
 
 /** 26 weeks, i.e. six months. */
@@ -35,7 +40,7 @@ export type ProgrammeTerms = {
   weeks: number | null
   /** True for a stated stipend or salary, false for an explicitly unpaid one. */
   paid: boolean | null
-  /** True when travel (or housing) is said to be covered, false when it is said not to be. */
+  /** True when travel (or housing) is said to be covered, false when it is said not to be. Recorded, not decisive. */
   travelCovered: boolean | null
 }
 
@@ -149,20 +154,21 @@ export function shortProgrammeVerdict(terms: ProgrammeTerms): {
     }
   }
   if (terms.paid === false) return { eligible: false, reason: 'programme abroad is unpaid' }
-  if (terms.travelCovered === false) {
-    return { eligible: false, reason: 'programme abroad does not cover travel' }
-  }
-  if (terms.weeks !== null && terms.paid && terms.travelCovered) {
+  if (terms.weeks !== null && terms.paid) {
+    const travel =
+      terms.travelCovered === true
+        ? ' with travel covered'
+        : terms.travelCovered === false
+          ? ', travel not covered'
+          : ''
     return {
       eligible: true,
-      reason: `paid programme of ${terms.weeks} weeks with travel covered; held abroad but no move needed`,
+      reason: `paid programme of ${terms.weeks} weeks${travel}; held abroad but no move needed`,
     }
   }
-  const missing = [
-    terms.weeks === null ? 'duration' : null,
-    terms.paid === null ? 'pay' : null,
-    terms.travelCovered === null ? 'travel' : null,
-  ].filter(Boolean)
+  const missing = [terms.weeks === null ? 'duration' : null, terms.paid === null ? 'pay' : null].filter(
+    Boolean,
+  )
   return { eligible: null, reason: `programme abroad; ad does not state ${missing.join(', ')}` }
 }
 
@@ -181,7 +187,7 @@ export function mergeTerms(fromText: ProgrammeTerms, fromModel: Partial<Programm
  * Narrow on purpose. "Fellowship" and "residency" are programmes; a bare
  * "Research Fellow" is very often a postdoc job and stays a job. Getting this
  * wrong in the generous direction only matters for roles held abroad, and
- * even then the duration, pay and travel tests still have to pass.
+ * even then the duration and pay tests still have to pass.
  */
 const PROGRAMME_TITLE =
   /\b(fellowship|residency|bootcamp|boot camp|summer school|accelerator|incubator|incubation program(me)?|cohort)\b/i

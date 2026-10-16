@@ -144,8 +144,9 @@ For a programme, also read three facts from the ad: how many weeks it runs in
 total (\`programmeWeeks\`), whether participants are paid a stipend or salary
 (\`programmePaid\`), and whether travel or housing is covered
 (\`programmeTravelCovered\`). Use null for anything the ad does not state. Do
-not guess: these facts decide, mechanically, whether a programme held abroad
-can be listed, so a confident wrong answer does more harm than a null.
+not guess: the length and the pay decide, mechanically, whether a programme
+held abroad can be listed, so a confident wrong answer does more harm than a
+null. Travel cover is recorded for readers but decides nothing.
 
 Score a programme the way the internship rule above scores an internship.
 Its cause relevance is the substance of the field it moves people into and the
@@ -376,11 +377,11 @@ countries. It is not false because:
   someone working *from* that country, not a remote hire in the Netherlands.
 
 A programme held in person abroad is the one exception, and you do not decide
-it here. A paid programme of six months or less with travel covered does not
-require anyone to move, so it is eligible wherever it is held — but that is
-decided by code from the three programme fields, not from \`nlEligible\`. For
-a programme, answer \`nlEligible\` only for where the work happens (false for
-a Berkeley residency), and put the effort into getting the three facts right.`
+it here. A paid programme of six months or less does not require anyone to
+move, so it is eligible wherever it is held — but that is decided by code from
+the programme fields, not from \`nlEligible\`. For a programme, answer
+\`nlEligible\` only for where the work happens (false for a Berkeley
+residency), and put the effort into getting the length and the pay right.`
 
 export type TriagePromptInput = {
   title: string

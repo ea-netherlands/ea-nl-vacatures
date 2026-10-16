@@ -63,12 +63,12 @@ export const TRIAGE_SCHEMA = {
     programmeTravelCovered: {
       anyOf: [{ type: 'boolean' }, { type: 'null' }],
       description:
-        'For a programme: true if the ad says travel (or housing) is covered or reimbursed, false if it says it is not. Null for a job, or when the ad does not say. Do not infer it from a generous stipend.',
+        'For a programme: true if the ad says travel (or housing) is covered or reimbursed, false if it says it is not. Null for a job, or when the ad does not say. Do not infer it from a generous stipend. Recorded for readers; it does not decide eligibility.',
     },
     nlEligible: {
       type: 'boolean',
       description:
-        'False only if the work cannot be done from the Netherlands (on-site abroad with no remote option, or remote restricted to other countries). Nationality, screening and language requirements do not make it false. A short programme abroad is decided by code from the three programme fields; answer this one for where the work itself happens.',
+        'False only if the work cannot be done from the Netherlands (on-site abroad with no remote option, or remote restricted to other countries). Nationality, screening and language requirements do not make it false. A short programme abroad is decided by code from the programme fields; answer this one for where the work itself happens.',
     },
     primaryCause: {
       // Anthropic's json_schema output format doesn't accept the JSON Schema

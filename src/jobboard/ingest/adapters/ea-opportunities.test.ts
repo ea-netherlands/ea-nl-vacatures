@@ -170,13 +170,13 @@ test('Generator Residency normalises as a programme and passes stage one on its 
   assert.ok(!verdict.allowedLeverage.includes('earning-to-give'))
 })
 
-test('without its own page, Generator still reaches stage two, which supplies pay and travel', () => {
+test('without its own page, Generator still reaches stage two, which supplies the pay', () => {
   const listing = eaOpportunitiesBoard.normalise({ externalId: GENERATOR.id, payload: GENERATOR }, {})
   assert.ok(listing)
   const verdict = stage1(asStage1(listing))
   assert.equal(verdict.pass, true)
   if (!verdict.pass) return
-  assert.match(verdict.nlReason, /does not state pay, travel; deferring to stage two/)
+  assert.match(verdict.nlReason, /does not state pay; deferring to stage two/)
   assert.deepEqual(verdict.programme, { weeks: 13, paid: null, travelCovered: null })
 })
 

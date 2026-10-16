@@ -67,7 +67,7 @@ export const jobListing = defineType({
       initialValue: 'job',
       options: { list: plainOptions(LISTING_KINDS), layout: 'radio', direction: 'horizontal' },
       description:
-        'programme = a residency, fellowship or bootcamp with a fixed end that people join to move into a field. Its pay is a stipend, and it may be held abroad: a paid programme of six months or less with travel covered is listed wherever it is held, because it does not require moving.',
+        'programme = a residency, fellowship or bootcamp with a fixed end that people join to move into a field. Its pay is a stipend, and it may be held abroad: a paid programme of six months or less is listed wherever it is held, because it does not require moving.',
     }),
     defineField({
       name: 'programmeWeeks',

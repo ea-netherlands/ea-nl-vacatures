@@ -2,13 +2,13 @@
  * Reading a programme's own page — added October 2026.
  *
  * The EA boards describe a programme in three or four AI-written bullets, and
- * those are written to sell it, not to answer the three questions the
+ * those are written to sell it, not to answer the questions the
  * short-programme rule asks (../../classify/programme.ts). For Generator
  * Residency, October 2026, the EA Opportunities summary says "three-month
- * residency" and nothing about pay or travel; Probably Good's adds the
- * stipend. Only the residency's own FAQ says "Kairos also covers travel to and
- * from Berkeley". Without that sentence the rule cannot decide, and the
- * listing has to go to the classifier to be read again.
+ * residency" and nothing about pay; only the residency's own page states the
+ * $8,500 monthly stipend (and that Kairos covers travel). Without the page the
+ * rule cannot decide, and the listing has to go to the classifier — which, in
+ * the dry run, missed facts that sat past its truncation point.
  *
  * So for programmes only — tens of pages, not hundreds — the adapters fetch the
  * apply link and append its text. Cached for a week: programme pages change
