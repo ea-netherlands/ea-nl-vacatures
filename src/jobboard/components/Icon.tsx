@@ -32,6 +32,7 @@ export type IconName =
   | 'arrow-right'
   | 'arrow-left'
   | 'chevron-down'
+  | 'menu-2'
   | 'x'
   | 'info-circle'
   | 'filter'
@@ -89,6 +90,7 @@ const PATHS: Record<IconName, string> = {
   'arrow-right': 'M5 12h14M13 18l6-6-6-6',
   'arrow-left': 'M5 12h14M5 12l6 6M5 12l6-6',
   'chevron-down': 'M6 9l6 6 6-6',
+  'menu-2': 'M4 6h16M4 12h16M4 18h16',
   x: 'M18 6L6 18M6 6l12 12',
   'info-circle': 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18M12 9h.01M11 12h1v4h1',
   filter: 'M4 4h16v2.172a2 2 0 0 1-.586 1.414L15 12v7l-6-2v-4.5L4.52 7.572A2 2 0 0 1 4 6.227z',

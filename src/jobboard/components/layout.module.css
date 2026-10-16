@@ -82,6 +82,221 @@
   background: var(--bg);
 }
 
+/* ---------------------------------------------------------------------------
+   The website's bar, on top (./SiteHeader, October 2026). Measured off
+   effectiefaltruisme.nl: 72px tall, logo 32px, menu labels at 14px medium in
+   slate 600 with a chevron, pill-radius hover, the language button in teal
+   with its flag, the solid "Start de gratis cursus" button on the right.
+   --------------------------------------------------------------------------- */
+.siteBarWrap {
+  max-width: var(--container-max);
+  margin-inline: auto;
+  padding-inline: var(--space-8);
+}
+
+.siteBar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding-block: var(--space-4);
+}
+
+.siteLogo {
+  display: inline-flex;
+  flex-shrink: 0;
+}
+.siteLogo img {
+  height: var(--space-8);
+  width: auto;
+}
+
+.siteMenus {
+  display: none;
+  align-items: center;
+}
+
+.siteMenu {
+  position: relative;
+}
+
+.siteMenuButton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-0-5);
+  height: var(--space-10);
+  padding-inline: var(--space-2);
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  background: none;
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: var(--fw-medium);
+  color: var(--slate-600);
+  text-decoration: none;
+  cursor: pointer;
+}
+.siteMenuButton:hover,
+.siteMenuButton[aria-expanded='true'] {
+  background: var(--bg-subtle);
+  color: var(--fg);
+}
+.siteMenuButton:focus-visible,
+.siteMenuItem:focus-visible,
+.siteLang:focus-visible,
+.siteMenuToggle:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.siteMenuList {
+  position: absolute;
+  top: calc(100% + var(--space-1));
+  left: 0;
+  z-index: 60;
+  min-width: 13rem;
+  list-style: none;
+  margin: 0;
+  padding: var(--space-1-5);
+  background: var(--bg);
+  border-radius: var(--radius-input);
+  box-shadow: var(--shadow-lg);
+}
+
+.siteMenuItem {
+  display: block;
+  padding: var(--space-1-5) var(--space-2);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  color: var(--fg);
+  text-decoration: none;
+}
+.siteMenuItem:hover {
+  background: var(--bg-subtle);
+  color: var(--fg);
+}
+
+.siteActions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-left: auto;
+}
+
+.siteLang {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: var(--space-9);
+  padding-inline: var(--space-3-5);
+  border-radius: var(--radius-control);
+  font-size: var(--text-sm);
+  font-weight: var(--fw-medium);
+  color: var(--primary-fg);
+  text-decoration: none;
+}
+.siteLang:hover {
+  background: var(--primary-subtle);
+  color: var(--primary-fg);
+}
+
+.siteActions .siteCta {
+  display: none;
+  height: var(--space-9);
+  padding-block: 0;
+  padding-inline: var(--space-3-5);
+}
+
+/* A plain link in the menu row (Evenementen, Vacatures) is wider on the site
+   than a menu button, which spends its right padding on the chevron. */
+.siteMenuLink {
+  padding-inline: var(--space-4);
+}
+
+.siteMenuToggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--space-9);
+  height: var(--space-9);
+  border: none;
+  border-radius: var(--radius-control);
+  background: none;
+  color: var(--fg);
+  cursor: pointer;
+}
+
+.siteMobile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  /* The header is sticky, so a panel taller than the screen would hide its
+     own last items. It scrolls inside the space under the 72px bar. */
+  max-height: calc(100dvh - var(--space-16) - var(--space-2));
+  overflow-y: auto;
+  padding-block: var(--space-2) var(--space-6);
+  border-top: 1px solid var(--border);
+}
+
+.siteMobileGroup ul {
+  list-style: none;
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.siteMobileHeading {
+  font-family: var(--font-heading);
+  font-weight: var(--fw-medium);
+  color: var(--fg);
+}
+
+.siteMobileGroup a,
+.siteMobileLink {
+  color: var(--fg-muted);
+  text-decoration: none;
+}
+
+@media (min-width: 64rem) {
+  .siteMenus {
+    display: flex;
+  }
+  .siteActions .siteCta {
+    display: inline-flex;
+  }
+  .siteMenuToggle,
+  .siteMobile {
+    display: none;
+  }
+}
+
+/* The board's own row, under the site's bar: its name and its pages. */
+.boardBar {
+  border-top: 1px solid var(--border);
+}
+.boardBar .headerInner {
+  padding-block: var(--space-2-5);
+  flex-wrap: nowrap;
+}
+
+/* On a phone the board's row stays one line and scrolls sideways, rather
+   than wrapping into three and making the sticky header a third of the
+   screen. */
+.boardBar .nav {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  white-space: nowrap;
+  min-width: 0;
+}
+.boardBar .nav::-webkit-scrollbar {
+  display: none;
+}
+.boardBar .brand {
+  flex-shrink: 0;
+}
+
 .headerInner {
   display: flex;
   align-items: center;
@@ -100,17 +315,6 @@
 }
 .brand:hover {
   color: var(--fg);
-}
-
-.brandLogo {
-  height: 1.75rem;
-  width: auto;
-}
-
-.brandDivider {
-  width: 1px;
-  height: 1.25rem;
-  background: var(--border-emphasized);
 }
 
 .brandName {
@@ -211,17 +415,48 @@
   flex: 1;
 }
 
-/* White with a 1px hairline, butted against the last section — the site's
-   footer, which is not a tinted slab floating below a gap. */
+/* ===========================================================================
+   The footer — the website's own, October 2026.
+
+   Measured off effectiefaltruisme.nl so the two read as one site: teal 800
+   ground, teal 100 links, teal 200 for the small print, white Sentient
+   headings, teal 700 rules between the three rows. Wider than the board's
+   64rem container, as the site's is (1440px, 2rem gutters).
+   =========================================================================== */
 .footer {
-  border-top: 1px solid var(--border);
-  background: var(--bg);
-  padding-block: var(--space-12);
+  background: var(--ea-teal-800);
+  color: var(--ea-teal-100);
   font-size: var(--text-sm);
-  color: var(--fg-muted);
+  line-height: var(--lh-snug);
+}
+
+.footerInner {
+  max-width: var(--container-site);
+  margin-inline: auto;
+  padding: var(--space-16) var(--space-8);
+}
+
+.footer a {
+  color: var(--ea-teal-100);
+  text-decoration: none;
+  border-radius: var(--radius-md);
+}
+.footer a:hover {
+  color: var(--white);
+}
+.footer a:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.footerGrid {
+  display: grid;
+  gap: var(--space-8);
+  grid-template-columns: 1fr 1fr;
 }
 
 .footerBrand {
+  grid-column: 1 / -1;
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
@@ -229,55 +464,81 @@
 }
 
 .footerLogo {
-  height: 2.5rem;
+  height: var(--space-12);
   width: auto;
 }
 
 .footerSlogan {
-  color: var(--fg-muted);
-  max-width: 28ch;
+  color: var(--ea-teal-200);
+  max-width: 34ch;
 }
 
-.footerGrid {
-  display: grid;
-  gap: var(--space-8);
-  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
-}
-
-/* The site's footer column headings are sentence-case body text at `medium`
-   in the default foreground — not uppercase, not tracked, not subtle. */
-.footerHeading {
-  font-family: var(--font-body);
-  font-size: var(--text-sm);
-  font-weight: var(--fw-medium);
-  color: var(--fg);
-  margin-bottom: var(--space-4);
-}
-
-.footerList {
-  list-style: none;
-  padding: 0;
+.footerColumn {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
 }
 
-/* Muted and undecorated, going to full-strength ink on hover — the site's
-   footer links. Teal underlines belong in running prose, and a footer of
-   fifteen of them was the loudest thing on the page. */
-.footerList a {
-  color: var(--fg-muted);
-  text-decoration: none;
-}
-.footerList a:hover {
-  color: var(--fg);
+.footerHeading {
+  font-family: var(--font-heading);
+  font-size: var(--text-md);
+  font-weight: var(--fw-medium);
+  line-height: var(--lh-normal);
+  color: var(--white);
+  margin: 0;
 }
 
-.footerNote {
-  margin-top: var(--space-8);
+.footerList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.footerSocials {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.footerSocials a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--space-9);
+  height: var(--space-9);
+  border-radius: var(--radius-full);
+}
+.footerSocials a:hover {
+  background: var(--ea-teal-700);
+}
+
+.footerInfo {
+  display: grid;
+  gap: var(--space-8);
+  grid-template-columns: 1fr;
+  margin-top: var(--space-10);
   padding-top: var(--space-6);
-  border-top: var(--rule-dashed);
-  max-width: var(--container-prose);
+  border-top: 1px solid var(--ea-teal-700);
+  color: var(--ea-teal-200);
+}
+
+.footerInfo p + p {
+  margin-top: var(--space-2);
+}
+
+.footerInfoHeading {
+  font-family: var(--font-heading);
+  font-size: var(--text-sm);
+  font-weight: var(--fw-medium);
+  color: var(--white);
+  margin: 0 0 var(--space-2);
+}
+
+.footer .footerUnderline {
+  text-decoration: underline;
+  text-underline-offset: var(--space-0-5);
 }
 
 .footerBottom {
@@ -285,32 +546,46 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-4);
-  margin-top: var(--space-8);
-  padding-top: var(--space-4);
-  border-top: 1px solid var(--border);
-  color: var(--fg-muted);
+  gap: var(--space-3);
+  margin-top: var(--space-10);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--ea-teal-700);
+  font-size: var(--text-xs);
+  color: var(--ea-teal-200);
 }
 
-.footerSocials {
+.footerLegal {
+  list-style: none;
+  margin: 0;
+  padding: 0;
   display: flex;
-  align-items: center;
-  gap: var(--space-1);
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
 }
 
-.footerSocials a {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2rem;
-  height: 2rem;
-  border-radius: var(--radius-md);
-  color: var(--fg-muted);
-  text-decoration: none;
+.footerBottom a {
+  color: var(--ea-teal-200);
 }
-.footerSocials a:hover {
-  background: var(--bg-muted);
-  color: var(--fg);
+
+@media (min-width: 48rem) {
+  .footerGrid {
+    grid-template-columns: 1.4fr repeat(4, 1fr);
+  }
+  .footerBrand {
+    grid-column: auto;
+  }
+  .footerInfo {
+    grid-template-columns: 2fr 1fr 1fr;
+  }
+}
+
+/* The board's own "tell us we are wrong" note, just above the footer. */
+.disagree {
+  border-top: var(--rule-dashed);
+  padding-block: var(--space-8);
+  max-width: var(--container-prose);
+  color: var(--fg-muted);
+  font-size: var(--text-sm);
 }
 
 /* Hero: faint repeating wave pattern with a soft radial teal halo. */
