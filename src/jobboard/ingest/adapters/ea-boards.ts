@@ -18,7 +18,9 @@
  */
 
 import { fetchJson, fetchText } from '../../lib/http'
-import { canonicaliseUrl } from '../../lib/text'
+import { canonicaliseUrl, parseSalaryText } from '../../lib/text'
+import type { ListingKind } from '../../taxonomy'
+import { monthlyStipend, programmePageText, withProgrammePage } from './programme-page'
 import type {
   AdapterContext,
   EmployerDiscovery,
@@ -213,6 +215,14 @@ export const eightyThousandHours: SourceAdapter = {
 // We are spending Probably Good's paid search quota, so: poll at most daily,
 // cache aggressively, and send a descriptive user agent (§7.6). An explicit
 // arrangement beats a silent one — emailing them is an M0 item.
+//
+// October 2026: the source had failed every run since mid-September with "no
+// algolia_search_key in GraphQL response". Their front end had added one field,
+// `jobs_object_id_field`, to the persisted query, and because the server
+// matches the text byte-for-byte our older copy was no longer on its
+// whitelist — the reply was a bare "An unknown error occurred". When this
+// breaks again, read the query out of their bundle (search the JS for
+// `persisted("AlgoliaSearchKey"`) and copy it exactly.
 // ---------------------------------------------------------------------------
 
 const PG_SEARCH_KEY_QUERY = `
@@ -225,6 +235,7 @@ const PG_SEARCH_KEY_QUERY = `
         index_name_profiles
         index_name_jobs
         index_name_jobs_sorted_by_closes_at
+        jobs_object_id_field
       }
     }
   `
@@ -250,6 +261,18 @@ async function probablyGoodCreds(config: Record<string, unknown>): Promise<Algol
   return { appId: key.app_id, apiKey: key.api_key, index: key.index_name_jobs }
 }
 
+/**
+ * Probably Good's workload tags that mean a programme rather than a job. They
+ * are fetched wherever they are held: a programme abroad is judged by the
+ * short-programme rule, not by the location facet (../../classify/programme.ts).
+ */
+const PG_PROGRAMME_WORKLOADS = ['Fellowship', 'Training', 'Graduate Program']
+
+export function probablyGoodKind(hit: Record<string, any>): ListingKind {
+  const workloads: string[] = (hit.tags_workload ?? []).map((t: any) => t?.name).filter(Boolean)
+  return workloads.some((w) => PG_PROGRAMME_WORKLOADS.includes(w)) ? 'programme' : 'job'
+}
+
 export const probablyGood: SourceAdapter = {
   id: 'probablygood',
   async *fetch(config, ctx) {
@@ -270,14 +293,37 @@ export const probablyGood: SourceAdapter = {
         ? [locations.map((l) => `locations.algolia_filter_name:${l}`)]
         : undefined,
     })
-    for (const hit of data.hits ?? []) {
-      yield { externalId: String(hit.objectID), payload: hit }
+    const programmes = await algoliaQuery<{ hits?: Record<string, unknown>[] }>(creds, {
+      query: '',
+      hitsPerPage: 1000,
+      facetFilters: [PG_PROGRAMME_WORKLOADS.map((w) => `tags_workload.name:${w}`)],
+    })
+    ctx.log(`probablygood: ${programmes.hits?.length ?? 0} programmes, wherever held`)
+
+    const seen = new Set<string>()
+    for (const hit of [...(data.hits ?? []), ...(programmes.hits ?? [])]) {
+      const id = String(hit.objectID)
+      if (seen.has(id)) continue
+      seen.add(id)
+      const payload: Record<string, unknown> = { ...hit }
+      if (probablyGoodKind(hit) === 'programme' && typeof hit.url_external === 'string') {
+        payload.programmePage = await programmePageText(canonicaliseUrl(hit.url_external), ctx)
+      }
+      yield { externalId: id, payload }
     }
   },
   normalise(raw): NormalisedListing | null {
     const h = raw.payload as Record<string, any>
     const applyUrl = h.url_external
     if (!applyUrl) return null
+    const kind = probablyGoodKind(h)
+    const programmePage = typeof h.programmePage === 'string' ? h.programmePage : null
+    const salary = parseSalaryText(h.salary_text || null)
+    const pay = salary.min
+      ? salary
+      : kind === 'programme'
+        ? (monthlyStipend(h.description ?? null) ?? monthlyStipend(programmePage))
+        : null
     const locations = (h.locations ?? [])
       .map((l: any) => l.algolia_filter_name ?? l.name ?? '')
       .filter(Boolean)
@@ -288,18 +334,25 @@ export const probablyGood: SourceAdapter = {
       employerName: String(h.org?.name ?? '').trim(),
       title: String(h.title ?? '').trim(),
       applyUrl: canonicaliseUrl(String(applyUrl)),
-      description: typeof h.description === 'string' ? h.description : null,
+      description: withProgrammePage(
+        typeof h.description === 'string' ? h.description : null,
+        programmePage,
+      ),
       descriptionHtml: null,
       // Facet names arrive prefixed, e.g. "[country] Netherlands".
       locationRaw: locations.replace(/\[[a-z]+\]\s*/g, '') || null,
       country: /netherlands|nederland/i.test(locations) ? 'NL' : null,
-      postedAt: h.posted_at_unix ? new Date(h.posted_at_unix * 1000) : null,
+      // `posted_at_unix` became `published_at_unix` some time before October 2026.
+      postedAt: (h.published_at_unix ?? h.posted_at_unix)
+        ? new Date((h.published_at_unix ?? h.posted_at_unix) * 1000)
+        : null,
       deadlineAt: h.closes_at_unix ? new Date(h.closes_at_unix * 1000) : null,
-      salaryMin: null,
-      salaryMax: null,
-      salaryCurrency: null,
-      salaryPeriod: null,
+      salaryMin: pay?.min ?? null,
+      salaryMax: pay?.max ?? null,
+      salaryCurrency: pay?.min ? pay.currency : null,
+      salaryPeriod: pay?.min ? pay.period : null,
       mentions30PercentRuling: false,
+      listingKind: kind,
     }
   },
   async discoverEmployers(config, ctx) {

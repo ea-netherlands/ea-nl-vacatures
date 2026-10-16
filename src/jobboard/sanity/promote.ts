@@ -70,6 +70,8 @@ type PromotableRow = {
   security_note: string | null
   seniority: string | null
   location_mode: string | null
+  listing_kind: string | null
+  programme_weeks: number | null
   draft_note: string | null
   reasoning: string | null
   employer_leverage_note: string | null
@@ -153,7 +155,8 @@ export async function runPromotion(options: PromoteOptions = {}): Promise<Promot
       if (options.dryRun) {
         log(
           `would promote #${row.id} — ${row.title} @ ${row.employer_name} ` +
-            `(${row.primary_cause}/${row.leverage}, score ${row.total_score})`,
+            `(${row.listing_kind === 'programme' ? 'programme, ' : ''}` +
+            `${row.primary_cause}/${row.leverage}, score ${row.total_score})`,
         )
         report.promoted++
         promotedKeys.add(row.dedup_key)
@@ -202,6 +205,8 @@ export async function runPromotion(options: PromoteOptions = {}): Promise<Promot
         _id: docId,
         _type: 'jobListing',
         title: row.title,
+        listingKind: row.listing_kind === 'programme' ? 'programme' : 'job',
+        programmeWeeks: row.listing_kind === 'programme' ? (row.programme_weeks ?? undefined) : undefined,
         slug: { _type: 'slug', current: slugBase },
         employer: { _type: 'reference', _ref: employerRef },
         applyUrl: row.apply_url,
@@ -292,7 +297,8 @@ async function loadPromotable(db: Db, limit: number): Promise<PromotableRow[]> {
             c.leverage, c.cause_score,
             c.leverage_score, c.total_score, c.language_requirement,
             c.work_authorisation, c.security_screening, c.security_note,
-            c.seniority, c.location_mode, c.draft_note, c.reasoning,
+            c.seniority, c.location_mode, c.listing_kind, c.programme_weeks,
+            c.draft_note, c.reasoning,
             e.leverage_note       as employer_leverage_note,
             e.website             as employer_website,
             e.careers_url         as employer_careers_url,

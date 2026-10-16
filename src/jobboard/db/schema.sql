@@ -179,3 +179,16 @@ create table if not exists review_digest (
   new_count    int not null,
   waiting_count int not null
 );
+
+-- Added October 2026: programmes (paid residencies, fellowships, bootcamps) as
+-- a second kind of listing next to jobs. On `listing` it is what the source
+-- said, or what the title says (ingest/run.ts); stage one reads it to decide
+-- whether the short-programme rule applies (classify/programme.ts). On
+-- `classification` it is the final kind after the classifier's read, plus the
+-- three facts the programme rule decides on, kept so a curator can see why a
+-- Berkeley residency counted as NL-eligible.
+alter table listing add column if not exists listing_kind text not null default 'job';
+alter table classification add column if not exists listing_kind text not null default 'job';
+alter table classification add column if not exists programme_weeks int;
+alter table classification add column if not exists programme_paid boolean;
+alter table classification add column if not exists programme_travel_covered boolean;

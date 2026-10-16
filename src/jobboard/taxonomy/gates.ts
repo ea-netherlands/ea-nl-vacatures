@@ -28,6 +28,7 @@
 import {
   type CauseArea,
   type LeverageType,
+  type ListingKind,
   CLASSIFIER_ASSIGNABLE_CAUSES,
   CLASSIFIER_ASSIGNABLE_LEVERAGE,
 } from './index'
@@ -62,7 +63,12 @@ export type ListingSalary = {
 export function earningToGiveEligible(
   employer: EmployerGateFlags | null,
   listing: ListingSalary,
+  kind: ListingKind = 'job',
 ): boolean {
+  // A stipend is not a salary to give from: a fellowship at an allowlisted
+  // firm would otherwise clear the floor on its stipend and land in the
+  // earning-to-give section.
+  if (kind === 'programme') return false
   if (!employer?.e2g_allowlisted) return false
   if (employer.e2g_salary_presumed) return true
   if (listing.salary_max === null) return false
@@ -86,9 +92,10 @@ export function allowedCauseAreas(): CauseArea[] {
 export function allowedLeverageTypes(
   employer: EmployerGateFlags | null,
   listing: ListingSalary,
+  kind: ListingKind = 'job',
 ): LeverageType[] {
   const allowed = [...CLASSIFIER_ASSIGNABLE_LEVERAGE]
-  if (earningToGiveEligible(employer, listing)) allowed.push('earning-to-give')
+  if (earningToGiveEligible(employer, listing, kind)) allowed.push('earning-to-give')
   if (employer?.recommender_allowlisted) allowed.push('trusted-recommendation')
   return allowed
 }
@@ -108,6 +115,7 @@ export function enforceGates(
   result: { primaryCause: string | null; secondaryCauses: string[]; leverage: string | null },
   employer: EmployerGateFlags | null,
   listing: ListingSalary,
+  kind: ListingKind = 'job',
 ): {
   primaryCause: string | null
   secondaryCauses: string[]
@@ -115,7 +123,7 @@ export function enforceGates(
   violations: GateViolation[]
 } {
   const causes = new Set(allowedCauseAreas())
-  const leverages = new Set(allowedLeverageTypes(employer, listing))
+  const leverages = new Set(allowedLeverageTypes(employer, listing, kind))
   const violations: GateViolation[] = []
 
   let primaryCause = result.primaryCause

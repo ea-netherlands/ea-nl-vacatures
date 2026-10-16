@@ -6,6 +6,7 @@ import { aimCareers } from './adapters/aim'
 import { ATS_ADAPTERS } from './adapters/ats'
 import { DUTCH_ADAPTERS } from './adapters/dutch'
 import { EA_BOARD_ADAPTERS } from './adapters/ea-boards'
+import { eaOpportunitiesBoard } from './adapters/ea-opportunities'
 import { jsonldCareers } from './adapters/jsonld'
 import type { SourceAdapter } from './types'
 
@@ -13,6 +14,7 @@ export const ADAPTERS: SourceAdapter[] = [
   ...ATS_ADAPTERS,
   ...DUTCH_ADAPTERS,
   ...EA_BOARD_ADAPTERS,
+  eaOpportunitiesBoard,
   jsonldCareers,
   aimCareers,
 ]

@@ -11,7 +11,9 @@
  * employer's allowlist flag and the listing's salary.
  */
 
+import type { ListingKind } from '../taxonomy'
 import { allowedCauseAreas, allowedLeverageTypes, type EmployerGateFlags } from '../taxonomy/gates'
+import { programmeTerms, shortProgrammeVerdict, type ProgrammeTerms } from './programme'
 
 export type Stage1Input = {
   id: number
@@ -23,10 +25,24 @@ export type Stage1Input = {
   salary_max: number | null
   salary_currency: string | null
   employer: EmployerGateFlags | null
+  /** From the source or the title (see ../ingest/run.ts). Absent on rows that predate it: a job. */
+  listing_kind?: ListingKind | null
 }
 
 export type Stage1Verdict =
-  | { pass: true; allowedCauses: string[]; allowedLeverage: string[]; nlReason: string }
+  | {
+      pass: true
+      allowedCauses: string[]
+      allowedLeverage: string[]
+      nlReason: string
+      /**
+       * Set when the listing got through only as a short programme abroad.
+       * `run.ts` re-applies the programme rule to these after the classifier
+       * has filled any facts the text left out; null means the ordinary
+       * location test passed and the rule does not apply.
+       */
+      programme: ProgrammeTerms | null
+    }
   | { pass: false; reason: string }
 
 const NL_CITIES =
@@ -94,10 +110,35 @@ export function nlEligible(input: {
   return { eligible: false, reason: 'no Netherlands signal in location, title or ad opening' }
 }
 
+/**
+ * The location test, then — for a programme that fails it — the short-programme
+ * rule in ./programme.ts. A programme held in the Netherlands or remotely is
+ * eligible the ordinary way and never reaches the rule.
+ */
+export function nlEligibleListing(input: Stage1Input): {
+  eligible: boolean
+  reason: string
+  programme: ProgrammeTerms | null
+} {
+  const nl = nlEligible(input)
+  if (nl.eligible || input.listing_kind !== 'programme') return { ...nl, programme: null }
+
+  const terms = programmeTerms(input.description)
+  const verdict = shortProgrammeVerdict(terms)
+  if (verdict.eligible === false) return { eligible: false, reason: verdict.reason, programme: null }
+  // Undecided goes through: the classifier reads the facts the text did not
+  // state, and run.ts decides on the merged set.
+  return {
+    eligible: true,
+    reason: verdict.eligible ? verdict.reason : `${verdict.reason}; deferring to stage two`,
+    programme: terms,
+  }
+}
+
 export function stage1(input: Stage1Input): Stage1Verdict {
   if (!input.title.trim()) return { pass: false, reason: 'no title' }
 
-  const nl = nlEligible(input)
+  const nl = nlEligibleListing(input)
   if (!nl.eligible) return { pass: false, reason: nl.reason }
 
   // Enough text to reason about? A stub with no description can still pass —
@@ -111,12 +152,14 @@ export function stage1(input: Stage1Input): Stage1Verdict {
   return {
     pass: true,
     nlReason: nl.reason,
+    programme: nl.programme,
     // Every cause area is assignable; the earning-to-give gate below is the one
     // label the model never gets to see unless the employer has cleared it.
     allowedCauses: allowedCauseAreas(),
-    allowedLeverage: allowedLeverageTypes(input.employer, {
-      salary_max: input.salary_max,
-      salary_currency: input.salary_currency,
-    }),
+    allowedLeverage: allowedLeverageTypes(
+      input.employer,
+      { salary_max: input.salary_max, salary_currency: input.salary_currency },
+      input.listing_kind ?? 'job',
+    ),
   }
 }

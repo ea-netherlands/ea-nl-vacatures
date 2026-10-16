@@ -1898,6 +1898,15 @@ export const SEED_SOURCES: SeedSource[] = [
     notes:
       'Hitting Algolia spends Probably Good’s paid search quota: poll at most daily. Email them before launch (§10).',
   },
+  {
+    id: 'ea-opportunities',
+    kind: 'ea-board',
+    adapter: 'ea-opportunities',
+    returnsCompleteSet: true,
+    config: { boardUrl: 'https://www.effectivealtruism.org/opportunities' },
+    notes:
+      'CEA’s board. Added October 2026 for programmes (fellowships, residencies), which it labels; also takes its NL-reachable jobs. The whole dataset is in the page, so one request a run, plus a week-cached fetch of each programme’s own page.',
+  },
 
   // ---- ATS sources for watchlist employers with a known public feed ----
   {

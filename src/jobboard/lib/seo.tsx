@@ -100,7 +100,14 @@ export function jobPostingJsonLd(listing: ListingView, locale: Locale, url: stri
     validThrough: listing.deadlineAt ?? listing.expiresAt ?? undefined,
     // Applying happens on the employer's own site, never here.
     directApply: false,
-    employmentType: listing.seniority === 'internship' ? 'INTERN' : 'FULL_TIME',
+    // A residency or fellowship is not full-time employment, and saying so
+    // to Google would be the kind of small untruth search results punish.
+    employmentType:
+      listing.listingKind === 'programme'
+        ? 'OTHER'
+        : listing.seniority === 'internship'
+          ? 'INTERN'
+          : 'FULL_TIME',
     hiringOrganization: listing.employer
       ? {
           '@type': 'Organization',

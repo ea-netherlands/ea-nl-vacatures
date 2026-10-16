@@ -11,7 +11,8 @@
 
 import type { Db } from '../db/client'
 import { getDb } from '../db/client'
-import { sha256 } from '../lib/text'
+import { looksLikeProgramme } from '../classify/programme'
+import { sha256, slugify } from '../lib/text'
 import { computeDedupKey } from './dedup'
 import { getAdapter } from './registry'
 import type {
@@ -423,14 +424,16 @@ async function upsertListing(
     employerName,
   })
 
+  const listingKind = n.listingKind ?? (looksLikeProgramme(n.title) ? 'programme' : 'job')
+
   const { rows } = await db.query<{ inserted: boolean }>(
     `insert into listing (
        source_id, external_id, employer_id, employer_name, title, apply_url,
        description, description_html, location_raw, country, posted_at,
        deadline_at, salary_min, salary_max, salary_currency, salary_period,
-       mentions_30_percent_ruling, dedup_key
+       mentions_30_percent_ruling, dedup_key, listing_kind
      ) values (
-       $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18
+       $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19
      )
      on conflict (source_id, external_id) do update set
        employer_id      = coalesce(excluded.employer_id, listing.employer_id),
@@ -453,6 +456,7 @@ async function upsertListing(
        mentions_30_percent_ruling =
          listing.mentions_30_percent_ruling or excluded.mentions_30_percent_ruling,
        dedup_key        = excluded.dedup_key,
+       listing_kind     = excluded.listing_kind,
        last_seen_at     = now(),
        -- A role that reappears in the feed is open again.
        closed_at        = null
@@ -476,6 +480,7 @@ async function upsertListing(
       n.salaryPeriod,
       n.mentions30PercentRuling,
       dedupKey,
+      listingKind,
     ],
   )
   // PGlite does not expose xmax, so fall back to treating an absent flag as an
@@ -483,12 +488,23 @@ async function upsertListing(
   return rows[0]?.inserted ? 'inserted' : 'updated'
 }
 
-/** Exact, case-insensitive name match against the watchlist; null if none. */
+/**
+ * Exact, case-insensitive name match against the watchlist; null if none.
+ *
+ * Also matches the name's slug against the employer id, because the boards
+ * disagree on names: Probably Good calls Kairos "Kairos Project", which is
+ * not the watchlist's "Kairos" but slugs to its id, `kairos-project`. Without
+ * that, the two boards' copies of Generator Residency got different dedup
+ * keys and both went to the curator.
+ */
 async function employerIdByName(db: Db, name: string | null): Promise<string | null> {
   if (!name?.trim()) return null
   const { rows } = await db.query<{ id: string }>(
-    `select id from employer where lower(name) = lower($1) order by active desc, id limit 1`,
-    [name.trim()],
+    `select id from employer
+      where lower(name) = lower($1) or id = $2
+      order by (lower(name) = lower($1)) desc, active desc, id
+      limit 1`,
+    [name.trim(), slugify(name)],
   )
   return rows[0]?.id ?? null
 }
