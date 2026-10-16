@@ -339,7 +339,14 @@ countries. It is not false because:
   there. Treating "Dutch nationality required" as ineligible silently dropped
   every ministry internship from the board.
 - the role is out of scope, or about domestic Dutch matters. That is a cause
-  relevance judgement; score it there.`
+  relevance judgement; score it there.
+- the ad names a home office abroad but says the role is remote-friendly,
+  remote "for the right candidate", or that remote is considered. An open door
+  is enough; readers can judge their own odds.
+- the ad asks for overlap with UK or European working hours. The Netherlands
+  is one hour ahead of London; that overlap is the whole working day.
+- the ad needs a work permit or visa for the office country. That only binds
+  someone working *from* that country, not a remote hire in the Netherlands.`
 
 export type TriagePromptInput = {
   title: string

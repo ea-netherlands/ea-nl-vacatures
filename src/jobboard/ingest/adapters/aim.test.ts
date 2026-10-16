@@ -141,4 +141,6 @@ test('the triage prompt keeps nationality requirements out of NL eligibility', (
   assert.match(TRIAGE_SYSTEM_PROMPT, /where the work can be done from/)
   assert.match(TRIAGE_SYSTEM_PROMPT, /requires Dutch nationality, a security screening, or Dutch language/)
   assert.match(TRIAGE_SYSTEM_PROMPT, /### Internships and traineeships/)
+  // AIM's remote-friendly roles were dropped for asking for London-hours overlap.
+  assert.match(TRIAGE_SYSTEM_PROMPT, /one hour ahead of London/)
 })
