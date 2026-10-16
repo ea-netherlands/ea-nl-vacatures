@@ -567,6 +567,19 @@
   color: var(--ea-teal-200);
 }
 
+/* The cookie-settings button reads as one more legal link, as on the site. */
+.footerCookieSettings {
+  color: var(--ea-teal-200);
+  border-radius: var(--radius-md);
+}
+.footerCookieSettings:hover {
+  color: var(--white);
+}
+.footerCookieSettings:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
 @media (min-width: 48rem) {
   .footerGrid {
     grid-template-columns: 1.4fr repeat(4, 1fr);

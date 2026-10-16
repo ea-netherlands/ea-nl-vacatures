@@ -132,6 +132,9 @@ export const ONWARD_LINKS = {
   // earning-to-give page, not merely an out-of-date name.
   geefrevolutie: 'https://www.geefrevolutie.nl',
   contact: 'mailto:jobs@effectiefaltruisme.nl',
+  // The cookie banner links the website's own policy: one consent, one policy.
+  privacyPolicyNl: 'https://effectiefaltruisme.nl/legal/privacy-policy',
+  privacyPolicyEn: 'https://effectiefaltruisme.nl/en/legal/privacy-policy',
   effectiveEnvironmentalism: 'https://www.effectiveenvironmentalism.org',
 
   // Ways people actually route money once they have taken a well-paid job.
@@ -485,6 +488,32 @@ type Strings = {
   updatedAt: string
   disagreeHeading: string
   disagreeBody: string
+  /**
+   * The cookie banner and preferences dialog. Copied verbatim from the
+   * website's `messages/*.json` (`cookieBanner`), because it is the same
+   * consent on the same origin and a visitor should read the same words
+   * wherever on the site they are asked. The footer's "Cookie settings"
+   * label lives with the rest of the footer, in site-chrome.ts.
+   */
+  cookie: {
+    title: string
+    description: string
+    customise: string
+    privacyLink: string
+    acceptAll: string
+    rejectAll: string
+    prefsTitle: string
+    prefsDescription: string
+    alwaysOn: string
+    save: string
+    close: string
+    necessaryTitle: string
+    necessaryDescription: string
+    analyticsTitle: string
+    analyticsDescription: string
+    marketingTitle: string
+    marketingDescription: string
+  }
   /** One line under the brand lockup in the footer, as on the website. */
 
   causeAreas: Record<CauseArea, string>
@@ -857,6 +886,30 @@ const nl: Strings = {
   disagreeHeading: 'Oneens met iets op dit bord?',
   disagreeBody:
     'Dit bord wordt samengesteld door mensen die het mis kunnen hebben. Vind je dat een vacature er niet op hoort, mis je er een, of klopt er iets anders niet:',
+  cookie: {
+    title: 'Wij gebruiken cookies',
+    description:
+      "We gebruiken een paar cookies om deze site te laten werken. Met jouw toestemming gebruiken we ook analytische cookies om te zien welke pagina's mensen het meest helpen, en marketingcookies om onze campagnes te meten. Je kunt je keuze altijd aanpassen. (Met een ja help je ons anderen te helpen om anderen te helpen. Kosteneffectief, uiteraard.)",
+    customise: 'Cookies kiezen',
+    privacyLink: 'Lees ons privacybeleid',
+    acceptAll: 'Alles accepteren',
+    rejectAll: 'Alles weigeren',
+    prefsTitle: 'Cookie-instellingen',
+    prefsDescription:
+      'Kies welke cookies je toestaat. Noodzakelijke cookies staan altijd aan, want zonder werkt de site niet.',
+    alwaysOn: 'Altijd aan',
+    save: 'Keuze opslaan',
+    close: 'Sluiten',
+    necessaryTitle: 'Noodzakelijk',
+    necessaryDescription:
+      'Houden de site veilig en onthouden je cookiekeuze. Hiermee volgen we je niet.',
+    analyticsTitle: 'Analytisch',
+    analyticsDescription:
+      "Laten Google Analytics en Microsoft Clarity ons zien hoe mensen de site gebruiken, zoals welke pagina's ze bezoeken en hoe ze over een pagina bewegen, zodat we hem kunnen verbeteren.",
+    marketingTitle: 'Marketing',
+    marketingDescription:
+      'Laten Google en Meta meten of onze advertenties, bijvoorbeeld voor de EA Fellowship, de juiste mensen bereiken.',
+  },
 
   causeAreas: {
     'global-health-wellbeing': 'Mondiale gezondheid en welzijn',
@@ -1305,6 +1358,30 @@ const en: Strings = {
   disagreeHeading: 'Disagree with something here?',
   disagreeBody:
     'This board is curated by people who can be wrong. If you think a listing does not belong, if we are missing one, or if something else is off:',
+  cookie: {
+    title: 'We use cookies',
+    description:
+      'We use a few cookies to keep this site working. With your permission we also use analytics cookies to see which pages help people most, and marketing cookies to measure our campaigns. You can change your mind at any time. (Saying yes helps us help others help others. Cost-effectively, of course.)',
+    customise: 'Choose cookies',
+    privacyLink: 'Read our privacy policy',
+    acceptAll: 'Accept all',
+    rejectAll: 'Reject all',
+    prefsTitle: 'Cookie settings',
+    prefsDescription:
+      "Choose which cookies you allow. Necessary cookies are always on because the site can't work without them.",
+    alwaysOn: 'Always on',
+    save: 'Save choices',
+    close: 'Close',
+    necessaryTitle: 'Necessary',
+    necessaryDescription:
+      "Keep the site secure and remember your cookie choice. These don't track you.",
+    analyticsTitle: 'Analytics',
+    analyticsDescription:
+      'Let Google Analytics and Microsoft Clarity show us how people use the site, such as which pages they visit and how they move around a page, so we can improve it.',
+    marketingTitle: 'Marketing',
+    marketingDescription:
+      'Let Google and Meta measure whether our ads, such as for the EA Fellowship, reach the right people.',
+  },
 
   causeAreas: {
     'global-health-wellbeing': 'Global health and wellbeing',

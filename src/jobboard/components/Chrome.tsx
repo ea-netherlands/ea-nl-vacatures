@@ -17,6 +17,7 @@ import {
   t,
   type Locale,
 } from '../content/i18n'
+import { Analytics, CookieSettingsLink } from './Analytics'
 import { Icon, type IconName } from './Icon'
 import s from './layout.module.css'
 import u from './ui.module.css'
@@ -237,6 +238,9 @@ function Footer({ locale }: { locale: Locale }) {
                 <a href={link.href}>{link.label}</a>
               </li>
             ))}
+            <li>
+              <CookieSettingsLink label={f.cookieSettings} className={s.footerCookieSettings} />
+            </li>
           </ul>
         </div>
       </div>
@@ -293,6 +297,7 @@ export function Shell({
       </main>
       <DisagreeNote locale={locale} />
       <Footer locale={locale} />
+      <Analytics locale={locale} />
     </div>
   )
 }

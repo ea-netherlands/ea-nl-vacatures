@@ -59,6 +59,7 @@ export type IconName =
   | 'search'
   | 'message'
   | 'flask'
+  | 'cookie'
   | 'brand-linkedin'
   | 'brand-instagram'
 
@@ -145,6 +146,9 @@ const PATHS: Record<IconName, string> = {
   // alarming way to say unfinished without reaching for a warning triangle.
   flask:
     'M6.1 15h11.8M14 3v7l4.5 8a2 2 0 0 1 -1.8 3h-9.4a2 2 0 0 1 -1.8 -3l4.5 -8v-7M9 3h6',
+  // The cookie banner's glyph, the same one the website's banner uses.
+  cookie:
+    'M8 13v.01M12 17v.01M12 12v.01M16 14v.01M11 8v.01M13.148 3.476l2.667 1.104a4 4 0 0 0 4.656 6.14l.053 .132a8 8 0 0 1 -10.525 10.525a8 8 0 0 1 3.149 -17.9z',
 }
 
 export type IconProps = Omit<SVGProps<SVGSVGElement>, 'name'> & {
