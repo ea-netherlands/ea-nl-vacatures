@@ -42,7 +42,7 @@ export const TRIAGE_SCHEMA = {
     nlEligible: {
       type: 'boolean',
       description:
-        'False if, having read the whole ad, a Netherlands-resident candidate could not hold this role.',
+        'False only if the work cannot be done from the Netherlands (on-site abroad with no remote option, or remote restricted to other countries). Nationality, screening and language requirements do not make it false.',
     },
     primaryCause: {
       // Anthropic's json_schema output format doesn't accept the JSON Schema

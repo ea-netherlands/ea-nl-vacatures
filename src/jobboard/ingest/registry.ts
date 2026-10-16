@@ -2,6 +2,7 @@
  * Adapter registry. `source.adapter` in Postgres is matched against these ids.
  */
 
+import { aimCareers } from './adapters/aim'
 import { ATS_ADAPTERS } from './adapters/ats'
 import { DUTCH_ADAPTERS } from './adapters/dutch'
 import { EA_BOARD_ADAPTERS } from './adapters/ea-boards'
@@ -13,6 +14,7 @@ export const ADAPTERS: SourceAdapter[] = [
   ...DUTCH_ADAPTERS,
   ...EA_BOARD_ADAPTERS,
   jsonldCareers,
+  aimCareers,
 ]
 
 const BY_ID = new Map(ADAPTERS.map((a) => [a.id, a]))
