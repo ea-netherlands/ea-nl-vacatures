@@ -23,7 +23,7 @@
  *   grid for cause-neutral readers. No dropdowns, no list — the whole page is
  *   the choice of where to start.
  * - **Filtered** (any filter set): a slim header naming the current selection,
- *   the filter bar for narrowing, and the two tiers of listings.
+ *   the filter bar for narrowing, and the three bands of listings (../lib/bands).
  *
  * The punch is meant to come from specificity and live counts, not from gloss.
  * Every tile states how many roles are behind it, and a tile with nothing
@@ -52,10 +52,11 @@ import {
   Section,
   TierHeading,
 } from '../components/Chrome'
-import { CauseGrid, SkillGrid, countFacets } from '../components/BrowseGrid'
-import { ExpandableCardList, TierJump } from '../components/ExpandableCardList'
+import { BandGrid, CauseGrid, SkillGrid, countFacets } from '../components/BrowseGrid'
+import { BAND_ICONS, ExpandableCardList, TierJump } from '../components/ExpandableCardList'
 import { Icon } from '../components/Icon'
 import { ONWARD_LINKS, routes, t, type Locale } from '../content/i18n'
+import { BANDS, bandOf, isBand, splitIntoBands, type Band } from '../lib/bands'
 import { getLiveListings } from '../sanity/queries'
 import type { ListingView } from '../sanity/queries'
 import { CAUSE_AREAS, SUB_AREA_CAUSE, type CauseArea, type Skill, type SubArea } from '../taxonomy'
@@ -66,6 +67,7 @@ export function parseFilters(searchParams: Record<string, string | string[] | un
   const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) || undefined
   return {
     view: one(searchParams.view),
+    band: one(searchParams.band),
     cause: one(searchParams.cause),
     subarea: one(searchParams.subarea),
     skill: one(searchParams.skill),
@@ -85,12 +87,20 @@ export function parseFilters(searchParams: Record<string, string | string[] | un
  */
 export function isFiltered(f: FilterState): boolean {
   return Boolean(
-    f.view === 'all' || f.cause || f.subarea || f.skill || f.location || f.language || f.seniority,
+    f.view === 'all' ||
+      f.band ||
+      f.cause ||
+      f.subarea ||
+      f.skill ||
+      f.location ||
+      f.language ||
+      f.seniority,
   )
 }
 
 export function applyFilters(listings: ListingView[], f: FilterState): ListingView[] {
   return listings.filter((l) => {
+    if (isBand(f.band) && bandOf(l) !== f.band) return false
     if (f.cause && l.primaryCause !== f.cause && !l.secondaryCauses.includes(f.cause as never))
       return false
     // A listing carries exactly one sub-area, so this is an equality test and
@@ -136,6 +146,8 @@ function selectionLabel(state: FilterState, locale: Locale): string | null {
     return copy.filteredBySkill(copy.skills[state.skill as Skill])
   if (state.cause && state.cause in copy.causeAreas)
     return copy.filteredByCause(copy.causeAreas[state.cause as CauseArea])
+  // Least specific last: a band narrowed further by a cause is named by the cause.
+  if (isBand(state.band)) return copy.bandLabels[state.band]
   return null
 }
 
@@ -167,14 +179,14 @@ export async function IndexPage({
   const counts = countFacets(all)
   const browsing = !isFiltered(state)
 
-  // The board's priority order, stated rather than implied. Roles at
-  // organisations an independent evaluator or 80,000 Hours already vetted go
-  // first, under a heading that says what that buys you and what it costs;
-  // everything else follows under a heading that admits the judgement is ours
-  // and that the competition is lighter. The sort control orders within each
-  // tier, not across them.
-  const recommended = filtered.filter((l) => l.leverage === 'trusted-recommendation')
-  const dutch = filtered.filter((l) => l.leverage !== 'trusted-recommendation')
+  // The board's priority order, stated rather than implied: three bands, each
+  // under a heading that says why its listings are here and what it costs to
+  // win one. What goes in which band, and why ways in are decided first, is in
+  // ../lib/bands. The sort control orders within each band, not across them.
+  const bands = splitIntoBands(filtered)
+  const bandCounts = Object.fromEntries(
+    BANDS.map((b) => [b, all.filter((l) => bandOf(l) === b).length]),
+  ) as Record<Band, number>
 
   /*
     The date under the hero is the newest listing's, not today's.
@@ -281,6 +293,18 @@ export async function IndexPage({
             <BetaBand locale={locale} />
           </Section>
 
+          {/*
+            Above the causes, because it answers the question a reader often
+            has first: not which problem, but what kind of opening. Below the
+            international and beta statements, which still come before
+            anything a reader could act on.
+          */}
+          <Section>
+            <h2 className={u.browseHeading}>{copy.browseBandHeading}</h2>
+            <p className={u.browseBody}>{copy.browseBandBody}</p>
+            <BandGrid locale={locale} counts={bandCounts} />
+          </Section>
+
           <Section id="problemareas">
             <h2 className={u.browseHeading}>{copy.browseCauseHeading}</h2>
             <p className={u.browseBody}>{copy.browseCauseBody}</p>
@@ -383,45 +407,47 @@ export async function IndexPage({
             />
           ) : (
             <>
-              {/* Both tiers named and counted before either list starts, so a
-                  reader knows the second one exists without us truncating the
+              {/* Every band named and counted before any list starts, so a
+                  reader knows the later ones exist without us truncating the
                   first to tell them. */}
               <TierJump
                 locale={locale}
-                recommended={recommended.length}
-                dutch={dutch.length}
+                counts={BANDS.map((b) => ({
+                  band: b,
+                  count: bands[b].length,
+                  // Named, not just counted: with three bands, "4 plekken"
+                  // on its own says nothing about which four.
+                  label: `${copy.bandLabels[b]} · ${bands[b].length}`,
+                }))}
               />
 
-              {/* A tier with nothing in it — because a filter excluded it —
+              {/* A band with nothing in it — because a filter excluded it —
                   renders nothing at all: an explanation of an empty list is
                   worse than no heading. */}
-              {recommended.length > 0 ? (
-                <div id="tier-recommended">
-                  <TierHeading
-                    icon="circle-check"
-                    heading={copy.tierRecommendedHeading}
-                    body={copy.tierRecommendedBody}
-                    count={copy.tierRecommendedCount(recommended.length)}
-                  />
-                  <ExpandableCardList listings={recommended} locale={locale} />
-                </div>
-              ) : null}
-
-              {dutch.length > 0 ? (
-                <div id="tier-dutch">
-                  <TierHeading
-                    icon="building"
-                    heading={copy.tierDutchHeading}
-                    body={copy.tierDutchBody}
-                    count={copy.tierDutchCount(dutch.length)}
-                    /* Only this tier gets the link. The recommended tier's
-                       criterion — somebody else vetted the organisation — is
-                       self-explanatory in a sentence; leverage is not. */
-                    link={{ href: `${r.method}#leverage`, label: copy.tierDutchLeverageLink }}
-                  />
-                  <ExpandableCardList listings={dutch} locale={locale} />
-                </div>
-              ) : null}
+              {BANDS.map((b) => {
+                if (!bands[b].length) return null
+                const c = tierCopy(b, copy)
+                return (
+                  <div key={b} id={`tier-${b}`}>
+                    <TierHeading
+                      icon={BAND_ICONS[b]}
+                      heading={c.heading}
+                      body={c.body}
+                      count={c.count(bands[b].length)}
+                      /* Only the Dutch band gets the link. The vetted band's
+                         criterion — somebody else vetted the organisation —
+                         is self-explanatory in a sentence, and so is a way
+                         in; leverage is not. */
+                      link={
+                        b === 'dutch'
+                          ? { href: `${r.method}#leverage`, label: copy.tierDutchLeverageLink }
+                          : undefined
+                      }
+                    />
+                    <ExpandableCardList listings={bands[b]} locale={locale} />
+                  </div>
+                )
+              })}
             </>
           )}
         </Section>
@@ -436,4 +462,20 @@ export async function IndexPage({
       </Container>
     </>
   )
+}
+
+/** Each band's heading copy. The vetted and Dutch keys predate the bands and keep their names. */
+function tierCopy(band: Band, copy: ReturnType<typeof t>) {
+  switch (band) {
+    case 'vetted':
+      return {
+        heading: copy.tierRecommendedHeading,
+        body: copy.tierRecommendedBody,
+        count: copy.tierRecommendedCount,
+      }
+    case 'routes':
+      return { heading: copy.tierRoutesHeading, body: copy.tierRoutesBody, count: copy.tierRoutesCount }
+    case 'dutch':
+      return { heading: copy.tierDutchHeading, body: copy.tierDutchBody, count: copy.tierDutchCount }
+  }
 }
