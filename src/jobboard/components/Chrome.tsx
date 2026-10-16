@@ -222,9 +222,12 @@ function Footer({ locale }: { locale: Locale }) {
             </p>
             <ul className={s.footerList}>
               <li>
-                <a href={ONWARD_LINKS.introCourse}>
-                  {locale === 'nl' ? 'Introductiecursus' : 'Intro course'}
+                <a href={ONWARD_LINKS.freeCourse}>
+                  {locale === 'nl' ? 'Gratis cursus' : 'Free course'}
                 </a>
+              </li>
+              <li>
+                <a href={ONWARD_LINKS.fellowship[locale]}>EA Fellowship</a>
               </li>
               <li>
                 <a href={ONWARD_LINKS.careerGuide}>
@@ -332,12 +335,12 @@ export function OnwardStep({ locale }: { locale: Locale }) {
       <h2 className={u.onwardHeading}>{copy.onwardHeading}</h2>
       <p className={u.onwardBody}>{copy.onwardBody}</p>
       <div className={u.onwardActions}>
-        <a href={ONWARD_LINKS.introCourse} className={`${u.btn} ${u.btnSubtle}`}>
+        <a href={ONWARD_LINKS.freeCourse} className={`${u.btn} ${u.btnSolid}`}>
           {copy.onwardCourse}
           <Icon name="arrow-right" />
         </a>
-        <a href={ONWARD_LINKS.newsletter} className={`${u.btn} ${u.btnGhost}`}>
-          {copy.onwardNewsletter}
+        <a href={ONWARD_LINKS.fellowship[locale]} className={`${u.btn} ${u.btnSubtle}`}>
+          {copy.onwardFellowship}
         </a>
       </div>
     </div>

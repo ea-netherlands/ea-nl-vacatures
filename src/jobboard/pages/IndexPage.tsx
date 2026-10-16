@@ -18,9 +18,9 @@
  * So the page now has two states, and which one it is in depends entirely on
  * whether the URL carries a filter:
  *
- * - **Browse** (no filters): hero, the international-first statement, then a
- *   grid of cause tiles with their sub-areas exposed as chips, then the skill
- *   grid for cause-neutral readers. No dropdowns, no list — the whole page is
+ * - **Browse** (no filters): hero, then the band tiles, a grid of cause tiles
+ *   with their sub-areas exposed as chips, and the skill grid for cause-neutral
+ *   readers. No dropdowns, no list — the whole page is
  *   the choice of where to start.
  * - **Filtered** (any filter set): a slim header naming the current selection,
  *   the filter bar for narrowing, and the three bands of listings (../lib/bands).
@@ -29,25 +29,24 @@
  * Every tile states how many roles are behind it, and a tile with nothing
  * behind it says so instead of leading somewhere empty.
  *
- * ## What did not change
+ * ## What changed again, October 2026
  *
- * The international-first statement still sits above everything a reader could
- * act on. Someone who can relocate should hit 80,000 Hours, Probably Good and
- * EA Opportunities before they touch a tile on this page; moving that below the
- * grid would turn the board's one piece of real honesty into a footer.
+ * The browse state was cut back to five parts: a plain hero with one button,
+ * the three bands, the cause grid, the skill grid, and the course/fellowship
+ * close. The international-first statement used to sit above everything a
+ * reader could act on, on the argument that someone who can relocate should hit
+ * the international boards before a tile here. James reversed that: the
+ * statement stays on every listing and on the method page, but the front page
+ * leads with the jobs. See the comment above the grids.
  */
 
 import Link from 'next/link'
 import { EmptyState, Filters, type FilterState } from '../components/Filters'
 import {
-  BetaBand,
   BetaNote,
   Container,
-  EarningToGiveBand,
   FeedbackBand,
-  FurtherReading,
   Hero,
-  InternationalFirst,
   OnwardStep,
   Section,
   TierHeading,
@@ -55,7 +54,7 @@ import {
 import { BandGrid, CauseGrid, SkillGrid, countFacets } from '../components/BrowseGrid'
 import { BAND_ICONS, ExpandableCardList, TierJump } from '../components/ExpandableCardList'
 import { Icon } from '../components/Icon'
-import { ONWARD_LINKS, routes, t, type Locale } from '../content/i18n'
+import { routes, t, type Locale } from '../content/i18n'
 import { BANDS, bandOf, isBand, splitIntoBands, type Band } from '../lib/bands'
 import { getLiveListings } from '../sanity/queries'
 import type { ListingView } from '../sanity/queries'
@@ -188,118 +187,44 @@ export async function IndexPage({
     BANDS.map((b) => [b, all.filter((l) => bandOf(l) === b).length]),
   ) as Record<Band, number>
 
-  /*
-    The date under the hero is the newest listing's, not today's.
-
-    The page fetches live from Sanity on every request, so "updated <today>"
-    would be literally true and still misleading — a reader parses it as "a
-    person curated this today", which is a claim about editorial activity we
-    cannot make. The most recent posting date is a fact about the board that
-    answers the same question honestly: how stale is this.
-  */
-  const newest = all
-    .map((l) => l.postedAt)
-    .filter((d): d is string => Boolean(d))
-    .sort()
-    .at(-1)
-  const updated = newest
-    ? new Intl.DateTimeFormat(locale === 'nl' ? 'nl-NL' : 'en-GB', {
-        day: 'numeric',
-        month: 'long',
-      }).format(new Date(newest))
-    : null
-
   // ---------------------------------------------------------------------
   // Browse state — no filters. The page is the choice, not a list.
   // ---------------------------------------------------------------------
   if (browsing) {
     return (
       <>
+        {/*
+          A plain hero: what this is, in one line, and one button.
+
+          It used to carry a paragraph of reasoning, a "newest from" date, a
+          second button and two links. Each had a reason, and together they
+          meant a first-time reader met five things before a single job. The
+          reasoning lives on the method page, linked from the header.
+        */}
         <Hero title={copy.heroTitle} lead={copy.heroLead}>
-          {/*
-            The reasoning sits in the hero, not in a section beneath it.
-
-            The headline makes a strong claim — the most socially impactful jobs
-            in the country — and a sceptical reader's first thought is "says
-            who". That deserves an answer in the same breath, but not a lecture:
-            the full argument already exists on the method page, built on the
-            ITN framework from EA NL's own glossary plus leverage, so a section
-            here made the same case twice and pushed the jobs off the screen.
-
-            No framework is named. Someone who knows this thinking will hear
-            neglectedness, leverage and counterfactual impact; someone who does
-            not should just hear plain sense.
-          */}
-          <p className={s.heroWhy}>
-            {copy.heroWhy}{' '}
-            <Link href={r.method}>{copy.heroWhyLink}</Link>
-            {' · '}
-            {/* The headline claims these are the most socially impactful jobs
-                in the country. 80,000 Hours has written the definition that
-                claim rests on, so it sits beside it. */}
-            <a href={ONWARD_LINKS.socialImpactDefinition} rel="noopener">
-              {copy.heroWhatIsImpact}
-            </a>
-          </p>
-          <p className={s.heroStat}>
-            {updated ? copy.heroStat(all.length, updated) : copy.browseRoleCount(all.length)}
-          </p>
-
-          {/*
-            The two ways in, offered together, above the fold.
-
-            The browse grid below is the better route for someone who does not
-            yet know what they want, and it stays the page's spine. But it is
-            not the better route for everyone, and until now it was the only
-            one with any visual weight: "see all" was a text link below three
-            full sections, so a reader who simply wanted the list had to scroll
-            past the whole argument to find it. A beta reader told us so.
-
-            Both are real choices, so both are buttons. The list first, because
-            it is the one that was missing.
-          */}
           <p className={s.heroActions}>
             <Link href={`${r.index}?view=all`} className={`${u.btn} ${u.btnSolid}`}>
               {copy.browseShowAll(all.length)}
               <Icon name="arrow-right" />
             </Link>
-            <a href="#problemareas" className={`${u.btn} ${u.btnSubtle}`}>
-              {copy.heroBrowseCta}
-            </a>
           </p>
         </Hero>
 
+        {/*
+          Then three ways to narrow it, each a grid with live counts, under
+          parallel headings so they read as one choice: by kind, by problem,
+          by skill.
+
+          Two bands that used to sit above these were removed in October 2026
+          at James's call: the international-first statement and the beta
+          band. Neither claim was dropped. The compact international note is
+          still on every listing and on the method page, and the beta pill
+          stays in the header, with a one-line beta note on every list and
+          listing. They are off this page because a reader should reach the
+          jobs before the caveats.
+        */}
         <Container>
-          <Section tight>
-            {/*
-              Still above the grid. Someone who can relocate should hit the
-              three international boards before they hit a tile — putting this
-              below the grid would make it decoration.
-            */}
-            <InternationalFirst locale={locale} compact />
-          </Section>
-
-          {/*
-            Beta second, and still above the grid.
-
-            The order between these two is deliberate and worth keeping. The
-            international statement is about where the reader should look; the
-            beta statement is about how much to trust what they find here. A
-            reader who can relocate should be able to leave before they read a
-            word about our roadmap — so the look-elsewhere point keeps its
-            place at the top, and the caveat about this board follows it.
-          */}
-          <Section tight>
-            <BetaBand locale={locale} />
-          </Section>
-
-          {/*
-            Above the causes, because it answers the question a reader often
-            has first: not which problem, but what kind of opening. Below the
-            international and beta statements, which still come before
-            anything a reader could act on.
-          */}
-          <Section>
+          <Section first>
             <h2 className={u.browseHeading}>{copy.browseBandHeading}</h2>
             <p className={u.browseBody}>{copy.browseBandBody}</p>
             <BandGrid locale={locale} counts={bandCounts} />
@@ -309,13 +234,6 @@ export async function IndexPage({
             <h2 className={u.browseHeading}>{copy.browseCauseHeading}</h2>
             <p className={u.browseBody}>{copy.browseCauseBody}</p>
             <CauseGrid locale={locale} counts={counts} />
-            {/* The grid asks the reader to pick a problem. This is the argument
-                for why that choice carries more weight than anything else they
-                will decide, and it belongs at the moment of choosing. */}
-            <FurtherReading
-              href={ONWARD_LINKS.problemChoiceMatters}
-              label={copy.readProblemChoice}
-            />
           </Section>
 
           <Section>
@@ -326,47 +244,11 @@ export async function IndexPage({
             <SkillGrid locale={locale} counts={counts} />
           </Section>
 
-          {/* After both grids on purpose: a reader who has scrolled past every
-              cause and every skill without finding themselves is precisely who
-              this route is for. */}
-          <Section>
-            <EarningToGiveBand locale={locale} />
-          </Section>
-
-          <Section tight>
-            {/* The dismissible "what is this?" band used to live here. The
-                reasoning section above now does that job properly, in the one
-                place a reader is actually asking the question. */}
-            <p className={u.linkRow}>
-              <Link href={`${r.index}?view=all`}>{copy.browseShowAll(all.length)}</Link>
-              <Link href={r.suggest}>{copy.suggestNavLabel}</Link>
-              <Link href={r.causes}>
-                {locale === 'nl' ? 'Bekijk de probleemgebieden' : 'Browse the problem areas'}
-              </Link>
-              <Link href={r.employers}>
-                {locale === 'nl' ? 'Bekijk de organisaties' : 'Browse the organisations'}
-              </Link>
-              <Link href={r.earningToGive}>{copy.e2gTitle}</Link>
-            </p>
-          </Section>
-
-          {/* Before the onward step, not after it: the onward step sends
-              people away to a course and a newsletter, and asking for feedback
-              on the far side of an exit link asks the readers least likely to
-              still be here. */}
-          <Section tight>
-            <FeedbackBand locale={locale} />
-          </Section>
-
+          {/* One way onward for someone not ready to apply: the free course,
+              or the fellowship after it. Earning to give, feedback and the
+              organisations index are all in the header. */}
           <Section tight>
             <OnwardStep locale={locale} />
-            {/* The "what next" block is where someone asks how to actually go
-                about this, which is the question these two answer. */}
-            <FurtherReading href={ONWARD_LINKS.careerGuide80k} label={copy.readCareerGuide} />
-            <FurtherReading
-              href={ONWARD_LINKS.careerPlanning80k}
-              label={copy.readCareerPlanning}
-            />
           </Section>
         </Container>
       </>
