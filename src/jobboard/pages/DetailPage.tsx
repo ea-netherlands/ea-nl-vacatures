@@ -260,6 +260,9 @@ export async function DetailPage({ locale, slug }: { locale: Locale; slug: strin
                 className={`${u.btn} ${u.btnSolid}`}
                 href={`/api/jobs/${encodeURIComponent(listing.id)}/apply?locale=${locale}`}
                 rel="noopener"
+                // Read by ApplyClickTracker for the apply_click conversion.
+                data-apply-listing={listing.id}
+                data-apply-employer={listing.employer?.name}
               >
                 {copy.detailApply}
                 <Icon name="external-link" />

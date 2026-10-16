@@ -376,6 +376,34 @@ has twenty minutes, spend it reading the method page aloud — text-to-speech ma
 stilted prose obvious in a way silent reading does not. That is an offer, not a
 dependency.
 
+### Google Tag Manager and the ads conversion
+
+The website serves this app at `/vacatures` and `/en/jobs` through a rewrite,
+so its pages are on the website's origin but none of the website's layout
+reaches them. Until October 2026 that meant no consent banner, no Consent
+Mode defaults and no tag manager on any board page.
+
+The board now mounts its own copy of all three (`components/Analytics.tsx`,
+`lib/consent.ts`, the defaults script in `app/layout.tsx`), byte-compatible
+with the website's: same `ean-consent` localStorage key, same version, same
+events. Same origin, so a visitor who answered the banner on the home page is
+not asked again here. **If the website bumps `CONSENT_VERSION` or changes the
+categories, change `lib/consent.ts` too.** The banner's words are copied from
+the website's `messages/*.json` (`cookieBanner`) into `content/i18n.ts`.
+
+- GTM is the website's container, `GTM-NJK5ZXD`, in production builds unless
+  `NEXT_PUBLIC_GTM_CONTAINER_ID` overrides it. In `next dev` nothing loads
+  unless you set that variable — use a dummy ID, never the real one, so
+  localhost traffic stays out of the live analytics.
+- GTM loads only after consent (Consent Mode "basic"), as on the website.
+- The footer's "Cookie-instellingen" / "Cookie settings" button reopens the
+  preferences dialog, as on the website.
+- Following an apply link (any `a[data-apply-listing]`) pushes
+  `{ event: 'apply_click', listing_id, employer }` to the dataLayer. In GTM, a
+  Google Ads conversion tag on that custom event is the Ad Grants conversion.
+  The server-side `apply_click` table still counts every click regardless of
+  consent — use it to sanity-check what Google reports.
+
 ---
 
 ## Deployment

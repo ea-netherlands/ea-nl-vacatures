@@ -13,8 +13,9 @@
  * in its own Sanity project, which the board cannot read, so this is a copy:
  * when the site's header or footer changes, change this file to match.
  *
- * Left out on purpose: the footer's "Cookie-instellingen" button. It reopens
- * the site's consent banner, and the board does not run that banner yet.
+ * The footer's "Cookie-instellingen" button is here too, after the legal
+ * links as on the site. It reopens the board's copy of the site's consent
+ * banner (components/Analytics.tsx), which shares the site's stored choice.
  */
 
 import type { Locale } from './i18n'
@@ -37,6 +38,8 @@ export const SITE_FOOTER: Record<
     postal: { heading: string; lines: string[] }
     registered: { heading: string; lines: string[] }
     legal: SiteLink[]
+    /** The button after the legal links that reopens the cookie banner. */
+    cookieSettings: string
   }
 > = {
   nl: {
@@ -94,6 +97,7 @@ export const SITE_FOOTER: Record<
       { label: 'Financiële overzichten (pdf)', href: FINANCIALS_PDF },
       { label: 'Credits', href: `${SITE}/legal/credits` },
     ],
+    cookieSettings: 'Cookie-instellingen',
   },
   en: {
     tagline: 'Finding the best ways to help others, together',
@@ -150,6 +154,7 @@ export const SITE_FOOTER: Record<
       { label: 'Financial statements (PDF)', href: FINANCIALS_PDF },
       { label: 'Credits', href: `${SITE}/en/legal/credits` },
     ],
+    cookieSettings: 'Cookie settings',
   },
 }
 
