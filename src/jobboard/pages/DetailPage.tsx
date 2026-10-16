@@ -71,6 +71,11 @@ function EligibilityTable({ listing, locale }: { listing: ListingView; locale: L
       : copy.screeningNo,
     warn: Boolean(listing.securityScreening),
   })
+  // A programme held abroad has no location mode — none of the three describe
+  // a residency in Berkeley — so it shows its city on its own.
+  if (!listing.locationMode && listing.listingKind === 'programme' && listing.locationCity) {
+    rows.push({ label: copy.labelLocation, value: listing.locationCity })
+  }
   if (listing.locationMode) {
     rows.push({
       label: copy.labelLocation,
@@ -83,7 +88,7 @@ function EligibilityTable({ listing, locale }: { listing: ListingView; locale: L
     rows.push({ label: copy.labelSeniority, value: copy.seniorities[listing.seniority] })
   }
   rows.push({
-    label: copy.detailSalary,
+    label: listing.listingKind === 'programme' ? copy.detailStipend : copy.detailSalary,
     value: salaryFor(listing, copy) ?? copy.detailSalaryUnknown,
   })
   const posted = formatDate(listing.postedAt, locale)

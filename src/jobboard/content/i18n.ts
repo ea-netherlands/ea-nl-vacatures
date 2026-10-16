@@ -27,6 +27,7 @@ import {
   type SubArea,
   type WorkAuthorisation,
 } from '../taxonomy'
+import type { Band } from '../lib/bands'
 
 export const LOCALES = ['nl', 'en'] as const
 export type Locale = (typeof LOCALES)[number]
@@ -399,6 +400,24 @@ type Strings = {
    */
   tierDutchLeverageLink: string
   tierDutchCount: (n: number) => string
+  /**
+   * The third band, October 2026: internships, traineeships and programmes.
+   * See ../lib/bands for what goes in it and why it is decided first.
+   */
+  tierRoutesHeading: string
+  tierRoutesBody: string
+  tierRoutesCount: (n: number) => string
+  /** Short band names, for the filter and the front-page tiles. */
+  bandLabels: Record<Band, string>
+  bandBlurbs: Record<Band, string>
+  browseBandHeading: string
+  browseBandBody: string
+  filterBand: string
+  /** A programme's badge on its card, and its length beside it. */
+  programmeBadge: string
+  programmeWeeks: (n: number) => string
+  /** The pay row on a programme's detail page: a stipend is not a salary. */
+  detailStipend: string
   tierExpand: (n: number) => string
   tierCollapse: string
   /**
@@ -764,6 +783,30 @@ const nl: Strings = {
     'Hier gaat het om de hefboom. De meeste van deze werkgevers — ministeries, toezichthouders, universiteiten, banken — zouden zelf niet zeggen dat ze aan een van de grootste wereldproblemen werken, en niemand heeft ze als geheel doorgelicht. Wat we zoeken is iets anders: functies waarin je meer aan het probleem kunt richten dan je eigen uren. Dat kan geld zijn, of regels die voor een hele sector gelden, of het werk van tientallen anderen, of een idee dat daarna gratis te kopiëren is. Een kredietanalist bij een landbouwbank kan zo meer betekenen dan een medewerker bij een goed doel. Dat oordeel is van ons, per functie, en we schrijven er altijd bij waarom. De concurrentie is hier meestal een stuk minder hevig.',
   tierDutchLeverageLink: 'Wat we met hefboom bedoelen',
   tierDutchCount: (n) => (n === 1 ? '1 vacature' : `${n} vacatures`),
+  tierRoutesHeading: 'Manieren om binnen te komen',
+  tierRoutesBody:
+    'Hier gaat het om waar het je brengt. Stages, traineeships en betaalde programma’s — fellowships, residencies, bootcamps — zijn zelden de plek waar je het meeste verandert, maar vaak de manier om terecht te komen in de teams waar dat wel gebeurt. Een stage bij de directie die de nationale AI-strategie schrijft, is hoe mensen die strategie later zelf schrijven. Sommige programma’s vinden in het buitenland plaats. Die nemen we op als ze betaald zijn en hooguit zes maanden duren, want dan hoef je er niet voor te verhuizen.',
+  tierRoutesCount: (n) => (n === 1 ? '1 plek' : `${n} plekken`),
+  bandLabels: {
+    vetted: 'Bij doorgelichte organisaties',
+    routes: 'Manieren om binnen te komen',
+    dutch: 'Met een hefboom in Nederland',
+  },
+  bandBlurbs: {
+    vetted:
+      'Elke functie bij organisaties die een onafhankelijke evaluator of een EA-financier al heeft doorgelicht. Reken op stevige concurrentie, vaak op afstand.',
+    routes:
+      'Stages, traineeships en betaalde programma’s: de opstap naar de teams waar het werk aan deze problemen gebeurt.',
+    dutch:
+      'Functies bij ministeries, toezichthouders, banken en universiteiten waarin je meer aan een probleem kunt richten dan je eigen uren.',
+  },
+  browseBandHeading: 'Drie soorten plekken',
+  browseBandBody:
+    'We delen het bord in drieën, omdat elke soort hier om een andere reden staat.',
+  filterBand: 'Soort',
+  programmeBadge: 'Programma',
+  programmeWeeks: (n) => (n === 1 ? '1 week' : `${n} weken`),
+  detailStipend: 'Stipendium',
   tierExpand: (n) => `Toon alle ${n} vacatures`,
   tierCollapse: 'Toon minder',
   tierJumpLabel: 'In deze lijst:',
@@ -1197,6 +1240,29 @@ const en: Strings = {
     'This tier is about leverage. Most of these employers — ministries, regulators, universities, banks — would not say they work on one of the world’s largest problems, and nobody has vetted them as a whole. What we look for is different: roles that let you point more at the problem than your own hours. That might be money, or rules that bind a whole sector, or the work of dozens of other people, or an idea that is free to copy afterwards. A credit analyst at an agricultural lender can matter more than a programme officer at a charity. That judgement is ours, made role by role, and we always write down the reason. Competition here is usually a good deal lighter.',
   tierDutchLeverageLink: 'What we mean by leverage',
   tierDutchCount: (n) => (n === 1 ? '1 role' : `${n} roles`),
+  tierRoutesHeading: 'Ways in',
+  tierRoutesBody:
+    'This band is about where it leads. Internships, traineeships and paid programmes — fellowships, residencies, bootcamps — are rarely where you change the most, but they are often how people get into the teams where that happens. An internship with the directorate writing the national AI strategy is how people end up writing it later. Some programmes are held abroad. We list those when they are paid and last six months or less, because then you do not have to move for them.',
+  tierRoutesCount: (n) => (n === 1 ? '1 opening' : `${n} openings`),
+  bandLabels: {
+    vetted: 'At vetted organisations',
+    routes: 'Ways in',
+    dutch: 'With leverage in the Netherlands',
+  },
+  bandBlurbs: {
+    vetted:
+      'Every role at organisations an independent evaluator or an EA funder has already vetted. Expect fierce competition, often remote.',
+    routes:
+      'Internships, traineeships and paid programmes: the step into the teams doing the work on these problems.',
+    dutch:
+      'Roles at ministries, regulators, banks and universities that let you point more at a problem than your own hours.',
+  },
+  browseBandHeading: 'Three kinds of opening',
+  browseBandBody: 'The board is split three ways, because each kind is here for a different reason.',
+  filterBand: 'Kind',
+  programmeBadge: 'Programme',
+  programmeWeeks: (n) => (n === 1 ? '1 week' : `${n} weeks`),
+  detailStipend: 'Stipend',
   tierExpand: (n) => `Show all ${n} roles`,
   tierCollapse: 'Show fewer',
   tierJumpLabel: 'In this list:',

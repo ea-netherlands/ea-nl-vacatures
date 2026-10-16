@@ -37,7 +37,9 @@
 
 import Link from 'next/link'
 import { Icon, type IconName } from './Icon'
+import { BAND_ICONS } from './ExpandableCardList'
 import { routes, t, type Locale } from '../content/i18n'
+import { BANDS, type Band } from '../lib/bands'
 import {
   CAUSE_AREAS,
   SKILLS,
@@ -213,6 +215,60 @@ export function SkillGrid({ locale, counts }: { locale: Locale; counts: BrowseCo
           </Link>
         ) : (
           <span key={skill} className={`${u.skillTile} ${u.skillTileEmpty}`}>
+            {inner}
+          </span>
+        )
+      })}
+    </div>
+  )
+}
+
+/**
+ * The three bands as a row of tiles, above the cause grid — October 2026.
+ *
+ * The cause grid asks "what problem?", and that is still the page's spine. But
+ * the bands answer a question a reader often has first: what kind of opening
+ * am I in the market for? Someone finishing a degree wants the internships and
+ * fellowships, and should not have to learn that they are scattered across
+ * five cause tiles. So each band is one tile, with its count, linking to the
+ * list filtered to it.
+ *
+ * Same treatment as the skill tiles, not the cause tiles: three short tiles
+ * with a sentence each, so the row reads as a choice and does not push the
+ * cause grid below the fold.
+ */
+export function BandGrid({ locale, counts }: { locale: Locale; counts: Record<Band, number> }) {
+  const copy = t(locale)
+  const r = routes(locale)
+
+  return (
+    <div className={u.bandGrid}>
+      {BANDS.map((band) => {
+        const n = counts[band]
+        const inner = (
+          <>
+            <span className={u.bandTileHead}>
+              <span className={u.skillTileIcon} aria-hidden="true">
+                <Icon name={BAND_ICONS[band]} />
+              </span>
+              <span className={u.bandTileName}>{copy.bandLabels[band]}</span>
+            </span>
+            <span className={u.bandTileBlurb}>{copy.bandBlurbs[band]}</span>
+            <span className={u.bandTileCount}>
+              {n === 0
+                ? copy.browseEmptyTile
+                : band === 'routes'
+                  ? copy.tierRoutesCount(n)
+                  : copy.browseRoleCount(n)}
+            </span>
+          </>
+        )
+        return n > 0 ? (
+          <Link key={band} href={`${r.index}?band=${band}`} className={u.bandTile}>
+            {inner}
+          </Link>
+        ) : (
+          <span key={band} className={`${u.bandTile} ${u.skillTileEmpty}`}>
             {inner}
           </span>
         )

@@ -23,6 +23,7 @@ import {
   type CauseArea,
 } from '../taxonomy'
 import { routes, t, type Locale } from '../content/i18n'
+import { BANDS } from '../lib/bands'
 import { Icon } from './Icon'
 import u from './ui.module.css'
 
@@ -34,6 +35,8 @@ export type FilterState = {
    * the same URL and the second would be unreachable.
    */
   view?: string
+  /** One of the three bands in ../lib/bands — the front-page tiles link here. */
+  band?: string
   cause?: string
   subarea?: string
   skill?: string
@@ -100,7 +103,8 @@ export function Filters({
   }
 
   const hasFilters = Boolean(
-    state.cause ||
+    state.band ||
+      state.cause ||
       state.subarea ||
       state.skill ||
       state.location ||
@@ -125,6 +129,12 @@ export function Filters({
     labels: Record<string, string>
     prominent?: boolean
   }[] = [
+    {
+      key: 'band',
+      label: copy.filterBand,
+      values: BANDS,
+      labels: copy.bandLabels,
+    },
     {
       key: 'cause',
       label: copy.filterCause,

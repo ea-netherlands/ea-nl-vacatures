@@ -27,8 +27,9 @@
 import Link from 'next/link'
 import type { Locale } from '../content/i18n'
 import { t } from '../content/i18n'
+import type { Band } from '../lib/bands'
 import type { ListingView } from '../sanity/queries'
-import { Icon } from './Icon'
+import { Icon, type IconName } from './Icon'
 import { ListingCard } from './ListingCard'
 import u from './ui.module.css'
 
@@ -48,37 +49,42 @@ export function ExpandableCardList({
   )
 }
 
+/** One glyph per band, shared by the tier headings, this strip and the front-page tiles. */
+export const BAND_ICONS = {
+  vetted: 'circle-check',
+  routes: 'stairs',
+  dutch: 'building',
+} as const satisfies Record<Band, IconName>
+
 /**
- * A one-line contents strip above the two tiers.
+ * A one-line contents strip above the bands.
  *
  * Carries the job the truncation used to do — telling a reader that the list
- * has two distinct halves — without hiding anything to do it. Renders only when
- * both tiers actually have listings; with one tier it would be a label on the
- * only thing present.
+ * has distinct parts — without hiding anything to do it. Lists only the bands
+ * that have listings, and renders only when there are at least two; with one
+ * it would be a label on the only thing present.
  */
 export function TierJump({
   locale,
-  recommended,
-  dutch,
+  counts,
 }: {
   locale: Locale
-  recommended: number
-  dutch: number
+  /** In display order. */
+  counts: { band: Band; count: number; label: string }[]
 }) {
   const copy = t(locale)
-  if (!recommended || !dutch) return null
+  const present = counts.filter((c) => c.count > 0)
+  if (present.length < 2) return null
 
   return (
     <p className={u.tierJump}>
       <span className={u.tierJumpLabel}>{copy.tierJumpLabel}</span>
-      <a href="#tier-recommended">
-        <Icon name="circle-check" />
-        {copy.tierRecommendedCount(recommended)}
-      </a>
-      <a href="#tier-dutch">
-        <Icon name="building" />
-        {copy.tierDutchCount(dutch)}
-      </a>
+      {present.map((c) => (
+        <a key={c.band} href={`#tier-${c.band}`}>
+          <Icon name={BAND_ICONS[c.band]} />
+          {c.label}
+        </a>
+      ))}
     </p>
   )
 }

@@ -74,6 +74,16 @@ export function ListingCard({
         {note ? <p className={u.cardNote}>{note}</p> : null}
 
         <span className={u.cardTags}>
+          {/* First, because it changes how to read the rest: the pay is a
+              stipend, the place may be abroad, and it ends. */}
+          {listing.listingKind === 'programme' ? (
+            <span className={`${u.badge} ${u.badgeNeutral}`}>
+              <Icon name="stairs" />
+              {listing.programmeWeeks
+                ? `${copy.programmeBadge} · ${copy.programmeWeeks(listing.programmeWeeks)}`
+                : copy.programmeBadge}
+            </span>
+          ) : null}
           {/* The sub-area, not the cause area, when we have one: "AI-veiligheid"
               tells a scanning reader more than "mondiale catastrofale risico's",
               and it is the label they most likely clicked to get here. The
