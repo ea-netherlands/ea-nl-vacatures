@@ -15,6 +15,7 @@ import {
   subAreaOptions,
   MAX_SKILLS_PER_LISTING,
   LANGUAGE_REQUIREMENTS,
+  LISTING_KINDS,
   LOCATION_MODES,
   SENIORITIES,
   WORK_AUTHORISATIONS,
@@ -57,6 +58,24 @@ export const jobListing = defineType({
       type: 'string',
       group: 'editorial',
       validation: (r) => r.required(),
+    }),
+    defineField({
+      name: 'listingKind',
+      title: 'Kind',
+      type: 'string',
+      group: 'editorial',
+      initialValue: 'job',
+      options: { list: plainOptions(LISTING_KINDS), layout: 'radio', direction: 'horizontal' },
+      description:
+        'programme = a residency, fellowship or bootcamp with a fixed end that people join to move into a field. Its pay is a stipend, and it may be held abroad: a paid programme of six months or less is listed wherever it is held, because it does not require moving.',
+    }),
+    defineField({
+      name: 'programmeWeeks',
+      title: 'Programme length (weeks)',
+      type: 'number',
+      group: 'practical',
+      hidden: ({ document }) => document?.listingKind !== 'programme',
+      validation: (r) => r.integer().min(1),
     }),
     defineField({
       name: 'slug',

@@ -9,6 +9,7 @@ import { isSanityConfigured, readClient } from './client'
 import type { CauseArea, LeverageType } from '../taxonomy'
 import type {
   LanguageRequirement,
+  ListingKind,
   LocationMode,
   Seniority,
   Skill,
@@ -20,6 +21,8 @@ const LISTING_FIELDS = /* groq */ `
   "id": _id,
   "slug": slug.current,
   title,
+  "listingKind": coalesce(listingKind, "job"),
+  programmeWeeks,
   applyUrl,
   whyThisMattersNl,
   whyThisMattersEn,
@@ -59,6 +62,9 @@ export type ListingView = {
   id: string
   slug: string
   title: string
+  /** Documents from before October 2026 have no kind; the query reads them as jobs. */
+  listingKind: ListingKind
+  programmeWeeks: number | null
   applyUrl: string
   whyThisMattersNl: string | null
   whyThisMattersEn: string | null

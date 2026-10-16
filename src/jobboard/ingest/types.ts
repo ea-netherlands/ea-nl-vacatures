@@ -7,6 +7,8 @@
  * the pipeline's own bookkeeping.
  */
 
+import type { ListingKind } from '../taxonomy'
+
 export type RawListing = {
   /** Stable id from the source. Must survive re-serving of the same role. */
   externalId: string
@@ -31,6 +33,12 @@ export type NormalisedListing = {
   salaryCurrency: string | null
   salaryPeriod: string | null
   mentions30PercentRuling: boolean
+  /**
+   * Set by sources that label their openings (the EA Opportunities board,
+   * Probably Good). Left out by everything else, in which case ingest reads
+   * the title (`looksLikeProgramme`).
+   */
+  listingKind?: ListingKind
 }
 
 export type SourceRecord = {

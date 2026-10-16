@@ -9,6 +9,7 @@ import {
   CAUSE_AREAS,
   LANGUAGE_REQUIREMENTS,
   LEVERAGE_TYPES,
+  LISTING_KINDS,
   LOCATION_MODES,
   MAX_SKILLS_PER_LISTING,
   SENIORITIES,
@@ -21,6 +22,10 @@ export const TRIAGE_SCHEMA = {
   type: 'object',
   additionalProperties: false,
   required: [
+    'listingKind',
+    'programmeWeeks',
+    'programmePaid',
+    'programmeTravelCovered',
     'nlEligible',
     'primaryCause',
     'secondaryCauses',
@@ -39,10 +44,31 @@ export const TRIAGE_SCHEMA = {
     'reasoning',
   ],
   properties: {
+    listingKind: {
+      type: 'string',
+      enum: [...LISTING_KINDS],
+      description:
+        '`programme` for a cohort with a fixed end that people join to move into a field — a paid residency, fellowship or bootcamp. `job` for everything else, including fixed-term jobs and internships that are ordinary posts in a team.',
+    },
+    programmeWeeks: {
+      anyOf: [{ type: 'integer' }, { type: 'null' }],
+      description:
+        'For a programme: how long it runs in weeks, counting the whole of it (a three-month residency is 13). Null for a job, or when the ad does not say.',
+    },
+    programmePaid: {
+      anyOf: [{ type: 'boolean' }, { type: 'null' }],
+      description:
+        'For a programme: true if participants receive a stipend or salary, false if the ad says it is unpaid. Null for a job, or when the ad does not say. A free course is not paid.',
+    },
+    programmeTravelCovered: {
+      anyOf: [{ type: 'boolean' }, { type: 'null' }],
+      description:
+        'For a programme: true if the ad says travel (or housing) is covered or reimbursed, false if it says it is not. Null for a job, or when the ad does not say. Do not infer it from a generous stipend. Recorded for readers; it does not decide eligibility.',
+    },
     nlEligible: {
       type: 'boolean',
       description:
-        'False only if the work cannot be done from the Netherlands (on-site abroad with no remote option, or remote restricted to other countries). Nationality, screening and language requirements do not make it false.',
+        'False only if the work cannot be done from the Netherlands (on-site abroad with no remote option, or remote restricted to other countries). Nationality, screening and language requirements do not make it false. A short programme abroad is decided by code from the programme fields; answer this one for where the work itself happens.',
     },
     primaryCause: {
       // Anthropic's json_schema output format doesn't accept the JSON Schema
@@ -110,6 +136,10 @@ export const TRIAGE_SCHEMA = {
 } as const
 
 export type TriageResult = {
+  listingKind: 'job' | 'programme'
+  programmeWeeks: number | null
+  programmePaid: boolean | null
+  programmeTravelCovered: boolean | null
   nlEligible: boolean
   primaryCause: string | null
   secondaryCauses: string[]

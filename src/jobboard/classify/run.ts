@@ -25,6 +25,7 @@ import { enforceGates, type EmployerGateFlags } from '../taxonomy/gates'
 import { buildNoteSystemPrompt, buildTriageUserPrompt, TRIAGE_SYSTEM_PROMPT } from './prompt'
 import { NOTE_SCHEMA, TRIAGE_SCHEMA, type TriageResult } from './schema'
 import { stage1, type Stage1Input } from './stage1'
+import { mergeTerms, shortProgrammeVerdict } from './programme'
 import { loadGlossaryForPrompt, loadStyleGuide } from '../content/style'
 import { sourceRankSql } from '../ingest/dedup'
 import { loadCuratorCalibration } from '../review/calibration'
@@ -127,6 +128,7 @@ export async function runClassification(
           description,
           allowedCauses: gate.allowedCauses,
           allowedLeverage: gate.allowedLeverage,
+          listingKind: c.listing_kind,
         }),
         schema: TRIAGE_SCHEMA,
         maxTokens: 3000,
@@ -135,13 +137,41 @@ export async function runClassification(
       report.usage.output += usage.output
       report.usage.cacheRead += usage.cacheRead
 
+      // A source that labels the listing a programme is believed over the
+      // model; otherwise the model's read decides (an ATS "fellowship" that is
+      // really a fixed-term job stays a job).
+      const listingKind =
+        c.listing_kind === 'programme' || raw.listingKind === 'programme' ? 'programme' : 'job'
+      const programme =
+        listingKind === 'programme'
+          ? mergeTerms(gate.programme ?? { weeks: null, paid: null, travelCovered: null }, {
+              weeks: raw.programmeWeeks,
+              paid: raw.programmePaid,
+              travelCovered: raw.programmeTravelCovered,
+            })
+          : null
+
+      /*
+        Where the listing got through stage one only as a short programme
+        abroad, the code decides eligibility, not the model: the model was
+        told to answer nlEligible for where the work happens, which for a
+        Berkeley residency is false, and its job here was to fill in the
+        facts the text left out. A fact still missing after both reads is not
+        eligible.
+      */
+      const programmeVerdict = gate.programme && programme ? shortProgrammeVerdict(programme) : null
+      const nlEligible = programmeVerdict ? programmeVerdict.eligible === true : raw.nlEligible
+      if (programmeVerdict) log(`listing ${c.id}: ${programmeVerdict.reason}`)
+
       // Output-side gate enforcement. A model told not to use a label will
       // occasionally use it anyway, and this is the one category where a
       // single leak starts an erosion (§8.1).
-      const gated = enforceGates(raw, c.employer, {
-        salary_max: c.salary_max,
-        salary_currency: c.salary_currency,
-      })
+      const gated = enforceGates(
+        raw,
+        c.employer,
+        { salary_max: c.salary_max, salary_currency: c.salary_currency },
+        listingKind,
+      )
       if (gated.violations.length) {
         report.gateViolations++
         log(
@@ -178,7 +208,7 @@ export async function runClassification(
       const causeScore = trusted ? Math.max(raw.causeScore, PROMOTION_MIN_CAUSE_SCORE) : raw.causeScore
 
       const promotable =
-        raw.nlEligible &&
+        nlEligible &&
         gated.primaryCause !== null &&
         skills.length > 0 &&
         leverage !== null &&
@@ -236,8 +266,10 @@ export async function runClassification(
            skills, leverage,
            cause_score, leverage_score, language_requirement, work_authorisation,
            security_screening, security_note, seniority, location_mode,
-           draft_note, reasoning, gate_violations, raw_response
-         ) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19::jsonb,$20::jsonb)
+           draft_note, reasoning, gate_violations, raw_response,
+           listing_kind, programme_weeks, programme_paid, programme_travel_covered
+         ) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19::jsonb,$20::jsonb,
+                   $21,$22,$23,$24)
          on conflict (listing_id) do update set
            model = excluded.model,
            classified_at = now(),
@@ -258,13 +290,17 @@ export async function runClassification(
            draft_note = excluded.draft_note,
            reasoning = excluded.reasoning,
            gate_violations = excluded.gate_violations,
-           raw_response = excluded.raw_response`,
+           raw_response = excluded.raw_response,
+           listing_kind = excluded.listing_kind,
+           programme_weeks = excluded.programme_weeks,
+           programme_paid = excluded.programme_paid,
+           programme_travel_covered = excluded.programme_travel_covered`,
         [
           c.id,
           // Both models, when both were used, so a bad note can be traced to
           // the model that wrote it rather than to the one that scored it.
           noteModel ? `${TRIAGE_MODEL} + ${noteModel}` : TRIAGE_MODEL,
-          raw.nlEligible,
+          nlEligible,
           gated.primaryCause,
           gated.secondaryCauses,
           subArea,
@@ -277,11 +313,18 @@ export async function runClassification(
           raw.securityScreening,
           raw.securityNote,
           raw.seniority,
-          raw.locationMode,
+          // None of the three location modes describes a residency abroad:
+          // "on-site-nl" would be false and "remote" worse. Leave it empty
+          // and let the city and the listing kind say where it is.
+          programmeVerdict ? null : raw.locationMode,
           draftNote,
-          raw.reasoning,
+          programmeVerdict ? `${raw.reasoning}\n\nNL eligibility: ${programmeVerdict.reason}.` : raw.reasoning,
           JSON.stringify(gated.violations),
           JSON.stringify(raw),
+          listingKind,
+          programme?.weeks ?? null,
+          programme?.paid ?? null,
+          programme?.travelCovered ?? null,
         ],
       )
       report.classified++
@@ -297,7 +340,11 @@ export async function runClassification(
           'auto-rejected',
           'pipeline',
           `stage 2: cause ${causeScore} + leverage ${leverageScore} = ${total}` +
-            (raw.nlEligible ? '' : '; not NL-eligible on a full read'),
+            (nlEligible
+              ? ''
+              : programmeVerdict
+                ? `; ${programmeVerdict.reason}`
+                : '; not NL-eligible on a full read'),
         )
       }
     } catch (err) {
@@ -321,7 +368,7 @@ async function loadCandidates(db: Db, options: ClassifyOptions): Promise<Candida
   >(
     `select l.id, l.title, l.employer_name, l.location_raw, l.country, l.description,
             l.apply_url, l.employer_id, l.salary_min, l.salary_max, l.salary_currency,
-            l.salary_period,
+            l.salary_period, l.listing_kind,
             e.leverage_note      as employer_leverage_note,
             e.e2g_allowlisted, e.e2g_salary_presumed, e.recommender_allowlisted
        from listing l

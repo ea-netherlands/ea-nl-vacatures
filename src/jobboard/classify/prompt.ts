@@ -131,6 +131,34 @@ function (communications, HR, facilities, a general embassy rotation whose
 tasks would be the same at any post), nor to a team whose work only touches a
 cause area. Those score as any other role would.
 
+### Programmes: residencies, fellowships, bootcamps
+
+Some listings are not jobs but programmes — a cohort with a fixed end date
+that people join to move into a field: a paid residency, a research or policy
+fellowship, a technical bootcamp. Set \`listingKind\` to \`programme\` for
+these and \`job\` for everything else. A fixed-term contract in an ordinary
+team is a job, and so is an internship that is a post in a team; a summer
+fellowship with a cohort, mentors and a demo day is a programme.
+
+For a programme, also read three facts from the ad: how many weeks it runs in
+total (\`programmeWeeks\`), whether participants are paid a stipend or salary
+(\`programmePaid\`), and whether travel or housing is covered
+(\`programmeTravelCovered\`). Use null for anything the ad does not state. Do
+not guess: the length and the pay decide, mechanically, whether a programme
+held abroad can be listed, so a confident wrong answer does more harm than a
+null. Travel cover is recorded for readers but decides nothing.
+
+Score a programme the way the internship rule above scores an internship.
+Its cause relevance is the substance of the field it moves people into and the
+work they do during it; a residency whose residents build AI-safety projects
+and are placed into AI-safety organisations scores 3. Its leverage is what the
+participant points at the problem during the programme, which is usually 1 —
+do not inflate it because the alumni later become influential. A programme is
+often the route into the teams this board cares about, and that is why it is
+here; it does not need a high leverage score to earn its place. Seniority is
+who it is aimed at: \`entry\` for early-career, \`mid\` when it asks for
+several years of experience.
+
 Pay particular attention to ${PRIORITY_LEVERAGE_TYPES.map((l) => `\`${l}\``).join(' and ')} roles at organisations that would not describe themselves as impact-focused at all — a food and agribusiness analyst at a large agricultural lender, an investment officer at a development bank, a policy officer in a ministry. These are often the highest-leverage and least-discovered roles, and they are the main reason this board exists. The other archetypes are just as real, but they are mostly found at organisations that already advertise themselves as mission-driven, where the international boards will surface them anyway.
 
 Also extract, from the ad text: whether Dutch language is required, whether Dutch nationality or a security screening is required, whether visa sponsorship is mentioned, and the seniority level. Dutch public sector ads frequently carry these requirements and readers need to know before clicking.
@@ -346,7 +374,14 @@ countries. It is not false because:
 - the ad asks for overlap with UK or European working hours. The Netherlands
   is one hour ahead of London; that overlap is the whole working day.
 - the ad needs a work permit or visa for the office country. That only binds
-  someone working *from* that country, not a remote hire in the Netherlands.`
+  someone working *from* that country, not a remote hire in the Netherlands.
+
+A programme held in person abroad is the one exception, and you do not decide
+it here. A paid programme of six months or less does not require anyone to
+move, so it is eligible wherever it is held — but that is decided by code from
+the programme fields, not from \`nlEligible\`. For a programme, answer
+\`nlEligible\` only for where the work happens (false for a Berkeley
+residency), and put the effort into getting the length and the pay right.`
 
 export type TriagePromptInput = {
   title: string
@@ -358,6 +393,8 @@ export type TriagePromptInput = {
   description: string
   allowedCauses: string[]
   allowedLeverage: string[]
+  /** What the source or the title says. The model still decides the final kind. */
+  listingKind?: 'job' | 'programme' | null
 }
 
 export function buildTriageUserPrompt(input: TriagePromptInput): string {
@@ -370,6 +407,9 @@ export function buildTriageUserPrompt(input: TriagePromptInput): string {
     `**Location as published:** ${input.locationRaw ?? '(not stated)'}`,
     input.country ? `**Country:** ${input.country}` : null,
     input.salaryText ? `**Salary as published:** ${input.salaryText}` : null,
+    input.listingKind === 'programme'
+      ? `**The source lists this as a programme** (residency, fellowship or similar), not a job.`
+      : null,
     ``,
     `**Permitted cause areas for this listing:** ${input.allowedCauses.join(', ')}`,
     `**Permitted leverage archetypes for this listing:** ${input.allowedLeverage.join(', ')}`,

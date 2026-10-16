@@ -413,6 +413,21 @@ export const LEGACY_LOCATION_MODE_MAP: Record<string, LocationMode> = {
 export const SENIORITIES = ['internship', 'entry', 'mid', 'senior', 'executive'] as const
 export type Seniority = (typeof SENIORITIES)[number]
 
+/**
+ * What kind of opening a listing is — added October 2026.
+ *
+ * A `programme` is a cohort with a fixed end date that you join to move into a
+ * field: a paid residency, a fellowship, a bootcamp. It is not a job, and
+ * three things misfire when it is treated as one. Its pay is a stipend, not a
+ * salary. Its seniority is who it is aimed at, not a rung. And earning to give
+ * is meaningless for it, so the gate never offers that label (see
+ * ../taxonomy/gates.ts). Most importantly, a programme abroad can still be
+ * NL-eligible: a twelve-week residency does not require anyone to move, which
+ * is the board's whole premise (see ../classify/programme.ts).
+ */
+export const LISTING_KINDS = ['job', 'programme'] as const
+export type ListingKind = (typeof LISTING_KINDS)[number]
+
 // ---------------------------------------------------------------------------
 // Scoring (§8.3)
 // ---------------------------------------------------------------------------
