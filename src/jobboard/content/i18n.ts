@@ -486,7 +486,6 @@ type Strings = {
   disagreeHeading: string
   disagreeBody: string
   /** One line under the brand lockup in the footer, as on the website. */
-  footerSlogan: string
 
   causeAreas: Record<CauseArea, string>
   /** One line per cause area, for the browse tiles. */
@@ -858,7 +857,6 @@ const nl: Strings = {
   disagreeHeading: 'Oneens met iets op dit bord?',
   disagreeBody:
     'Dit bord wordt samengesteld door mensen die het mis kunnen hebben. Vind je dat een vacature er niet op hoort, mis je er een, of klopt er iets anders niet:',
-  footerSlogan: 'Samen beter doen.',
 
   causeAreas: {
     'global-health-wellbeing': 'Mondiale gezondheid en welzijn',
@@ -1307,7 +1305,6 @@ const en: Strings = {
   disagreeHeading: 'Disagree with something here?',
   disagreeBody:
     'This board is curated by people who can be wrong. If you think a listing does not belong, if we are missing one, or if something else is off:',
-  footerSlogan: 'Do better, together.',
 
   causeAreas: {
     'global-health-wellbeing': 'Global health and wellbeing',

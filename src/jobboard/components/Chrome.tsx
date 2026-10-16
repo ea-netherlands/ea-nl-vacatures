@@ -7,13 +7,14 @@
  */
 
 import Link from 'next/link'
+import { SiteHeader } from './SiteHeader'
+import { POLICY_PLAN_PDF, SITE_FOOTER } from '../content/site-chrome'
 import type { ReactNode } from 'react'
 import {
   INTERNATIONAL_BOARDS,
   ONWARD_LINKS,
   routes,
   t,
-  otherLocale,
   type Locale,
 } from '../content/i18n'
 import { Icon, type IconName } from './Icon'
@@ -110,192 +111,164 @@ export function Hero({
 }
 
 /**
- * The language switcher stays visible because a Dutch listing page will carry a
- * Dutch frame, Dutch labels and sometimes an English editorial note. That is
- * entirely normal in the Netherlands and needs no explanation — so there is
- * deliberately no apologetic banner about it (§9.5).
+ * The header: the website's own bar (./SiteHeader), then the board's row.
+ *
+ * The board's row carries what the old board header did — its name with the
+ * beta pill, its pages, and the feedback button — minus the language switch,
+ * which moved up into the site's bar where the site has it.
  */
 function Header({ locale, switchHref }: { locale: Locale; switchHref: string }) {
   const copy = t(locale)
   const r = routes(locale)
   return (
-    <header className={s.header}>
-      <Container>
-        <div className={s.headerInner}>
-          <Link href={r.index} className={s.brand}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/vacatures-static/img/ean-logo.svg" alt="Effectief Altruïsme Nederland" className={s.brandLogo} />
-            <span className={s.brandDivider} aria-hidden="true" />
-            <span className={s.brandName}>{copy.boardName}</span>
-            {/* The one beta signal that is on literally every page, including
-                the listing pages most readers land on from search without ever
-                seeing the index. A pill next to the board's name, because that
-                is where a reader looks to work out what they are on. */}
-            <span className={s.betaPill}>{copy.betaBadge}</span>
-          </Link>
-          <nav className={s.nav} aria-label={copy.boardName}>
-            {/* `?view=all`, not the bare index. This link is named "all jobs"
-                and used to land on the browse page — a grid of cause tiles with
-                no listing on it. A reader who wants the list had to notice a
-                text link three sections further down, which is exactly the "a
-                lot of clicking" a beta reader reported. The escape hatch
-                existed; nothing pointed at it. */}
-            <Link href={`${r.index}?view=all`} className={s.navLink}>
-              {locale === 'nl' ? 'Alle vacatures' : 'All jobs'}
+    <SiteHeader locale={locale} switchHref={switchHref}>
+      <div className={s.boardBar}>
+        <Container>
+          <div className={s.headerInner}>
+            <Link href={r.index} className={s.brand}>
+              <span className={s.brandName}>{copy.boardName}</span>
+              {/* The one beta signal that is on literally every page, including
+                  the listing pages most readers land on from search without ever
+                  seeing the index. A pill next to the board's name, because that
+                  is where a reader looks to work out what they are on. */}
+              <span className={s.betaPill}>{copy.betaBadge}</span>
             </Link>
-            <Link href={r.method} className={s.navLink}>
-              {locale === 'nl' ? 'Zo kiezen we' : 'How we choose'}
-            </Link>
-            <Link href={r.employers} className={s.navLink}>
-              {locale === 'nl' ? 'Organisaties' : 'Organisations'}
-            </Link>
-            <Link href={r.earningToGive} className={s.navLinkDistinct}>
-              {copy.e2gTitle}
-            </Link>
-            <Link href={switchHref} className={s.navLink} lang={otherLocale(locale)}>
-              {copy.languageSwitch}
-            </Link>
-            {/* Feedback is the last item and the only one drawn as a control.
-                While the board is in beta it is the point of the whole page,
-                so it stops being a link in a row of six and becomes the thing
-                the header is asking for. */}
-            <Link href={r.suggest} className={s.navFeedback}>
-              <Icon name="message" />
-              {copy.suggestNavLabel}
-            </Link>
-          </nav>
-        </div>
-      </Container>
-    </header>
+            <nav className={s.nav} aria-label={copy.boardName}>
+              {/* `?view=all`, not the bare index: this link is named "all jobs",
+                  and the bare index is the browse page with no listing on it. */}
+              <Link href={`${r.index}?view=all`} className={s.navLink}>
+                {locale === 'nl' ? 'Alle vacatures' : 'All jobs'}
+              </Link>
+              <Link href={r.method} className={s.navLink}>
+                {locale === 'nl' ? 'Zo kiezen we' : 'How we choose'}
+              </Link>
+              <Link href={r.employers} className={s.navLink}>
+                {locale === 'nl' ? 'Organisaties' : 'Organisations'}
+              </Link>
+              <Link href={r.earningToGive} className={s.navLinkDistinct}>
+                {copy.e2gTitle}
+              </Link>
+              {/* Feedback is the last item and the only one drawn as a control.
+                  While the board is in beta it is the point of the whole page. */}
+              <Link href={r.suggest} className={s.navFeedback}>
+                <Icon name="message" />
+                {copy.suggestNavLabel}
+              </Link>
+            </nav>
+          </div>
+        </Container>
+      </div>
+    </SiteHeader>
   )
 }
 
 function Footer({ locale }: { locale: Locale }) {
-  const copy = t(locale)
-  const r = routes(locale)
+  const f = SITE_FOOTER[locale]
   return (
     <footer className={s.footer}>
-      <Container>
+      <div className={s.footerInner}>
         <div className={s.footerGrid}>
-          {/* The site's footer leads with the brand lockup and a one-line
-              slogan before the link columns. The board's footer had neither,
-              so a reader who landed on a listing from a search never saw
-              whose board it was. */}
           <div className={s.footerBrand}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/vacatures-static/img/ean-logo.svg"
+              src="/vacatures-static/img/ean-logo-white.svg"
               alt="Effectief Altruïsme Nederland"
               className={s.footerLogo}
             />
-            <p className={s.footerSlogan}>{copy.footerSlogan}</p>
-          </div>
-          <div>
-            <p className={s.footerHeading}>{locale === 'nl' ? 'Het bord' : 'The board'}</p>
-            <ul className={s.footerList}>
-              <li>
-                <Link href={`${r.index}?view=all`}>
-                  {locale === 'nl' ? 'Alle vacatures' : 'All jobs'}
-                </Link>
-              </li>
-              <li>
-                <Link href={r.method}>{locale === 'nl' ? 'Zo kiezen we' : 'How we choose'}</Link>
-              </li>
-              <li>
-                <Link href={r.causes}>
-                  {locale === 'nl' ? 'Probleemgebieden' : 'Problem areas'}
-                </Link>
-              </li>
-              <li>
-                <Link href={r.employers}>
-                  {locale === 'nl' ? 'Organisaties' : 'Organisations'}
-                </Link>
-              </li>
-              <li>
-                <Link href={r.earningToGive}>{copy.e2gTitle}</Link>
-              </li>
-            </ul>
-          </div>
-          <div>
-            <p className={s.footerHeading}>
-              {locale === 'nl' ? 'Verder lezen' : 'Read further'}
+            <p className={s.footerSlogan}>{f.tagline}</p>
+            <p className={s.footerSocials}>
+              {SOCIALS.map((social) => (
+                <a
+                  key={social.href}
+                  href={social.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Icon name={social.icon} size="1.125rem" label={social.label} />
+                </a>
+              ))}
             </p>
-            <ul className={s.footerList}>
-              <li>
-                <a href={ONWARD_LINKS.freeCourse}>
-                  {locale === 'nl' ? 'Gratis cursus' : 'Free course'}
-                </a>
-              </li>
-              <li>
-                <a href={ONWARD_LINKS.fellowship[locale]}>EA Fellowship</a>
-              </li>
-              <li>
-                <a href={ONWARD_LINKS.careerGuide}>
-                  {locale === 'nl' ? 'Loopbaangids' : 'Career guide'}
-                </a>
-              </li>
-              <li>
-                <a href={ONWARD_LINKS.glossary}>
-                  {locale === 'nl' ? 'Begrippenlijst' : 'Glossary'}
-                </a>
-              </li>
-              <li>
-                <a href={ONWARD_LINKS.newsletter}>
-                  {locale === 'nl' ? 'Nieuwsbrief' : 'Newsletter'}
-                </a>
-              </li>
-            </ul>
           </div>
-          <div>
-            <p className={s.footerHeading}>
-              {locale === 'nl' ? 'Effectief geven' : 'Effective giving'}
-            </p>
-            <ul className={s.footerList}>
-              <li>
-                <a href={ONWARD_LINKS.doneerEffectief}>Doneer Effectief</a>
-              </li>
-              <li>
-                <a href={ONWARD_LINKS.geefrevolutie}>De Geefrevolutie</a>
-              </li>
-            </ul>
-          </div>
+          {f.columns.map((col) => (
+            <nav key={col.heading} className={s.footerColumn} aria-label={col.heading}>
+              <h2 className={s.footerHeading}>{col.heading}</h2>
+              <ul className={s.footerList}>
+                {col.links.map((link) => (
+                  <li key={link.href}>
+                    <a href={link.href}>{link.label}</a>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+          ))}
         </div>
 
-        {/* The board is curated by people who can be wrong, and says so (§9.5).
-            It used to say so and then offer only an email address, which asks a
-            reader to compose a message from nothing. The form is named first
-            because it is the lower-effort route and the one that reaches the
-            review queue; the address stays for people who would rather write. */}
-        <div className={s.footerNote}>
-          <p className={u.onwardHeading}>{copy.disagreeHeading}</p>
-          <p>
-            {copy.disagreeBody}{' '}
-            <Link href={r.suggest}>{copy.feedbackBandCta}</Link>
-            {locale === 'nl' ? ', of mail ' : ', or email '}
-            <a href={ONWARD_LINKS.contact}>jobs@effectiefaltruisme.nl</a>.
-          </p>
+        <div className={s.footerInfo}>
+          <div>
+            <h2 className={s.footerInfoHeading}>{f.anbi.heading}</h2>
+            <p>{f.anbi.body}</p>
+            <p>{f.anbi.ids}</p>
+            <p>
+              <a href={POLICY_PLAN_PDF} className={s.footerUnderline}>
+                {f.anbi.link}
+              </a>
+            </p>
+          </div>
+          {[f.postal, f.registered].map((addr) => (
+            <div key={addr.heading}>
+              <h2 className={s.footerInfoHeading}>{addr.heading}</h2>
+              <p>
+                {addr.lines.map((line, i) => (
+                  <span key={line}>
+                    {i > 0 ? <br /> : null}
+                    {line}
+                  </span>
+                ))}
+              </p>
+            </div>
+          ))}
         </div>
 
         <div className={s.footerBottom}>
-          <p>
-            © {new Date().getFullYear()} Effectief Altruïsme.{' '}
-            {locale === 'nl' ? 'Alle rechten voorbehouden.' : 'All rights reserved.'}
-          </p>
-          <p className={s.footerSocials}>
-            {SOCIALS.map((social) => (
-              <a
-                key={social.href}
-                href={social.href}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Icon name={social.icon} size="1.25rem" label={social.label} />
-              </a>
+          <p>© {new Date().getFullYear()} Effectief Altruïsme Nederland</p>
+          <ul className={s.footerLegal}>
+            {f.legal.map((link) => (
+              <li key={link.href}>
+                <a href={link.href}>{link.label}</a>
+              </li>
             ))}
-          </p>
+          </ul>
         </div>
-      </Container>
+      </div>
     </footer>
+  )
+}
+
+/**
+ * The board's own "tell us we are wrong" line, which used to sit inside the
+ * footer. The site's footer has nothing like it, so it now sits just above,
+ * on every page, where it still reaches a reader who scrolled to the end.
+ *
+ * The board is curated by people who can be wrong, and says so (§9.5). The
+ * form is named first because it is the lower-effort route and the one that
+ * reaches the review queue; the address stays for people who would rather
+ * write.
+ */
+function DisagreeNote({ locale }: { locale: Locale }) {
+  const copy = t(locale)
+  const r = routes(locale)
+  return (
+    <Container>
+      <div className={s.disagree}>
+        <p className={u.onwardHeading}>{copy.disagreeHeading}</p>
+        <p>
+          {copy.disagreeBody}{' '}
+          <Link href={r.suggest}>{copy.feedbackBandCta}</Link>
+          {locale === 'nl' ? ', of mail ' : ', or email '}
+          <a href={ONWARD_LINKS.contact}>jobs@effectiefaltruisme.nl</a>.
+        </p>
+      </div>
+    </Container>
   )
 }
 
@@ -318,6 +291,7 @@ export function Shell({
       <main id="board-main" className={s.main}>
         {children}
       </main>
+      <DisagreeNote locale={locale} />
       <Footer locale={locale} />
     </div>
   )
