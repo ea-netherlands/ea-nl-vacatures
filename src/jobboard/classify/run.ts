@@ -59,6 +59,7 @@ type Candidate = Stage1Input & {
   employer_leverage_note: string | null
   salary_min: number | null
   salary_period: string | null
+  stage1_sig: string
 }
 
 export async function runClassification(
@@ -101,7 +102,13 @@ export async function runClassification(
     const gate = stage1(c)
     if (!gate.pass) {
       report.stage1Rejected++
-      await recordDecision(db, c.id, 'auto-rejected', 'pipeline', `stage 1: ${gate.reason}`)
+      await recordDecision(
+        db,
+        c.id,
+        'auto-rejected',
+        'pipeline',
+        `stage 1: ${gate.reason} (input ${c.stage1_sig})`,
+      )
       continue
     }
 
@@ -357,7 +364,13 @@ export async function runClassification(
   return report
 }
 
-async function loadCandidates(db: Db, options: ClassifyOptions): Promise<Candidate[]> {
+/**
+ * The fields a stage-one rejection depends on (stage1.ts), hashed. Stored in
+ * the rejection's reason so a listing is not re-checked until one changes.
+ */
+const STAGE1_INPUT_SIG = `md5(concat_ws(chr(31), l.title, l.location_raw, l.country, l.description, l.listing_kind))`
+
+export async function loadCandidates(db: Db, options: ClassifyOptions): Promise<Candidate[]> {
   const limit = options.limit ?? 200
   const { rows } = await db.query<
     Candidate & {
@@ -369,6 +382,7 @@ async function loadCandidates(db: Db, options: ClassifyOptions): Promise<Candida
     `select l.id, l.title, l.employer_name, l.location_raw, l.country, l.description,
             l.apply_url, l.employer_id, l.salary_min, l.salary_max, l.salary_currency,
             l.salary_period, l.listing_kind,
+            ${STAGE1_INPUT_SIG} as stage1_sig,
             e.leverage_note      as employer_leverage_note,
             e.e2g_allowlisted, e.e2g_salary_presumed, e.recommender_allowlisted
        from listing l
@@ -382,6 +396,22 @@ async function loadCandidates(db: Db, options: ClassifyOptions): Promise<Candida
         and d.id is null                      -- never re-surface a human decision
         and ($2 or c.listing_id is null)      -- unclassified unless forced
         and ($3::bigint[] is null or l.id = any($3))
+        -- A stage-one rejection writes no classification row, so without this
+        -- the same listings were rejected again on every run: by October 2026,
+        -- 550 of them 11,692 times, each taking a slot from a listing that had
+        -- never been looked at. Each rejection carries a fingerprint of the
+        -- fields stage one reads, so it is rerun only when one of them changes,
+        -- or when forced after a change to the rules. (Not the raw_listing
+        -- hash: the 80,000 Hours payload changes every day while the listing
+        -- does not.)
+        and ($2 or not exists (
+          select 1
+            from decision d1
+           where d1.listing_id = l.id
+             and d1.action = 'auto-rejected'
+             and d1.reason like 'stage 1:%'
+             and position(${STAGE1_INPUT_SIG} in d1.reason) > 0
+        ))
         -- Do not pay to classify a copy of a role we already have a better
         -- copy of: a higher-ranked source for the same dedup key, or one of
         -- equal rank that is already classified or older. The surviving row is
@@ -398,7 +428,17 @@ async function loadCandidates(db: Db, options: ClassifyOptions): Promise<Candida
                   or (${sourceRankSql('s2.kind')} = ${sourceRankSql('s.kind')}
                       and (c2.listing_id is not null or l2.id < l.id)))
         )
-      order by l.first_seen_at desc
+      -- A run classifies only as many listings as fit its time budget (about
+      -- 30), so the order decides what waits. Newest-first starved the queue
+      -- once a source added hundreds at once: Generator Residency, deadline
+      -- 1 November, sat 643rd on 18 October behind listings that arrived
+      -- after it. Programmes and listings from the EA boards or endorsed
+      -- employers go first, because they are the likeliest to pass and
+      -- programmes run to fixed application rounds; within each group, oldest first, so every
+      -- listing is reached eventually.
+      order by (l.listing_kind = 'programme') desc,
+               (s.kind = 'ea-board' or coalesce(e.recommender_allowlisted, false)) desc,
+               l.first_seen_at asc
       limit $1`,
     [limit, options.force ?? false, options.ids?.length ? options.ids : null],
   )
