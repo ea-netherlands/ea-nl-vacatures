@@ -2,7 +2,7 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "crons": [
     {
-      "path": "/api/cron/ingest?kind=ats&kind=ea-board",
+      "path": "/api/cron/ingest?kind=ats&kind=ea-board&kind=manual",
       "schedule": "0 5 * * *"
     },
     {

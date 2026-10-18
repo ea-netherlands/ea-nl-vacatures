@@ -9,6 +9,7 @@
  */
 
 import { getDb } from '../jobboard/db/client'
+import { mergeManualListings, type ManualListing } from '../jobboard/ingest/adapters/manual'
 import { CORRECTIONS, SEED_EMPLOYERS, SEED_SOURCES } from '../jobboard/seed/employers'
 import { main, parseArgs, printReport } from './_cli'
 
@@ -64,6 +65,22 @@ void main(async () => {
 
   let sources = 0
   for (const s of SEED_SOURCES) {
+    let config = s.config ?? {}
+    if (s.adapter === 'manual') {
+      // Listings added with add-listing.ts live only in the database; keep
+      // them, since the config below is otherwise replaced wholesale.
+      const { rows } = await db.query<{ config: Record<string, unknown> }>(
+        'select config from source where id = $1',
+        [s.id],
+      )
+      config = {
+        ...config,
+        listings: mergeManualListings(
+          (config.listings as ManualListing[] | undefined) ?? [],
+          rows[0]?.config?.listings,
+        ),
+      }
+    }
     await db.query(
       `insert into source (id, kind, adapter, config, employer_id, enabled, returns_complete_set)
        values ($1,$2,$3,$4::jsonb,$5,$6,$7)
@@ -81,7 +98,7 @@ void main(async () => {
         s.id,
         s.kind,
         s.adapter,
-        JSON.stringify(s.config ?? {}),
+        JSON.stringify(config),
         s.employerId ?? null,
         s.enabled ?? true,
         s.returnsCompleteSet,

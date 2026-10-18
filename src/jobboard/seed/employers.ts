@@ -13,6 +13,7 @@
  */
 
 import type { CauseArea } from '../taxonomy'
+import { MANUAL_LISTINGS } from './manual-listings'
 
 export type SeedEmployer = {
   id: string
@@ -1906,6 +1907,16 @@ export const SEED_SOURCES: SeedSource[] = [
     config: { boardUrl: 'https://www.effectivealtruism.org/opportunities' },
     notes:
       'CEA’s board. Added October 2026 for programmes (fellowships, residencies), which it labels; also takes its NL-reachable jobs. The whole dataset is in the page, so one request a run, plus a week-cached fetch of each programme’s own page.',
+  },
+  {
+    id: 'manual',
+    kind: 'manual',
+    adapter: 'manual',
+    // Leaving the list is not closing: never let absence close a listing here.
+    returnsCompleteSet: false,
+    config: { listings: MANUAL_LISTINGS },
+    notes:
+      'Programmes and jobs no source lists, added by hand from their URL (seed/manual-listings.ts, or src/scripts/add-listing.ts). Runs with the EA boards; each page is week-cached.',
   },
 
   // ---- ATS sources for watchlist employers with a known public feed ----

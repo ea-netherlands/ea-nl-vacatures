@@ -270,6 +270,7 @@ listings, expired drafts.
 | `npm run review-digest` | Mails the curator the roles waiting for review, with a dashboard link. `--dry` prints it instead. |
 | `npm run grade` | The M3 calibration tool. See below. |
 | `npm run pipeline` | ingest → classify → promote, end to end. |
+| `npx tsx src/scripts/add-listing.ts` | Puts one programme or job no source lists on the board from its URL (`--url --title --employer`, optionally `--kind=programme --location=Remote`). Previews only; `--write` adds it to the `manual` source and ingests it. |
 | `npm run mirror-glossary` | Refreshes the glossary mirror and distils the style guide. **Run before generating any page.** |
 | `npm run generate-explainers` | Generates the explainer layer, Dutch-first. |
 | `npm test` | The deterministic core, plus closure and dedup run through the real ingest runner on an in-memory database. |
@@ -304,6 +305,7 @@ table gives you a reason to, not before.
 | Probably Good | **Working** — verified live, 231 NL-eligible | A whitelisted persisted GraphQL query mints a fresh scoped Algolia key each run. Poll at most daily — it is their paid quota. |
 | ATS adapters | Built, per-employer | Greenhouse, Ashby, Lever, Workable, Recruitee, Personio, SmartRecruiters, Teamtailor, Breezy, Workday, BambooHR. Every gotcha in §7.2 is handled and commented. |
 | EURAXESS | Disabled | Set `config.exportUrl` if an export exists; it may replace the AcademicTransfer crawl. |
+| Manual | **Working** | Listings no source carries, added by a curator from their URL (`seed/manual-listings.ts`, or `add-listing.ts` without a deploy). Each page's text is fetched and goes through stage one, the classifier and review as usual. Never a complete set, so leaving the list never closes a listing. |
 
 Closure detection uses set difference only for sources that return a complete
 set. A budgeted crawl does not, so those get a weekly `HEAD` check instead —
