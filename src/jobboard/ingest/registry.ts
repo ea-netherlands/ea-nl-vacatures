@@ -8,6 +8,7 @@ import { DUTCH_ADAPTERS } from './adapters/dutch'
 import { EA_BOARD_ADAPTERS } from './adapters/ea-boards'
 import { eaOpportunitiesBoard } from './adapters/ea-opportunities'
 import { jsonldCareers } from './adapters/jsonld'
+import { manualListings } from './adapters/manual'
 import type { SourceAdapter } from './types'
 
 export const ADAPTERS: SourceAdapter[] = [
@@ -17,6 +18,7 @@ export const ADAPTERS: SourceAdapter[] = [
   eaOpportunitiesBoard,
   jsonldCareers,
   aimCareers,
+  manualListings,
 ]
 
 const BY_ID = new Map(ADAPTERS.map((a) => [a.id, a]))
