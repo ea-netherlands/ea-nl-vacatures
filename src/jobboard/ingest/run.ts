@@ -14,6 +14,7 @@ import { getDb } from '../db/client'
 import { looksLikeProgramme } from '../classify/programme'
 import { sha256, slugify } from '../lib/text'
 import { computeDedupKey } from './dedup'
+import { passesSourceFilters } from './filters'
 import { getAdapter } from './registry'
 import type {
   AdapterCache,
@@ -335,6 +336,10 @@ async function runSource(
       }
       if (!normalised.title || !normalised.applyUrl) {
         log(`skipping ${raw.externalId}: missing title or apply url`)
+        result.skipped++
+        continue
+      }
+      if (!passesSourceFilters(normalised, source.config)) {
         result.skipped++
         continue
       }

@@ -56,7 +56,7 @@ import { BAND_ICONS, ExpandableCardList, TierJump } from '../components/Expandab
 import { Icon } from '../components/Icon'
 import { routes, t, type Locale } from '../content/i18n'
 import { BANDS, bandOf, isBand, splitIntoBands, type Band } from '../lib/bands'
-import { getLiveListings } from '../sanity/queries'
+import { getEarningToGiveListings, getLiveListings } from '../sanity/queries'
 import type { ListingView } from '../sanity/queries'
 import { CAUSE_AREAS, SUB_AREA_CAUSE, type CauseArea, type Skill, type SubArea } from '../taxonomy'
 import s from '../components/layout.module.css'
@@ -170,10 +170,13 @@ export async function IndexPage({
 
   // Earning to give is excluded here: it has its own route because it needs
   // different framing and a different card layout (§9.6).
-  const all = await getLiveListings({
-    excludeEarningToGive: true,
-    sort: state.sort === 'leverage' ? 'leverage' : 'recent',
-  })
+  const [all, earningToGive] = await Promise.all([
+    getLiveListings({
+      excludeEarningToGive: true,
+      sort: state.sort === 'leverage' ? 'leverage' : 'recent',
+    }),
+    getEarningToGiveListings(),
+  ])
   const filtered = applyFilters(all, state)
   const counts = countFacets(all)
   const browsing = !isFiltered(state)
@@ -227,7 +230,7 @@ export async function IndexPage({
           <Section first>
             <h2 className={u.browseHeading}>{copy.browseBandHeading}</h2>
             <p className={u.browseBody}>{copy.browseBandBody}</p>
-            <BandGrid locale={locale} counts={bandCounts} />
+            <BandGrid locale={locale} counts={bandCounts} earningToGive={earningToGive.length} />
           </Section>
 
           <Section id="problemareas">

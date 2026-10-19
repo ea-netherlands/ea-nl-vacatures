@@ -21,7 +21,7 @@ import {
   type CauseArea,
   type Skill,
 } from '../taxonomy'
-import { enforceGates, type EmployerGateFlags } from '../taxonomy/gates'
+import { earningToGiveEligible, enforceGates, gateListing, type EmployerGateFlags } from '../taxonomy/gates'
 import { buildNoteSystemPrompt, buildTriageUserPrompt, TRIAGE_SYSTEM_PROMPT } from './prompt'
 import { NOTE_SCHEMA, TRIAGE_SCHEMA, type TriageResult } from './schema'
 import { stage1, type Stage1Input } from './stage1'
@@ -176,7 +176,7 @@ export async function runClassification(
       const gated = enforceGates(
         raw,
         c.employer,
-        { salary_max: c.salary_max, salary_currency: c.salary_currency },
+        gateListing(c),
         listingKind,
       )
       if (gated.violations.length) {
@@ -195,7 +195,7 @@ export async function runClassification(
       // Override rather than trust the model to self-assign the label: it was
       // never offered as an option to the model in the first place.
       const trusted = c.employer?.recommender_allowlisted ?? false
-      const leverage = trusted ? 'trusted-recommendation' : gated.leverage
+      const judgedLeverage = trusted ? 'trusted-recommendation' : gated.leverage
 
       // A sub-area that does not belong to the cause we actually assigned is
       // worse than none: it would file the listing under a chip nobody
@@ -214,12 +214,25 @@ export async function runClassification(
       const leverageScore = trusted ? 3 : raw.leverageScore
       const causeScore = trusted ? Math.max(raw.causeScore, PROMOTION_MIN_CAUSE_SCORE) : raw.causeScore
 
-      const promotable =
-        nlEligible &&
+      const onOwnMerits =
         gated.primaryCause !== null &&
-        skills.length > 0 &&
-        leverage !== null &&
+        judgedLeverage !== null &&
         meetsPromotionThreshold(causeScore, leverageScore)
+
+      // Earning to give is the one route onto the board that does not go
+      // through the cause score: the work itself is not the point, so a quant
+      // trader scores 0 there and would never be published. The mechanical gate
+      // has already decided the role qualifies; the model does not get a vote.
+      // A role that would be published on its own merits keeps the label the
+      // model gave it, so a senior ministry role that happens to clear the
+      // salary floor stays filed under its cause.
+      const asEarningToGive =
+        !trusted &&
+        earningToGiveEligible(c.employer, gateListing(c), listingKind) &&
+        (!onOwnMerits || judgedLeverage === 'earning-to-give')
+      const leverage = asEarningToGive ? 'earning-to-give' : judgedLeverage
+
+      const promotable = nlEligible && skills.length > 0 && (onOwnMerits || asEarningToGive)
 
       // Draft the editorial note only for listings that will reach a curator.
       // This is the expensive model, and the set is much smaller (§8.4).

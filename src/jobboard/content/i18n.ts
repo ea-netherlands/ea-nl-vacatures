@@ -395,6 +395,8 @@ type Strings = {
   /** Short band names, for the filter and the front-page tiles. */
   bandLabels: Record<Band, string>
   bandBlurbs: Record<Band, string>
+  /** The earning-to-give tile beside the bands; it links to its own page, not a filter. */
+  e2gTileBlurb: string
   browseBandHeading: string
   browseBandBody: string
   filterBand: string
@@ -803,8 +805,10 @@ const nl: Strings = {
     dutch:
       'Functies bij ministeries, toezichthouders, banken en universiteiten waarin je meer aan een probleem kunt richten dan je eigen uren.',
   },
+  e2gTileBlurb:
+    'Goed betaalde functies bij Amsterdamse handelshuizen en techbedrijven, voor wie een vast deel van het inkomen wil weggeven.',
   browseBandHeading: 'Kies op soort vacature',
-  browseBandBody: 'Drie soorten, die hier elk om een andere reden staan.',
+  browseBandBody: 'Vier soorten, die hier elk om een andere reden staan.',
   filterBand: 'Soort',
   programmeBadge: 'Programma',
   programmeWeeks: (n) => (n === 1 ? '1 week' : `${n} weken`),
@@ -1276,8 +1280,10 @@ const en: Strings = {
     dutch:
       'Roles at ministries, regulators, banks and universities that let you point more at a problem than your own hours.',
   },
+  e2gTileBlurb:
+    'Well-paid roles at Amsterdam trading firms and tech companies, for people who want to give a fixed share of their income away.',
   browseBandHeading: 'Browse by kind of role',
-  browseBandBody: 'Three kinds, each here for a different reason.',
+  browseBandBody: 'Four kinds, each here for a different reason.',
   filterBand: 'Kind',
   programmeBadge: 'Programme',
   programmeWeeks: (n) => (n === 1 ? '1 week' : `${n} weeks`),

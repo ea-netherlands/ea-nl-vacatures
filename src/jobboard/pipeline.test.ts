@@ -414,52 +414,86 @@ test('enforceGates leaves the current cause areas alone', () => {
 })
 
 // ---------------------------------------------------------------------------
-// The earning-to-give gate (§5.3) — allowlist AND salary floor
+// The earning-to-give gate (§5.3) — a stated salary OR the allowlist
 // ---------------------------------------------------------------------------
 
-test('earning to give needs the allowlist, not just a high salary', () => {
+const presumed = { ...noFlags, e2g_allowlisted: true, e2g_salary_presumed: true }
+const noPay = { salary_max: null, salary_currency: null }
+
+test('a stated salary over the floor qualifies at any employer', () => {
   assert.equal(
-    earningToGiveEligible(noFlags, { salary_max: 250_000, salary_currency: 'EUR' }),
-    false,
-    'a high salary at a non-allowlisted employer must not qualify',
+    earningToGiveEligible(noFlags, { salary_max: 120_000, salary_currency: 'EUR', employer_name: 'Mollie' }),
+    true,
   )
 })
 
-test('earning to give needs the salary floor, not just the allowlist', () => {
-  const allowlisted = { ...noFlags, e2g_allowlisted: true }
+test('a single stated figure counts, and a monthly one is annualised', () => {
+  // "Base salary of EUR 100k" parses as a min with no max.
+  assert.equal(earningToGiveEligible(noFlags, { salary_min: 100_000, salary_max: null, salary_currency: 'EUR' }), true)
   assert.equal(
-    earningToGiveEligible(allowlisted, { salary_max: E2G_SALARY_FLOOR - 1, salary_currency: 'EUR' }),
+    earningToGiveEligible(noFlags, { salary_max: 8_000, salary_currency: 'EUR', salary_period: 'month' }),
+    true,
+    '8,000 a month is 96,000 a year',
+  )
+  assert.equal(
+    earningToGiveEligible(noFlags, { salary_max: 7_000, salary_currency: 'EUR', salary_period: 'month' }),
     false,
   )
+})
+
+test('the salary test excludes listed industries, but not allowlisted employers', () => {
+  const high = { salary_max: 150_000, salary_currency: 'EUR', employer_name: 'Shell' }
+  assert.equal(earningToGiveEligible(noFlags, high), false)
+  assert.equal(earningToGiveEligible(noFlags, { ...high, employer_name: 'Holland Casino' }), false)
+  assert.equal(earningToGiveEligible({ ...noFlags, e2g_allowlisted: true }, high), true)
+})
+
+test('below the floor, or with no figure, a non-allowlisted employer never qualifies', () => {
+  assert.equal(
+    earningToGiveEligible(noFlags, { salary_max: E2G_SALARY_FLOOR - 1, salary_currency: 'EUR' }),
+    false,
+  )
+  assert.equal(earningToGiveEligible(noFlags, { ...noPay, title: 'Quantitative Trader' }), false)
+})
+
+test('presumed pay only counts for titles in a well-paid function', () => {
+  for (const title of ['Graduate Trader', 'Senior Machine Learning Engineer', 'Quantitative Researcher', 'Staff Software Engineer']) {
+    assert.equal(earningToGiveEligible(presumed, { ...noPay, title }), true, title)
+  }
+  for (const title of [
+    'Customer Support Specialist',
+    'Trading Recruiter',
+    'Trader Intern',
+    'Quantitative Research Internship (2027 Start)',
+    'Trader Assistant (Working Student)',
+    'Senior Product Manager - Developer Experience',
+    'Flow Quant Trading Days 2026',
+  ]) {
+    assert.equal(earningToGiveEligible(presumed, { ...noPay, title }), false, title)
+  }
+})
+
+test('allowlisted without presumed pay still needs the floor', () => {
+  const allowlisted = { ...noFlags, e2g_allowlisted: true }
+  assert.equal(earningToGiveEligible(allowlisted, { ...noPay, title: 'Graduate Trader' }), false)
   assert.equal(
     earningToGiveEligible(allowlisted, { salary_max: E2G_SALARY_FLOOR, salary_currency: 'EUR' }),
     true,
   )
 })
 
-test('e2g_salary_presumed covers the trading firms that publish no numbers', () => {
-  const presumed = { ...noFlags, e2g_allowlisted: true, e2g_salary_presumed: true }
-  assert.equal(earningToGiveEligible(presumed, { salary_max: null, salary_currency: null }), true)
-})
-
 test('a salary floor in euros is not compared against another currency', () => {
   // Without an FX rate we deliberately do not carry, a USD figure above the
   // euro floor is not evidence of anything.
-  const allowlisted = { ...noFlags, e2g_allowlisted: true }
   assert.equal(
-    earningToGiveEligible(allowlisted, { salary_max: E2G_SALARY_FLOOR + 50_000, salary_currency: 'USD' }),
+    earningToGiveEligible(noFlags, { salary_max: E2G_SALARY_FLOOR + 50_000, salary_currency: 'USD' }),
     false,
   )
 })
 
 test('earning-to-give is absent from allowed leverage unless the gate is cleared', () => {
-  assert.ok(!allowedLeverageTypes(noFlags, { salary_max: null, salary_currency: null }).includes('earning-to-give'))
-  assert.ok(
-    allowedLeverageTypes(
-      { ...noFlags, e2g_allowlisted: true, e2g_salary_presumed: true },
-      { salary_max: null, salary_currency: null },
-    ).includes('earning-to-give'),
-  )
+  assert.ok(!allowedLeverageTypes(noFlags, noPay).includes('earning-to-give'))
+  assert.ok(allowedLeverageTypes(presumed, { ...noPay, title: 'Graduate Trader' }).includes('earning-to-give'))
 })
 
 // ---------------------------------------------------------------------------
