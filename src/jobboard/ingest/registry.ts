@@ -5,6 +5,7 @@
 import { aimCareers } from './adapters/aim'
 import { ATS_ADAPTERS } from './adapters/ats'
 import { DUTCH_ADAPTERS } from './adapters/dutch'
+import { bookingJobs, optiverJobs } from './adapters/e2g-employers'
 import { EA_BOARD_ADAPTERS } from './adapters/ea-boards'
 import { eaOpportunitiesBoard } from './adapters/ea-opportunities'
 import { jsonldCareers } from './adapters/jsonld'
@@ -18,6 +19,8 @@ export const ADAPTERS: SourceAdapter[] = [
   eaOpportunitiesBoard,
   jsonldCareers,
   aimCareers,
+  optiverJobs,
+  bookingJobs,
   manualListings,
 ]
 

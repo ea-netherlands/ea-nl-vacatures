@@ -11,6 +11,12 @@
  *   npx tsx src/scripts/dry-run-source.ts --adapter=ea-opportunities
  *   npx tsx src/scripts/dry-run-source.ts --adapter=probablygood --match=generator
  *   npx tsx --env-file=.env.local src/scripts/dry-run-source.ts --adapter=ea-opportunities --match=generator --triage
+ *   npx tsx src/scripts/dry-run-source.ts --source=greenhouse:imc
+ *
+ * --source picks a seeded source by id, for adapters that serve several (every
+ * ATS). Its employer's gate flags then apply, and the report counts how many
+ * listings the source's own filters drop and how many clear the
+ * earning-to-give gate.
  *
  * The seed's config for the source is used when one exists, so the run sees
  * what production would.
@@ -20,21 +26,34 @@ import { stage1 } from '../jobboard/classify/stage1'
 import { mergeTerms, shortProgrammeVerdict } from '../jobboard/classify/programme'
 import { buildTriageUserPrompt, TRIAGE_SYSTEM_PROMPT } from '../jobboard/classify/prompt'
 import { TRIAGE_SCHEMA, type TriageResult } from '../jobboard/classify/schema'
+import { passesSourceFilters } from '../jobboard/ingest/filters'
 import { getAdapter } from '../jobboard/ingest/registry'
 import type { AdapterContext, NormalisedListing } from '../jobboard/ingest/types'
 import { structuredCall, TRIAGE_MODEL } from '../jobboard/lib/anthropic'
 import { truncateWords } from '../jobboard/lib/text'
-import { SEED_SOURCES } from '../jobboard/seed/employers'
+import { SEED_EMPLOYERS, SEED_SOURCES } from '../jobboard/seed/employers'
+import { earningToGiveEligible, gateListing, type EmployerGateFlags } from '../jobboard/taxonomy/gates'
 import { log, main, num, parseArgs, printReport } from './_cli'
 
 main(async () => {
   const args = parseArgs()
-  const adapterId = args.values.get('adapter')
-  if (!adapterId) throw new Error('--adapter=<id> is required, e.g. --adapter=ea-opportunities')
+  const sourceId = args.values.get('source')
+  const bySource = sourceId ? SEED_SOURCES.find((s) => s.id === sourceId) : undefined
+  if (sourceId && !bySource) throw new Error(`no seeded source "${sourceId}"`)
+  const adapterId = bySource?.adapter ?? args.values.get('adapter')
+  if (!adapterId) throw new Error('--adapter=<id> or --source=<id> is required, e.g. --adapter=ea-opportunities')
   const match = args.values.get('match')?.toLowerCase()
   const adapter = getAdapter(adapterId)
-  const seeded = SEED_SOURCES.find((s) => s.adapter === adapterId)
+  const seeded = bySource ?? SEED_SOURCES.find((s) => s.adapter === adapterId)
   const config = seeded?.config ?? {}
+  const seededEmployer = SEED_EMPLOYERS.find((e) => e.id === seeded?.employerId)
+  const employer: EmployerGateFlags | null = seededEmployer
+    ? {
+        e2g_allowlisted: seededEmployer.e2gAllowlisted ?? false,
+        e2g_salary_presumed: seededEmployer.e2gSalaryPresumed ?? false,
+        recommender_allowlisted: seededEmployer.recommenderAllowlisted ?? false,
+      }
+    : null
 
   const memory = new Map<string, unknown>()
   const incomplete: string[] = []
@@ -60,10 +79,27 @@ main(async () => {
   }
 
   const listings: NormalisedListing[] = []
+  let filtered = 0
   for await (const raw of adapter.fetch(config, ctx)) {
     const n = adapter.normalise(raw, config)
-    if (n) listings.push(n)
+    if (!n) continue
+    if (passesSourceFilters(n, config)) listings.push(n)
+    else filtered++
   }
+  const earningToGive = listings.filter((n) =>
+    earningToGiveEligible(
+      employer,
+      gateListing({
+        title: n.title,
+        employer_name: n.employerName,
+        salary_min: n.salaryMin,
+        salary_max: n.salaryMax,
+        salary_currency: n.salaryCurrency,
+        salary_period: n.salaryPeriod,
+      }),
+      n.listingKind ?? 'job',
+    ),
+  )
 
   const reasons = new Map<string, number>()
   let passed = 0
@@ -76,9 +112,11 @@ main(async () => {
       location_raw: n.locationRaw,
       country: n.country,
       description: n.description,
+      salary_min: n.salaryMin,
       salary_max: n.salaryMax,
       salary_currency: n.salaryCurrency,
-      employer: null,
+      salary_period: n.salaryPeriod,
+      employer,
       listing_kind: n.listingKind ?? 'job',
     })
     if (verdict.pass) passed++
@@ -88,7 +126,9 @@ main(async () => {
   }
 
   printReport(`${adapterId} — dry run, nothing written`, {
+    droppedBySourceFilters: filtered,
     normalised: listings.length,
+    clearEarningToGiveGate: earningToGive.length,
     programmes: listings.filter((l) => l.listingKind === 'programme').length,
     passStage1: passed,
     incomplete: incomplete.length ? incomplete : undefined,

@@ -12,7 +12,7 @@
  */
 
 import type { ListingKind } from '../taxonomy'
-import { allowedCauseAreas, allowedLeverageTypes, type EmployerGateFlags } from '../taxonomy/gates'
+import { allowedCauseAreas, allowedLeverageTypes, gateListing, type EmployerGateFlags } from '../taxonomy/gates'
 import { programmeTerms, shortProgrammeVerdict, type ProgrammeTerms } from './programme'
 
 export type Stage1Input = {
@@ -22,8 +22,10 @@ export type Stage1Input = {
   location_raw: string | null
   country: string | null
   description: string | null
+  salary_min?: number | null
   salary_max: number | null
   salary_currency: string | null
+  salary_period?: string | null
   employer: EmployerGateFlags | null
   /** From the source or the title (see ../ingest/run.ts). Absent on rows that predate it: a job. */
   listing_kind?: ListingKind | null
@@ -158,7 +160,7 @@ export function stage1(input: Stage1Input): Stage1Verdict {
     allowedCauses: allowedCauseAreas(),
     allowedLeverage: allowedLeverageTypes(
       input.employer,
-      { salary_max: input.salary_max, salary_currency: input.salary_currency },
+      gateListing(input),
       input.listing_kind ?? 'job',
     ),
   }

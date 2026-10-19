@@ -202,13 +202,23 @@ re-adds them from Appendix A.
 well-paid Amsterdam jobs and a classifier will find a plausible case for most of
 them; one diluted category would drag down trust in the whole board.
 
-So it is an employer-level boolean, checked **before** the model sees a listing
+So it is decided by fixed rules, checked **before** the model sees a listing
 (the label is simply absent from the options it is given) and enforced **again**
 on its output. The double enforcement is deliberate: a model told not to use a
 label will occasionally use it anyway.
 
-- **`earning-to-give`** requires `e2g_allowlisted` **and** (`salary_max >=
-  E2G_SALARY_FLOOR` **or** `e2g_salary_presumed`).
+- **`earning-to-give`** (since October 2026) passes either test:
+  - the ad's stated pay, annualised, is at least `E2G_SALARY_FLOOR` in euros, at
+    any employer not matched by `E2G_EXCLUDED_EMPLOYERS`; or
+  - the employer is `e2g_allowlisted` and either the ad clears the floor, or the
+    employer is `e2g_salary_presumed` **and** the title passes
+    `isEarningToGiveRole` (trading, quant, engineering, data, research; no
+    interns, recruiters or assistants).
+- An earning-to-give listing is published without a cause area or cause score
+  (`classify/run.ts`): the work is not the point. A role that would be
+  published on its own merits keeps the label the model gave it.
+- The allowlisted employers' sources only ingest Netherlands roles that pass the
+  role test (`ingest/filters.ts`), so the rest never cost a classifier call.
 
 `src/jobboard/taxonomy/gates.ts`, with tests in `pipeline.test.ts`.
 

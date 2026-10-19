@@ -1085,21 +1085,25 @@ export const SEED_EMPLOYERS: SeedEmployer[] = [
   // Employers here are listed because of what they pay, not what they do, and
   // the section says so publicly. The Amsterdam proprietary trading cluster is
   // a genuine national advantage and mostly does not publish salaries, so
-  // e2gSalaryPresumed is set for all of them.
+  // e2gSalaryPresumed is set for all of them. Presumed pay only counts for
+  // titles in a well-paid function (E2G_ROLE_TITLE in ../taxonomy/gates.ts).
+  //
+  // Sources checked live 19 October 2026: IMC, Flow Traders, Da Vinci and
+  // Adyen on public Greenhouse boards; Optiver and Booking.com through their
+  // own job APIs (../ingest/adapters/e2g-employers.ts).
   // -------------------------------------------------------------------------
   {
     id: 'optiver',
     name: 'Optiver',
     city: 'Amsterdam',
     website: 'https://www.optiver.com',
-    careersUrl: 'https://optiver.com/working-at-optiver/career-opportunities',
+    careersUrl: 'https://www.optiver.com/join-us/jobs/',
     ats: null,
     causeAreas: [],
     e2gAllowlisted: true,
     e2gSalaryPresumed: true,
     watchlistTier: 2,
-    notes: 'Verify the current roster and each firm’s ATS before building adapters.',
-    verify: true,
+    notes: 'Own site; its Greenhouse board is empty. Polled by `optiver:amsterdam`.',
   },
   {
     id: 'imc-trading',
@@ -1107,12 +1111,12 @@ export const SEED_EMPLOYERS: SeedEmployer[] = [
     city: 'Amsterdam',
     website: 'https://www.imc.com',
     careersUrl: 'https://careers.imc.com',
-    ats: null,
+    ats: 'greenhouse',
+    atsToken: 'imc',
     causeAreas: [],
     e2gAllowlisted: true,
     e2gSalaryPresumed: true,
     watchlistTier: 2,
-    verify: true,
   },
   {
     id: 'flow-traders',
@@ -1120,24 +1124,52 @@ export const SEED_EMPLOYERS: SeedEmployer[] = [
     city: 'Amsterdam',
     website: 'https://www.flowtraders.com',
     careersUrl: 'https://www.flowtraders.com/careers',
-    ats: null,
+    ats: 'greenhouse',
+    atsToken: 'flowtraders',
     causeAreas: [],
     e2gAllowlisted: true,
     e2gSalaryPresumed: true,
     watchlistTier: 2,
-    verify: true,
   },
   {
     id: 'da-vinci-derivatives',
     name: 'Da Vinci Derivatives',
     city: 'Amsterdam',
     website: 'https://davinciderivatives.com',
+    ats: 'greenhouse',
+    atsToken: 'davinciderivatives',
+    causeAreas: [],
+    e2gAllowlisted: true,
+    e2gSalaryPresumed: true,
+    watchlistTier: 2,
+    notes: 'Publishes pay in its ads (base EUR 100k for graduate traders and quants, October 2026).',
+  },
+  {
+    id: 'adyen',
+    name: 'Adyen',
+    city: 'Amsterdam',
+    website: 'https://www.adyen.com',
+    careersUrl: 'https://careers.adyen.com',
+    ats: 'greenhouse',
+    atsToken: 'adyen',
+    causeAreas: [],
+    e2gAllowlisted: true,
+    e2gSalaryPresumed: true,
+    watchlistTier: 2,
+    notes: 'Pay presumed for engineering and data titles only; support, sales and office roles do not clear the floor.',
+  },
+  {
+    id: 'booking',
+    name: 'Booking.com',
+    city: 'Amsterdam',
+    website: 'https://www.booking.com',
+    careersUrl: 'https://jobs.booking.com/booking/jobs',
     ats: null,
     causeAreas: [],
     e2gAllowlisted: true,
     e2gSalaryPresumed: true,
     watchlistTier: 2,
-    verify: true,
+    notes: 'iCIMS behind a Jibe front end; polled by `booking:amsterdam`. Pay presumed for engineering and data titles only.',
   },
   {
     id: 'mckinsey-amsterdam',
@@ -2236,5 +2268,42 @@ export const SEED_SOURCES: SeedSource[] = [
     employerId: 'securebio',
     returnsCompleteSet: true,
     config: { boardName: 'securebio' },
+  },
+  // ---- Earning to give (October 2026) ----
+  // Netherlands roles in a well-paid function only: everything else would cost
+  // a classifier call to reject (../ingest/filters.ts).
+  ...(
+    [
+      ['imc-trading', 'imc'],
+      ['flow-traders', 'flowtraders'],
+      ['da-vinci-derivatives', 'davinciderivatives'],
+      ['adyen', 'adyen'],
+    ] as const
+  ).map(
+    ([employerId, token]): SeedSource => ({
+      id: `greenhouse:${token}`,
+      kind: 'ats',
+      adapter: 'greenhouse',
+      employerId,
+      returnsCompleteSet: true,
+      config: { token, onlyLocations: ['Amsterdam', 'Netherlands'], e2gRolesOnly: true },
+    }),
+  ),
+  {
+    id: 'optiver:amsterdam',
+    kind: 'ats',
+    adapter: 'optiver-jobs',
+    employerId: 'optiver',
+    returnsCompleteSet: true,
+    // The adapter already asks only for the well-paid departments.
+    config: { office: 'amsterdam', e2gRolesOnly: true },
+  },
+  {
+    id: 'booking:amsterdam',
+    kind: 'ats',
+    adapter: 'booking-jobs',
+    employerId: 'booking',
+    returnsCompleteSet: true,
+    config: { location: 'Amsterdam', onlyLocations: ['Amsterdam', 'Netherlands'], e2gRolesOnly: true },
   },
 ]

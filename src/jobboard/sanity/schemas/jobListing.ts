@@ -159,7 +159,14 @@ export const jobListing = defineType({
       type: 'string',
       group: 'taxonomy',
       options: { list: causeAreaOptions() },
-      validation: (r) => r.required(),
+      // Earning-to-give roles are there for the pay, not the work, so most
+      // have no honest cause area (a trader at Optiver).
+      validation: (r) =>
+        r.custom((value, context) =>
+          value || (context.document as { leverage?: string } | undefined)?.leverage === 'earning-to-give'
+            ? true
+            : 'Required, except for earning-to-give listings',
+        ),
     }),
     defineField({
       name: 'secondaryCauses',

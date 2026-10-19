@@ -125,12 +125,15 @@ export async function runPromotion(options: PromoteOptions = {}): Promise<Promot
     }
     // Re-check the threshold here rather than trusting the query alone: the
     // gate enforcement in classify may have nulled a label after scoring, and a
-    // listing with no cause or no leverage is not publishable.
+    // listing with no cause or no leverage is not publishable. Earning to give
+    // is the exception: classify only assigns it after the mechanical gate,
+    // and the work is not meant to score on cause at all.
+    const earningToGive = row.leverage === 'earning-to-give'
     if (
-      !row.primary_cause ||
       !row.leverage ||
       !row.skills?.length ||
-      !meetsPromotionThreshold(row.cause_score, row.leverage_score)
+      (!earningToGive &&
+        (!row.primary_cause || !meetsPromotionThreshold(row.cause_score, row.leverage_score)))
     ) {
       report.skippedBelowThreshold++
       continue
@@ -332,11 +335,10 @@ async function loadPromotable(db: Db, limit: number): Promise<PromotableRow[]> {
         -- cheapest fix is not to spend it on a dead vacancy at all.
         and (l.deadline_at is null or l.deadline_at > now())
         and c.nl_eligible
-        and c.primary_cause is not null
         and c.leverage is not null
         and cardinality(c.skills) > 0
-        and c.total_score >= 4
-        and c.cause_score >= 2
+        and (c.leverage = 'earning-to-give'
+             or (c.primary_cause is not null and c.total_score >= 4 and c.cause_score >= 2))
         -- The same role from another source, already queued or decided on.
         -- Without this an 80k copy and the employer's own ATS copy of one job
         -- both reached the curator, and rejecting one left the other waiting.

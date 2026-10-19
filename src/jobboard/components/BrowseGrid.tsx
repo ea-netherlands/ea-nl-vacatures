@@ -237,7 +237,16 @@ export function SkillGrid({ locale, counts }: { locale: Locale; counts: BrowseCo
  * with a sentence each, so the row reads as a choice and does not push the
  * cause grid below the fold.
  */
-export function BandGrid({ locale, counts }: { locale: Locale; counts: Record<Band, number> }) {
+export function BandGrid({
+  locale,
+  counts,
+  earningToGive,
+}: {
+  locale: Locale
+  counts: Record<Band, number>
+  /** Live earning-to-give roles. That tile goes to its own page, which frames them differently (§9.6). */
+  earningToGive: number
+}) {
   const copy = t(locale)
   const r = routes(locale)
 
@@ -273,6 +282,18 @@ export function BandGrid({ locale, counts }: { locale: Locale; counts: Record<Ba
           </span>
         )
       })}
+      <Link href={r.earningToGive} className={u.bandTile}>
+        <span className={u.bandTileHead}>
+          <span className={u.skillTileIcon} aria-hidden="true">
+            <Icon name="coin" />
+          </span>
+          <span className={u.bandTileName}>{copy.e2gTitle}</span>
+        </span>
+        <span className={u.bandTileBlurb}>{copy.e2gTileBlurb}</span>
+        <span className={u.bandTileCount}>
+          {earningToGive === 0 ? copy.browseEmptyTile : copy.browseRoleCount(earningToGive)}
+        </span>
+      </Link>
     </div>
   )
 }
