@@ -18,7 +18,7 @@ sources:
 
 Sommige manieren om anderen te helpen werken veel beter dan andere. Dat verschil is zo groot dat het loont om uit te zoeken welke aanpak het meeste oplevert. Toch weten de meeste mensen niet dat dat verschil bestaat. Werk in dit probleemgebied probeert daar iets aan te doen: meer mensen hun loopbaan of hun geld laten inzetten voor de problemen waarbij hun inzet het meeste oplevert. Die denkwijze heet [effectief altruïsme](https://effectiefaltruisme.nl/begrippenlijst).
 
-Hieronder vallen twee soorten werk. Het eerste is het opbouwen en onderhouden van de gemeenschap: groepen opzetten, cursussen geven, evenementen organiseren en mensen begeleiden die net beginnen. Het tweede is effectief doneren. Daarbij bouw je aan de voorzieningen waarmee particulieren aan goed onderzochte doelen kunnen geven, en probeer je meer mensen zover te krijgen dat ze dat ook doen.
+Hieronder vallen drie soorten werk. Het eerste is effectieve loopbanen: mensen helpen werk te vinden waarmee ze het meeste bijdragen, met loopbaanadvies, coaching en vacatureoverzichten, zoals bij 80,000 Hours, Probably Good en High Impact Professionals. Het tweede is effectief doneren. Daarbij bouw je aan de voorzieningen waarmee particulieren aan goed onderzochte doelen kunnen geven, en probeer je meer mensen zover te krijgen dat ze dat ook doen. Het derde is het opbouwen en onderhouden van de gemeenschap: groepen opzetten, cursussen geven, evenementen organiseren en mensen begeleiden die net beginnen.
 
 De analyse waar deze pagina op leunt, komt grotendeels van 80,000 Hours. Die analyse is uitvoeriger dan wat op deze pagina past; ook de bezwaren staan er. Lees hem zelf. We hebben deze pagina niet met hen afgestemd.
 

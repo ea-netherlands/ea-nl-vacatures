@@ -72,7 +72,7 @@ const SCHEMA = {
     subArea: {
       anyOf: [{ type: 'string', enum: [...SUB_AREAS] }, { type: 'null' }],
       description:
-        'The one sub-area this role belongs to, or null if it genuinely sits above all of them. Normally a sub-area of the cause area given below — but if you are setting movementBuilding to true, pick from movement-building\u2019s own sub-areas instead (community-building or effective-giving), because that is the area the listing is moving to.',
+        'The one sub-area this role belongs to, or null if it genuinely sits above all of them. Normally a sub-area of the cause area given below — but if you are setting movementBuilding to true, pick from movement-building\u2019s own sub-areas instead (effective-careers, effective-giving or community-building), because that is the area the listing is moving to.',
     },
     skills: {
       type: 'array',
@@ -82,7 +82,7 @@ const SCHEMA = {
     movementBuilding: {
       type: 'boolean',
       description:
-        'True ONLY if this role is community building or public-facing effective giving and therefore belongs in the new movement-building cause area. False for everything else, including research or programme roles at organisations that happen to be part of the community.',
+        'True ONLY if this role is community building, cause-general career advice or public-facing effective giving and therefore belongs in the new movement-building cause area. False for everything else, including research or programme roles at organisations that happen to be part of the community.',
     },
     reasoning: { type: 'string', description: 'One sentence. Never published.' },
   },
@@ -107,7 +107,7 @@ ${(Object.entries(CAUSE_AREA_DEFINITIONS) as [CauseArea, string][])
 
 ## Sub-areas
 
-Pick exactly one, and it must belong to the listing's cause area — with one exception: if you set \`movementBuilding\` to true, pick from movement-building's own sub-areas (\`community-building\` or \`effective-giving\`), because that is where the listing is going.
+Pick exactly one, and it must belong to the listing's cause area — with one exception: if you set \`movementBuilding\` to true, pick from movement-building's own sub-areas (\`effective-careers\`, \`effective-giving\` or \`community-building\`), because that is where the listing is going.
 
 This is the label a reader browses by, so getting it wrong hides the listing from the people most likely to want it. Return null only when the role genuinely sits above every sub-area in its area — a cause-prioritisation post, or a ministry management role spanning several briefs — rather than whenever none feels perfect.
 
