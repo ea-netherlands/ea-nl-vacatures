@@ -71,7 +71,7 @@ export const CAUSE_AREA_DEFINITIONS: Record<CauseArea, string> = {
   'better-futures':
     'Whether the long-run future goes well *given* that humanity survives. Who holds power over transformative AI and whose values get locked in (but regulating AI systems themselves is global-catastrophic-risks); the quality and resilience of democratic institutions; the moral circle, including digital minds; space governance. The concern here is not extinction but a surviving world that is much worse than it could have been.',
   'movement-building':
-    'Growing the number of people who take these problems seriously and act on them, and the number who give effectively. Community building at the Centre for Effective Altruism, Effectief Altruïsme Nederland, the School for Moral Ambition and equivalents; consumer-facing effective giving at Giving What We Can, Doneer Effectief, De Geefrevolutie (formerly the Tien Procent Club). The boundary is deliberately narrow, and three exclusions carry it: (1) it is NOT "any job at an EA organisation" — a researcher at GiveWell or a campaigner at an ACE-recommended charity is filed under the problem their work serves; (2) fundraising or advocacy for a single operating charity\u2019s own programme is that charity\u2019s problem area, not this one; (3) field building aimed at ONE problem belongs to that problem, not here — an AI-safety fellowship, talent pipeline or research incubator such as Kairos is global-catastrophic-risks work, because the field it grows is AI safety rather than the movement as a whole. What lands here is cause-general: the community and the giving infrastructure that serve every problem on the board at once.',
+    'Growing the number of people who take these problems seriously and act on them, and the number who give effectively. Community building at the Centre for Effective Altruism, Effectief Altruïsme Nederland, the School for Moral Ambition and equivalents; cause-general career advice at 80,000 Hours, Probably Good, High Impact Professionals and equivalents; consumer-facing effective giving at Giving What We Can, Doneer Effectief, De Geefrevolutie (formerly the Tien Procent Club). The boundary is deliberately narrow, and three exclusions carry it: (1) it is NOT "any job at an EA organisation" — a researcher at GiveWell or a campaigner at an ACE-recommended charity is filed under the problem their work serves; (2) fundraising or advocacy for a single operating charity\u2019s own programme is that charity\u2019s problem area, not this one; (3) field building aimed at ONE problem belongs to that problem, not here — an AI-safety fellowship, talent pipeline or research incubator such as Kairos is global-catastrophic-risks work, because the field it grows is AI safety rather than the movement as a whole. What lands here is cause-general: the community and the giving infrastructure that serve every problem on the board at once.',
 }
 
 /**
@@ -112,7 +112,7 @@ export const SUB_AREAS_BY_CAUSE = {
     'moral-circle',
     'space-governance',
   ],
-  'movement-building': ['community-building', 'effective-giving'],
+  'movement-building': ['effective-careers', 'effective-giving', 'community-building'],
 } as const satisfies Record<CauseArea, readonly string[]>
 
 export const SUB_AREAS = Object.values(SUB_AREAS_BY_CAUSE).flat() as readonly SubArea[]
@@ -150,7 +150,9 @@ export const SUB_AREA_DEFINITIONS: Record<SubArea, string> = {
     'The quality, integrity and resilience of democratic institutions, including information environments. Unlike every other area on this board, DOMESTIC Dutch work counts here, and counts fully — a constitutional-law adviser in a ministry, a role at an advisory council such as the Raad voor het Openbaar Bestuur, work on electoral integrity or on the rules that constrain executive power. The reason for the exception: global health is judged by whose welfare the work serves, and a Dutch hospital serves Dutch people, whereas institutional quality is the precondition for a country handling every other problem on this board well — and it is decided nationally. The Netherlands also writes rules that reach far past it, through the EU. The bar is leverage, not location: this covers roles that SHAPE the rules and institutions, not roles that administer them. A raadadviseur on constitutional law belongs here; a communications officer or an HR-integrity adviser at the same ministry does not.',
   'moral-circle': 'Extending moral consideration — wild animals, invertebrates, digital minds.',
   'space-governance': 'Rules and institutions for activity beyond Earth.',
-  'community-building': 'Growing and supporting the community of people who work on these problems: national and university groups, events, fellowships, careers advice, the Centre for Effective Altruism, the School for Moral Ambition.',
+  'effective-careers':
+    'Helping people move into high-impact work on any problem on this board: cause-general career advice, coaching, mentoring, job boards and placement. 80,000 Hours, Probably Good, High Impact Professionals and equivalents. Career support aimed at one problem (an AI-safety career programme) belongs to that problem.',
+  'community-building': 'Growing and supporting the community of people who work on these problems: national and university groups, events, fellowships, the Centre for Effective Altruism, the School for Moral Ambition. Career advice and coaching belong in effective-careers.',
   'effective-giving': 'Public-facing effective giving: persuading people to donate and directing those donations well. Giving What We Can, Doneer Effectief, De Geefrevolutie (formerly the Tien Procent Club), pledge and platform work.',
 }
 
@@ -481,6 +483,7 @@ export const SUB_AREA_TITLES_NL: Record<SubArea, string> = {
   'democratic-institutions': 'Democratische instituties',
   'moral-circle': 'De morele cirkel',
   'space-governance': 'Ruimtebestuur',
+  'effective-careers': 'Effectieve loopbanen',
   'community-building': 'Community building',
   'effective-giving': 'Effectief geven',
 }
