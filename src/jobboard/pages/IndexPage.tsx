@@ -51,14 +51,21 @@ import {
   Section,
   TierHeading,
 } from '../components/Chrome'
-import { BandGrid, CauseGrid, SkillGrid, countFacets } from '../components/BrowseGrid'
+import { BandGrid, CauseGrid, LocationGrid, SkillGrid, countFacets } from '../components/BrowseGrid'
 import { BAND_ICONS, ExpandableCardList, TierJump } from '../components/ExpandableCardList'
 import { Icon } from '../components/Icon'
 import { routes, t, type Locale } from '../content/i18n'
 import { BANDS, bandOf, isBand, splitIntoBands, type Band } from '../lib/bands'
 import { getEarningToGiveListings, getLiveListings } from '../sanity/queries'
 import type { ListingView } from '../sanity/queries'
-import { CAUSE_AREAS, SUB_AREA_CAUSE, type CauseArea, type Skill, type SubArea } from '../taxonomy'
+import {
+  CAUSE_AREAS,
+  SUB_AREA_CAUSE,
+  type CauseArea,
+  type LocationMode,
+  type Skill,
+  type SubArea,
+} from '../taxonomy'
 import s from '../components/layout.module.css'
 import u from '../components/ui.module.css'
 
@@ -143,6 +150,8 @@ function selectionLabel(state: FilterState, locale: Locale): string | null {
     return copy.filteredBySubArea(copy.subAreas[state.subarea as SubArea])
   if (state.skill && state.skill in copy.skills)
     return copy.filteredBySkill(copy.skills[state.skill as Skill])
+  if (state.location && state.location in copy.locationModes)
+    return copy.filteredByLocation(copy.locationModes[state.location as LocationMode])
   if (state.cause && state.cause in copy.causeAreas)
     return copy.filteredByCause(copy.causeAreas[state.cause as CauseArea])
   // Least specific last: a band narrowed further by a cause is named by the cause.
@@ -214,9 +223,9 @@ export async function IndexPage({
         </Hero>
 
         {/*
-          Then three ways to narrow it, each a grid with live counts, under
+          Then four ways to narrow it, each a grid with live counts, under
           parallel headings so they read as one choice: by kind, by problem,
-          by skill.
+          by skill, by location.
 
           Two bands that used to sit above these were removed in October 2026
           at James's call: the international-first statement and the beta
@@ -245,6 +254,12 @@ export async function IndexPage({
               {copy.browseSkillBody} <span className={u.browseAside}>{copy.browseSkillAside}</span>
             </p>
             <SkillGrid locale={locale} counts={counts} />
+          </Section>
+
+          <Section>
+            <h2 className={u.browseHeading}>{copy.browseLocationHeading}</h2>
+            <p className={u.browseBody}>{copy.browseLocationBody}</p>
+            <LocationGrid locale={locale} counts={counts} />
           </Section>
 
           {/* One way onward for someone not ready to apply: the free course,

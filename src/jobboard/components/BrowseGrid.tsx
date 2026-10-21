@@ -42,9 +42,11 @@ import { routes, t, type Locale } from '../content/i18n'
 import { BANDS, type Band } from '../lib/bands'
 import {
   CAUSE_AREAS,
+  LOCATION_MODES,
   SKILLS,
   SUB_AREAS_BY_CAUSE,
   type CauseArea,
+  type LocationMode,
   type Skill,
   type SubArea,
 } from '../taxonomy'
@@ -61,6 +63,12 @@ const CAUSE_ICONS: Record<CauseArea, IconName> = {
   'global-catastrophic-risks': 'alert-hexagon',
   'better-futures': 'telescope',
   'movement-building': 'users-group',
+}
+
+const LOCATION_ICONS: Record<LocationMode, IconName> = {
+  remote: 'world',
+  'on-site-nl': 'map-pin',
+  'nl-flexible': 'building',
 }
 
 const SKILL_ICONS: Record<Skill, IconName> = {
@@ -81,6 +89,7 @@ export type BrowseCounts = {
   cause: Map<CauseArea, number>
   subArea: Map<SubArea, number>
   skill: Map<Skill, number>
+  location: Map<LocationMode, number>
 }
 
 /**
@@ -97,11 +106,13 @@ export function countFacets(
     secondaryCauses: CauseArea[]
     subArea: SubArea | null
     skills: Skill[]
+    locationMode: LocationMode | null
   }[],
 ): BrowseCounts {
   const cause = new Map<CauseArea, number>()
   const subArea = new Map<SubArea, number>()
   const skill = new Map<Skill, number>()
+  const location = new Map<LocationMode, number>()
   const bump = <K,>(m: Map<K, number>, k: K | null | undefined) => {
     if (k != null) m.set(k, (m.get(k) ?? 0) + 1)
   }
@@ -110,8 +121,9 @@ export function countFacets(
     for (const c of new Set([l.primaryCause, ...l.secondaryCauses])) bump(cause, c)
     bump(subArea, l.subArea)
     for (const s of new Set(l.skills)) bump(skill, s)
+    bump(location, l.locationMode)
   }
-  return { cause, subArea, skill }
+  return { cause, subArea, skill, location }
 }
 
 /**
@@ -294,6 +306,42 @@ export function BandGrid({
           {earningToGive === 0 ? copy.browseEmptyTile : copy.browseRoleCount(earningToGive)}
         </span>
       </Link>
+    </div>
+  )
+}
+
+/**
+ * The three location modes as tiles, in their fixed order rather than by
+ * count: there are only three, and remote, on site, mixed reads as a scale.
+ * Same tile as the skill grid, so the page reads as one choice.
+ */
+export function LocationGrid({ locale, counts }: { locale: Locale; counts: BrowseCounts }) {
+  const copy = t(locale)
+  const r = routes(locale)
+
+  return (
+    <div className={u.skillGrid}>
+      {LOCATION_MODES.map((mode) => {
+        const n = counts.location.get(mode) ?? 0
+        const inner = (
+          <>
+            <span className={u.skillTileIcon} aria-hidden="true">
+              <Icon name={LOCATION_ICONS[mode]} />
+            </span>
+            <span className={u.skillTileName}>{copy.locationModes[mode]}</span>
+            <span className={u.skillTileCount}>{n > 0 ? n : '—'}</span>
+          </>
+        )
+        return n > 0 ? (
+          <Link key={mode} href={`${r.index}?location=${mode}`} className={u.skillTile}>
+            {inner}
+          </Link>
+        ) : (
+          <span key={mode} className={`${u.skillTile} ${u.skillTileEmpty}`}>
+            {inner}
+          </span>
+        )
+      })}
     </div>
   )
 }

@@ -307,6 +307,8 @@ type Strings = {
   browseSkillHeading: string
   browseSkillBody: string
   browseSkillAside: string
+  browseLocationHeading: string
+  browseLocationBody: string
   browseRoleCount: (n: number) => string
   browseEmptyTile: string
   browseShowAll: (n: number) => string
@@ -314,6 +316,7 @@ type Strings = {
   filteredByCause: (label: string) => string
   filteredBySubArea: (label: string) => string
   filteredBySkill: (label: string) => string
+  filteredByLocation: (label: string) => string
 
   /*
     Feedback (August 2026; widened from suggestions-only in September 2026).
@@ -696,6 +699,8 @@ const nl: Strings = {
   browseSkillBody:
     'Als het je niet uitmaakt aan welk probleem je werkt, maar je wel weet waar je goed in bent.',
   browseSkillAside: 'Dezelfde indeling die Probably Good gebruikt.',
+  browseLocationHeading: 'Kies op locatie',
+  browseLocationBody: 'Waar je wilt werken: thuis, op locatie in Nederland of een mix van beide.',
   browseRoleCount: (n) => (n === 1 ? '1 vacature' : `${n} vacatures`),
   browseEmptyTile: 'Nu niets open',
   browseShowAll: (n) => `Bekijk alle ${n} vacatures`,
@@ -703,6 +708,8 @@ const nl: Strings = {
   filteredByCause: (label) => label,
   filteredBySubArea: (label) => label,
   filteredBySkill: (label) => `Vaardigheid: ${label.toLowerCase()}`,
+  // The label as written: lowercasing would turn Nederland into nederland.
+  filteredByLocation: (label) => label,
 
   feedbackTitle: 'Wat vind je van dit bord?',
   feedbackLead:
@@ -1171,6 +1178,8 @@ const en: Strings = {
   browseSkillBody:
     'For when the problem matters less to you than what you are good at.',
   browseSkillAside: 'The same categories Probably Good uses.',
+  browseLocationHeading: 'Browse by location',
+  browseLocationBody: 'Where you want to work: from home, on site in the Netherlands, or a mix of both.',
   browseRoleCount: (n) => (n === 1 ? '1 job' : `${n} jobs`),
   browseEmptyTile: 'Nothing open now',
   browseShowAll: (n) => `See all ${n} jobs`,
@@ -1178,6 +1187,7 @@ const en: Strings = {
   filteredByCause: (label) => label,
   filteredBySubArea: (label) => label,
   filteredBySkill: (label) => `Skill: ${label.toLowerCase()}`,
+  filteredByLocation: (label) => label,
 
   feedbackTitle: 'What do you make of this board?',
   feedbackLead:
