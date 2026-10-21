@@ -390,6 +390,7 @@ export async function loadCandidates(db: Db, options: ClassifyOptions): Promise<
       e2g_allowlisted: boolean | null
       e2g_salary_presumed: boolean | null
       recommender_allowlisted: boolean | null
+      employer_cause_areas: string[] | null
     }
   >(
     `select l.id, l.title, l.employer_name, l.location_raw, l.country, l.description,
@@ -397,7 +398,8 @@ export async function loadCandidates(db: Db, options: ClassifyOptions): Promise<
             l.salary_period, l.listing_kind,
             ${STAGE1_INPUT_SIG} as stage1_sig,
             e.leverage_note      as employer_leverage_note,
-            e.e2g_allowlisted, e.e2g_salary_presumed, e.recommender_allowlisted
+            e.e2g_allowlisted, e.e2g_salary_presumed, e.recommender_allowlisted,
+            e.cause_areas        as employer_cause_areas
        from listing l
        join source s on s.id = l.source_id
        left join employer e on e.id = l.employer_id
@@ -463,6 +465,7 @@ export async function loadCandidates(db: Db, options: ClassifyOptions): Promise<
           e2g_allowlisted: r.e2g_allowlisted ?? false,
           e2g_salary_presumed: r.e2g_salary_presumed ?? false,
           recommender_allowlisted: r.recommender_allowlisted ?? false,
+          cause_areas: r.employer_cause_areas ?? [],
         } satisfies EmployerGateFlags)
       : null,
   }))

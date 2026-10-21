@@ -1338,9 +1338,11 @@ export const SEED_EMPLOYERS: SeedEmployer[] = [
     careersUrl: 'https://www.ambitiousimpact.com/careers',
     city: 'London',
     ats: null,
-    // Its research splits by cause (global health, animal welfare); talent,
-    // marketing and operations serve the incubator as a whole.
-    causeAreas: ['global-health-wellbeing', 'farmed-animal-welfare', 'movement-building'],
+    // The charities it incubates work on global health and animal welfare, so
+    // every role here is filed under those two, including talent, marketing
+    // and operations (James, October 2026). Not movement-building: it grows
+    // charities for two problems, not the movement as a whole.
+    causeAreas: ['global-health-wellbeing', 'farmed-animal-welfare'],
     leverageNote:
       'Het incubatieprogramma achter ruim zestig goededoelenorganisaties, waarvan verschillende door GiveWell en Animal Charity Evaluators worden aanbevolen.',
     recommenderAllowlisted: true,

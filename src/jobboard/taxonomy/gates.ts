@@ -58,6 +58,11 @@ export type EmployerGateFlags = {
   e2g_allowlisted: boolean
   e2g_salary_presumed: boolean
   recommender_allowlisted: boolean
+  /**
+   * The employer's curated cause areas from the seed. Optional because the
+   * pre-classification callers do not need it. Empty means "not decided".
+   */
+  cause_areas?: readonly string[]
 }
 
 export type ListingSalary = {
@@ -221,7 +226,43 @@ export function enforceGates(
     primaryCause = null
   }
 
+  /*
+    The employer's seeded cause areas outrank the model on movement-building,
+    the same rule backfill-browse applies. GiveDirectly and GiveWell are seeded
+    global-health-wellbeing, and the model kept filing their partnerships,
+    fundraising and outreach roles under movement-building anyway: the word
+    "giving" pulls it there. An employer with a non-empty seed that omits
+    movement-building cannot have listings there; the listing goes to the
+    employer's first seeded cause instead, with the rest of its seed as
+    secondary causes: an AIM role sits under both global health and animal
+    welfare because the charities it incubates work on both. An empty seed
+    means "not decided", so CEA and 80,000 Hours stay eligible.
+  */
+  const seeded = employer?.cause_areas ?? []
+  const movementBuildingBlocked =
+    seeded.length > 0 && !seeded.includes('movement-building')
+  const reroutedFromMovementBuilding =
+    primaryCause === 'movement-building' && movementBuildingBlocked
+  if (reroutedFromMovementBuilding) {
+    const fallback = seeded.find((c) => causes.has(c as CauseArea)) ?? null
+    violations.push({
+      field: 'primaryCause',
+      value: 'movement-building',
+      reason: `employer is seeded ${seeded.join(', ')}, not movement-building`,
+    })
+    primaryCause = fallback
+  }
+
   const secondaryCauses = result.secondaryCauses.filter((c) => {
+    if (c === 'movement-building' && movementBuildingBlocked) {
+      violations.push({
+        field: 'secondaryCauses',
+        value: c,
+        reason: `employer is seeded ${seeded.join(', ')}, not movement-building`,
+      })
+      return false
+    }
+    if (c === primaryCause) return false
     if (causes.has(c as CauseArea)) return true
     violations.push({
       field: 'secondaryCauses',
@@ -230,6 +271,13 @@ export function enforceGates(
     })
     return false
   })
+  if (reroutedFromMovementBuilding) {
+    for (const c of seeded) {
+      if (c !== primaryCause && causes.has(c as CauseArea) && !secondaryCauses.includes(c)) {
+        secondaryCauses.push(c)
+      }
+    }
+  }
 
   let leverage = result.leverage
   if (leverage && !leverages.has(leverage as LeverageType)) {
