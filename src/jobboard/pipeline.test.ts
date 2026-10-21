@@ -281,6 +281,58 @@ test('movement-building excludes field building aimed at a single problem', () =
   }
 })
 
+test('GiveDirectly and GiveWell listings are filed under global health, never movement-building', () => {
+  // The model kept filing GiveDirectly's partnerships and GiveWell's outreach
+  // roles under movement-building because of the word "giving". Both are
+  // seeded global-health-wellbeing, and enforceGates now lets that seed win.
+  for (const id of ['givedirectly', 'givewell']) {
+    const org = SEED_EMPLOYERS.find((e) => e.id === id)
+    assert.ok(org, `${id} must stay in the seed`)
+    assert.equal(org.causeAreas[0], 'global-health-wellbeing')
+    assert.ok(!org.causeAreas.includes('movement-building'))
+
+    const result = enforceGates(
+      {
+        primaryCause: 'movement-building',
+        secondaryCauses: ['movement-building', 'global-health-wellbeing'],
+        leverage: 'direct-work',
+      },
+      { ...noFlags, cause_areas: org.causeAreas },
+      { salary_max: null, salary_currency: null },
+    )
+    assert.equal(result.primaryCause, 'global-health-wellbeing')
+    assert.deepEqual(result.secondaryCauses, [])
+    assert.equal(result.violations.length, 2)
+  }
+})
+
+test('AIM listings are filed under global health and animal welfare', () => {
+  // AIM incubates charities in both areas, so a talent or operations role the
+  // model calls movement-building lands under both, not under the movement.
+  const aim = SEED_EMPLOYERS.find((e) => e.id === 'ambitious-impact')
+  assert.ok(aim, 'AIM must stay in the seed')
+  assert.deepEqual(aim.causeAreas, ['global-health-wellbeing', 'farmed-animal-welfare'])
+
+  const result = enforceGates(
+    { primaryCause: 'movement-building', secondaryCauses: [], leverage: 'direct-work' },
+    { ...noFlags, cause_areas: aim.causeAreas },
+    { salary_max: null, salary_currency: null },
+  )
+  assert.equal(result.primaryCause, 'global-health-wellbeing')
+  assert.deepEqual(result.secondaryCauses, ['farmed-animal-welfare'])
+})
+
+test('an unseeded employer can still be filed under movement-building', () => {
+  // An empty seed means "not decided", so CEA and 80,000 Hours stay eligible.
+  const result = enforceGates(
+    { primaryCause: 'movement-building', secondaryCauses: [], leverage: 'direct-work' },
+    { ...noFlags, cause_areas: [] },
+    { salary_max: null, salary_currency: null },
+  )
+  assert.equal(result.primaryCause, 'movement-building')
+  assert.equal(result.violations.length, 0)
+})
+
 test('domestic Dutch work counts for democratic institutions, and only there', () => {
   /*
     The board's one deliberate asymmetry, decided August 2026.
