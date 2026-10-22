@@ -5,22 +5,18 @@
  * first-time visitors land from search. Design it to work with no prior
  * context."
  *
- * Layout order is load-bearing: the one-line frame, then whyThisMattersNl in a
- * visually distinct block, then the neutral excerpt, then the eligibility table,
- * then the outbound apply button, then the employer and cause links, then one
- * quiet onward step.
+ * Rebuilt October 2026. The apply button used to sit below three stacked
+ * caveats, the editorial note and a requirements table that was mostly
+ * "Unclear" and "Not stated". Now: title, employer and the apply button
+ * together; then our reason, with the beta caveat attached to it rather than
+ * above it; then the excerpt. Known facts go in a side column and unknown ones
+ * are left out — a row saying we do not know is not information. The
+ * look-elsewhere-first line stays on every listing, in that column.
  */
 
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import {
-  BetaNote,
-  Container,
-  FeedbackBand,
-  InternationalNote,
-  OnwardStep,
-  Section,
-} from '../components/Chrome'
+import { Container, InternationalNote, OnwardStep, Section } from '../components/Chrome'
 import { Icon } from '../components/Icon'
 import { excerptFor, noteFor, salaryFor } from '../components/ListingCard'
 import { Callout } from '../components/Prose'
@@ -46,40 +42,20 @@ export function isExpired(listing: ListingView): boolean {
   return new Date(listing.expiresAt).getTime() < Date.now()
 }
 
-function EligibilityTable({ listing, locale }: { listing: ListingView; locale: Locale }) {
+/** Only what we know. Warnings (Dutch required, screening) render as badges. */
+function factsFor(listing: ListingView, locale: Locale) {
   const copy = t(locale)
   const rows: { label: string; value: string; warn?: boolean }[] = []
 
-  if (listing.languageRequirement) {
-    rows.push({
-      label: copy.labelLanguage,
-      value: copy.languageRequirements[listing.languageRequirement],
-      warn: listing.languageRequirement === 'dutch-required',
-    })
-  }
-  if (listing.workAuthorisation) {
-    rows.push({
-      label: copy.labelWorkAuth,
-      value: copy.workAuthorisations[listing.workAuthorisation],
-      warn: listing.workAuthorisation === 'dutch-nationality-required',
-    })
-  }
-  rows.push({
-    label: copy.labelScreening,
-    value: listing.securityScreening
-      ? [copy.screeningYes, listing.securityNote].filter(Boolean).join(' — ')
-      : copy.screeningNo,
-    warn: Boolean(listing.securityScreening),
-  })
   // A programme held abroad has no location mode — none of the three describe
   // a residency in Berkeley — so it shows its city on its own.
-  if (!listing.locationMode && listing.listingKind === 'programme' && listing.locationCity) {
-    rows.push({ label: copy.labelLocation, value: listing.locationCity })
-  }
-  if (listing.locationMode) {
+  if (listing.locationMode || listing.locationCity) {
     rows.push({
       label: copy.labelLocation,
-      value: [copy.locationModes[listing.locationMode], listing.locationCity]
+      value: [
+        listing.locationMode ? copy.locationModes[listing.locationMode] : null,
+        listing.locationCity,
+      ]
         .filter(Boolean)
         .join(' · '),
     })
@@ -87,34 +63,57 @@ function EligibilityTable({ listing, locale }: { listing: ListingView; locale: L
   if (listing.seniority) {
     rows.push({ label: copy.labelSeniority, value: copy.seniorities[listing.seniority] })
   }
-  rows.push({
-    label: listing.listingKind === 'programme' ? copy.detailStipend : copy.detailSalary,
-    value: salaryFor(listing, copy) ?? copy.detailSalaryUnknown,
-  })
+  const salary = salaryFor(listing, copy)
+  if (salary) {
+    rows.push({
+      label: listing.listingKind === 'programme' ? copy.detailStipend : copy.detailSalary,
+      value: salary,
+    })
+  }
+  if (listing.languageRequirement && listing.languageRequirement !== 'unclear') {
+    rows.push({
+      label: copy.labelLanguage,
+      value: copy.languageRequirements[listing.languageRequirement],
+      warn: listing.languageRequirement === 'dutch-required',
+    })
+  }
+  if (listing.workAuthorisation && listing.workAuthorisation !== 'unclear') {
+    rows.push({
+      label: copy.labelWorkAuth,
+      value: copy.workAuthorisations[listing.workAuthorisation],
+      warn: listing.workAuthorisation === 'dutch-nationality-required',
+    })
+  }
+  if (listing.securityScreening) {
+    rows.push({
+      label: copy.labelScreening,
+      value: [copy.screeningYes, listing.securityNote].filter(Boolean).join(' — '),
+      warn: true,
+    })
+  }
+  const deadline = formatDate(listing.deadlineAt, locale)
+  if (deadline) rows.push({ label: copy.detailDeadline, value: deadline })
   const posted = formatDate(listing.postedAt, locale)
   if (posted) rows.push({ label: copy.detailPostedAt, value: posted })
-  rows.push({
-    label: copy.detailDeadline,
-    value: formatDate(listing.deadlineAt, locale) ?? copy.detailNoDeadline,
-  })
+  return rows
+}
 
+function ApplyButton({ listing, locale, wide }: { listing: ListingView; locale: Locale; wide?: boolean }) {
+  const copy = t(locale)
   return (
-    <table className={u.factTable}>
-      <tbody>
-        {rows.map((row) => (
-          <tr key={row.label}>
-            <th scope="row">{row.label}</th>
-            <td>
-              {row.warn ? (
-                <span className={`${u.badge} ${u.badgeWarning}`}>{row.value}</span>
-              ) : (
-                row.value
-              )}
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
+    // Outbound clicks go through a server-side redirect so the count survives
+    // ad blockers (§9.7).
+    <a
+      className={`${u.btn} ${u.btnSolid} ${wide ? u.btnFull : ''}`}
+      href={`/api/jobs/${encodeURIComponent(listing.id)}/apply?locale=${locale}`}
+      rel="noopener"
+      // Read by ApplyClickTracker for the apply_click conversion.
+      data-apply-listing={listing.id}
+      data-apply-employer={listing.employer?.name}
+    >
+      {copy.detailApply}
+      <Icon name="external-link" />
+    </a>
   )
 }
 
@@ -127,179 +126,156 @@ export async function DetailPage({ locale, slug }: { locale: Locale; slug: strin
   const note = noteFor(listing, locale)
   const excerpt = excerptFor(listing, locale)
   const expired = isExpired(listing)
+  const facts = factsFor(listing, locale)
 
   return (
     <Container>
       <Section first>
-        <div className={s.prose}>
-          <h1 className={s.heroTitle}>{listing.title}</h1>
-          <p className={u.cardMeta} style={{ marginTop: 'var(--space-3)' }}>
-            {listing.employer ? (
-              <span className={u.cardMetaItem}>
-                <Icon name="building" />
-                {listing.employer.name}
-              </span>
-            ) : null}
-            {listing.locationCity ? (
-              <span className={u.cardMetaItem}>
-                <Icon name="map-pin" />
-                {listing.locationCity}
-              </span>
-            ) : null}
-            {listing.primaryCause ? (
-              <Link href={r.cause(listing.primaryCause)} className={`${u.badge} ${u.badgeCause}`}>
-                {copy.causeAreas[listing.primaryCause]}
-              </Link>
-            ) : null}
-            {/* Sub-area and skills, both linking back into the filtered index.
-                The leverage archetype used to sit here; it is internal now. */}
-            {listing.subArea ? (
-              <Link
-                href={`${r.index}?subarea=${listing.subArea}`}
-                className={`${u.badge} ${u.badgeCause}`}
-              >
-                {copy.subAreas[listing.subArea]}
-              </Link>
-            ) : null}
-            {listing.skills.map((skill) => (
-              <Link
-                key={skill}
-                href={`${r.index}?skill=${skill}`}
-                className={`${u.badge} ${u.badgeOutline}`}
-              >
-                {copy.skills[skill]}
-              </Link>
-            ))}
-          </p>
-        </div>
-      </Section>
-
-      <Section tight>
-        <div className={s.prose}>
-          {expired ? (
-            <div style={{ marginBottom: 'var(--space-6)' }}>
-              <Callout tone="warning" icon="alert-triangle">
-                <strong>{copy.expiredHeading}</strong>
-                <br />
-                {copy.expiredBody}
-              </Callout>
-            </div>
-          ) : null}
-
-          {/* The one-line frame. Always present, costs almost nothing, and turns
-              an unexplained editorial judgement into an invitation (§9.5). */}
-          <p className={u.frame}>
-            {copy.detailFrame}{' '}
-            <Link href={r.method}>
-              {copy.detailFrameLink} <Icon name="arrow-right" />
+        <h1 className={u.detailTitle}>{listing.title}</h1>
+        <p className={u.detailMeta}>
+          {listing.employer ? (
+            <Link href={r.employer(listing.employer.slug)} className={u.cardMetaItem}>
+              <Icon name="building" />
+              {listing.employer.name}
             </Link>
-          </p>
-
-          {/* Most visitors arrive here rather than at the index, so the
-              look-elsewhere-first point has to be made on this page too — in one
-              line, above our own editorial pitch rather than after it. */}
-          <InternationalNote locale={locale} />
-
-          {/* Directly above the editorial note, because that note is what the
-              caveat is about. This page is where most readers arrive and where
-              a single sentence of our judgement carries the most weight, so it
-              is also where saying "and we might have this wrong" is worth the
-              line it costs. */}
-          <BetaNote locale={locale} />
-
-          {/* THE editorial field, above the role summary, visually distinct. */}
-          {note ? (
-            <div className={u.whyBlock}>
-              <h2 className={u.whyHeading}>{copy.detailWhyHeading}</h2>
-              <p className={u.whyText}>{note}</p>
-            </div>
           ) : null}
-
-          {excerpt ? (
-            <>
-              <h2 className={s.sectionHeading}>{copy.detailAboutHeading}</h2>
-              {/* Deliberately an excerpt, not the full description: link out
-                  instead. Both the legal norm among aggregators (§10) and the
-                  right product decision — we are not trying to keep people on
-                  the page. */}
-              <p style={{ color: 'var(--fg-muted)', lineHeight: 'var(--lh-relaxed)' }}>
-                {excerpt}
-              </p>
-            </>
+          {listing.locationCity ? (
+            <span className={u.cardMetaItem}>
+              <Icon name="map-pin" />
+              {listing.locationCity}
+            </span>
           ) : null}
-        </div>
+        </p>
+
+        {expired ? (
+          <div className={u.detailExpired}>
+            <Callout tone="warning" icon="alert-triangle">
+              <strong>{copy.expiredHeading}</strong>
+              <br />
+              {copy.expiredBody}
+            </Callout>
+          </div>
+        ) : (
+          <div className={u.detailApply}>
+            <ApplyButton listing={listing} locale={locale} />
+            <span className={u.detailApplyNote}>{copy.detailApplyNote}</span>
+          </div>
+        )}
+
+        {/* Cause, sub-area and skills, each linking back into the filtered
+            index. The leverage archetype used to sit here; it is internal now. */}
+        <p className={u.detailTags}>
+          {listing.primaryCause ? (
+            <Link href={r.cause(listing.primaryCause)} className={`${u.badge} ${u.badgeCause}`}>
+              {copy.causeAreas[listing.primaryCause]}
+            </Link>
+          ) : null}
+          {listing.subArea ? (
+            <Link
+              href={`${r.index}?subarea=${listing.subArea}`}
+              className={`${u.badge} ${u.badgeCause}`}
+            >
+              {copy.subAreas[listing.subArea]}
+            </Link>
+          ) : null}
+          {listing.skills.map((skill) => (
+            <Link
+              key={skill}
+              href={`${r.index}?skill=${skill}`}
+              className={`${u.badge} ${u.badgeOutline}`}
+            >
+              {copy.skills[skill]}
+            </Link>
+          ))}
+        </p>
       </Section>
 
       <Section tight>
-        <div className={s.prose}>
-          <h2 className={s.sectionHeading}>{copy.detailEligibilityHeading}</h2>
-          <EligibilityTable listing={listing} locale={locale} />
+        <div className={u.detailLayout}>
+          <div className={u.detailMain}>
+            {/* THE editorial field, first and visually distinct, with the
+                caveat about it underneath rather than stacked above it. */}
+            {note ? (
+              <div className={u.whyBlock}>
+                <h2 className={u.whyHeading}>{copy.detailWhyHeading}</h2>
+                <p className={u.whyText}>{note}</p>
+                <p className={u.whyCaveat}>
+                  <Icon name="flask" />
+                  <span>
+                    {copy.detailWhyCaveat}{' '}
+                    <Link href={r.suggest}>{copy.betaShortLink}</Link>
+                    {' · '}
+                    <Link href={r.method}>{copy.detailFrameLink}</Link>
+                  </span>
+                </p>
+              </div>
+            ) : null}
 
-          {listing.mentions30PercentRuling ? (
-            <div style={{ marginTop: 'var(--space-6)' }}>
-              <Callout icon="coin">
-                <strong>{copy.detailThirtyPercent}</strong>
-                <br />
-                {/* A flag, never a computed figure — this is the easiest place
-                    on the board to accidentally give bad financial advice
-                    (§5.3). */}
-                {copy.detailThirtyPercentNote}
-              </Callout>
-            </div>
-          ) : null}
-        </div>
-      </Section>
+            {excerpt ? (
+              <>
+                <h2 className={u.detailHeading}>{copy.detailAboutHeading}</h2>
+                {/* Deliberately an excerpt, not the full description: link out
+                    instead. Both the legal norm among aggregators (§10) and the
+                    right product decision — we are not trying to keep people on
+                    the page. */}
+                <p className={u.detailExcerpt}>{excerpt}</p>
+              </>
+            ) : null}
 
-      <Section tight>
-        <div className={s.prose}>
-          {!expired ? (
-            <>
-              {/* Outbound clicks go through a server-side redirect so the count
-                  survives ad blockers (§9.7). */}
-              <a
-                className={`${u.btn} ${u.btnSolid}`}
-                href={`/api/jobs/${encodeURIComponent(listing.id)}/apply?locale=${locale}`}
-                rel="noopener"
-                // Read by ApplyClickTracker for the apply_click conversion.
-                data-apply-listing={listing.id}
-                data-apply-employer={listing.employer?.name}
-              >
-                {copy.detailApply}
-                <Icon name="external-link" />
+            {listing.mentions30PercentRuling ? (
+              <div className={u.detailCallout}>
+                <Callout icon="coin">
+                  <strong>{copy.detailThirtyPercent}</strong>
+                  <br />
+                  {/* A flag, never a computed figure — this is the easiest place
+                      on the board to accidentally give bad financial advice
+                      (§5.3). */}
+                  {copy.detailThirtyPercentNote}
+                </Callout>
+              </div>
+            ) : null}
+
+            <p className={u.linkRow}>
+              {listing.employer ? (
+                <Link href={r.employer(listing.employer.slug)}>
+                  {copy.detailEmployerLink(listing.employer.name)}
+                </Link>
+              ) : null}
+              {listing.primaryCause ? (
+                <Link href={r.cause(listing.primaryCause)}>{copy.detailCauseLink}</Link>
+              ) : null}
+              <a href={ONWARD_LINKS.glossary}>
+                {locale === 'nl' ? 'Begrippenlijst' : 'Glossary'}
               </a>
-              <p
-                style={{
-                  marginTop: 'var(--space-3)',
-                  fontSize: 'var(--text-sm)',
-                  color: 'var(--fg-subtle)',
-                }}
-              >
-                {copy.detailApplyNote}
-              </p>
-            </>
-          ) : null}
+            </p>
+          </div>
 
-          <p className={u.linkRow}>
-            {listing.employer ? (
-              <Link href={r.employer(listing.employer.slug)}>
-                {copy.detailEmployerLink(listing.employer.name)}
-              </Link>
+          <aside className={u.detailAside}>
+            {facts.length ? (
+              <div className={u.factCard}>
+                <h2 className={u.factCardHeading}>{copy.detailFactsHeading}</h2>
+                <dl className={u.factList}>
+                  {facts.map((row) => (
+                    <div key={row.label}>
+                      <dt>{row.label}</dt>
+                      <dd>
+                        {row.warn ? (
+                          <span className={`${u.badge} ${u.badgeWarning}`}>{row.value}</span>
+                        ) : (
+                          row.value
+                        )}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+                {!expired ? <ApplyButton listing={listing} locale={locale} wide /> : null}
+              </div>
             ) : null}
-            {listing.primaryCause ? (
-              <Link href={r.cause(listing.primaryCause)}>{copy.detailCauseLink}</Link>
-            ) : null}
-            <a href={ONWARD_LINKS.glossary}>
-              {locale === 'nl' ? 'Begrippenlijst' : 'Glossary'}
-            </a>
-          </p>
+            {/* Most visitors arrive here rather than at the index, so the
+                look-elsewhere-first point is made on this page too. */}
+            <InternationalNote locale={locale} />
+          </aside>
         </div>
-      </Section>
-
-      {/* A reader who has got this far has read our argument for one specific
-          role and formed a view about it. That is the most informed feedback
-          anyone on the board can give us, and this is the moment they hold it. */}
-      <Section tight>
-        <FeedbackBand locale={locale} />
       </Section>
 
       <Section tight>
