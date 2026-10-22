@@ -379,10 +379,10 @@
 }
 
 /* ---- Onward step (§9.3). Offered once, at the foot, never a modal. ---- */
+/* Always rendered inside a Section, which draws the dashed rule above it.
+   This used to draw its own as well, so every page ended in two rules with
+   an empty band between them. */
 .onward {
-  border-top: var(--rule-dashed);
-  margin-top: var(--space-12);
-  padding-top: var(--space-8);
   max-width: var(--container-prose);
 }
 
@@ -457,6 +457,9 @@
 }
 
 .uncertaintyBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
   color: var(--fg-muted);
   white-space: pre-line;
 }
@@ -627,6 +630,12 @@
   font-size: var(--text-sm);
   color: var(--fg-muted);
   margin-bottom: var(--space-6);
+}
+
+.intlShort svg {
+  flex: none;
+  margin-top: 0.2em;
+  color: var(--primary-fg);
 }
 
 .climateNote {
@@ -1568,5 +1577,287 @@
   display: inline-flex;
   align-items: center;
   gap: var(--space-1-5);
+  font-weight: var(--fw-medium);
+}
+
+/* ============================================================
+   The method page, rewritten October 2026
+   ------------------------------------------------------------
+   Three numbered checks as cards, the five problems as chips
+   under them, and the two "what is missing" notes side by side.
+   ============================================================ */
+
+.checkList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 48rem) {
+  .checkList {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.check {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-5);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--bg);
+  box-shadow: var(--card-elevated-shadow);
+  scroll-margin-top: var(--space-24);
+}
+
+.checkNum {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--space-8);
+  height: var(--space-8);
+  border-radius: var(--radius-full);
+  background: var(--primary-muted);
+  color: var(--primary-fg);
+  font-weight: var(--fw-semibold);
+  font-size: var(--text-sm);
+}
+
+.checkTitle {
+  font-size: var(--text-lg);
+}
+
+.checkBody {
+  font-size: var(--text-sm);
+  color: var(--fg-muted);
+  line-height: var(--lh-relaxed);
+}
+
+.checkCausesLabel {
+  margin: var(--space-6) 0 var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: var(--fw-semibold);
+  color: var(--fg-muted);
+}
+
+.readMoreLead {
+  margin-top: var(--space-6);
+  font-size: var(--text-sm);
+  color: var(--fg-muted);
+}
+
+.readMoreList {
+  list-style: none;
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
+  font-size: var(--text-sm);
+}
+
+.readMoreList a {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1-5);
+  font-weight: var(--fw-medium);
+}
+
+.noteGrid {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: 1fr;
+  align-items: start;
+}
+
+@media (min-width: 48rem) {
+  .noteGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.noteGrid > * {
+  margin: 0;
+  max-width: none;
+}
+
+/* ============================================================
+   The listing page, rebuilt October 2026
+   ------------------------------------------------------------
+   Header with the apply button in it; a main column (our reason,
+   then the excerpt) and a side column of known facts. Stacks on
+   narrow screens with the facts after the reason.
+   ============================================================ */
+
+.detailTitle {
+  font-size: var(--text-3xl);
+  line-height: var(--lh-tighter);
+  max-width: 32ch;
+}
+
+@media (min-width: 48rem) {
+  .detailTitle {
+    font-size: var(--text-4xl);
+  }
+}
+
+.detailMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
+  margin-top: var(--space-3);
+  color: var(--fg-muted);
+}
+
+.detailMeta a {
+  color: inherit;
+  font-weight: var(--fw-medium);
+}
+
+.detailMeta a:hover {
+  color: var(--link-hover);
+}
+
+.detailApply {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3) var(--space-4);
+  margin-top: var(--space-6);
+}
+
+.detailApplyNote {
+  font-size: var(--text-sm);
+  color: var(--fg-muted);
+}
+
+.detailExpired {
+  margin-top: var(--space-6);
+  max-width: var(--container-prose);
+}
+
+.detailTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-6);
+}
+
+.detailLayout {
+  display: grid;
+  gap: var(--space-8);
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+}
+
+@media (min-width: 56rem) {
+  .detailLayout {
+    grid-template-columns: minmax(0, 1fr) 18rem;
+    gap: var(--space-10);
+  }
+}
+
+.detailMain .whyBlock {
+  margin-bottom: var(--space-8);
+}
+
+.whyCaveat {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: var(--rule-dashed);
+  font-size: var(--text-sm);
+  color: var(--fg-muted);
+}
+
+.whyCaveat svg {
+  flex: none;
+  margin-top: 0.2em;
+  color: var(--primary-fg);
+}
+
+.detailHeading {
+  font-size: var(--text-xl);
+  margin-bottom: var(--space-2);
+}
+
+.detailExcerpt {
+  color: var(--fg-muted);
+  line-height: var(--lh-relaxed);
+  max-width: 62ch;
+}
+
+.detailCallout {
+  margin-top: var(--space-6);
+}
+
+.detailAside {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+@media (min-width: 56rem) {
+  .detailAside {
+    position: sticky;
+    top: var(--space-24);
+  }
+}
+
+.detailAside .intlShort {
+  margin-bottom: 0;
+}
+
+.factCard {
+  padding: var(--space-5);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--bg);
+  box-shadow: var(--card-elevated-shadow);
+}
+
+.factCardHeading {
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: var(--fw-semibold);
+  color: var(--fg-muted);
+  margin-bottom: var(--space-3);
+}
+
+.factList {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: var(--space-5);
+  font-size: var(--text-sm);
+}
+
+.factList > div {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-0-5);
+  padding: var(--space-2-5) 0;
+  border-bottom: 1px solid var(--border-muted);
+}
+
+.factList > div:first-child {
+  padding-top: 0;
+}
+
+.factList > div:last-child {
+  border-bottom: none;
+}
+
+.factList dt {
+  color: var(--fg-muted);
+}
+
+.factList dd {
+  margin: 0;
   font-weight: var(--fw-medium);
 }

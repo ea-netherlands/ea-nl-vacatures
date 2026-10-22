@@ -228,75 +228,28 @@ type Strings = {
   e2gBandProfitForGood: string
 
   /*
-    The method page's argument, in three movements before leverage
-    (September 2026).
+    The method page, rewritten October 2026.
 
-    The page used to open with operational detail — here are our four
-    questions, here are our five areas — which answers "what do you do" without
-    ever answering "why should choosing a problem be the thing you agonise
-    over". A reader who does not already hold that premise has no reason to
-    care about the rest of the page.
-
-    So the arc is now: why the problem you pick dominates your impact → which
-    problems we therefore picked → why the solution within a problem matters
-    nearly as much → and only then how a particular job contributes. Each
-    movement sets up the next, and the fourth is the leverage block below.
-
-    In i18n rather than in the generated Sanity prose for two reasons. The
-    English method page has no Sanity body at all, so anything written there is
-    Dutch-only; and this argument is the spine the taxonomy is built on, so it
-    should be versioned in the repo next to the taxonomy rather than
-    regenerable prose.
-
-    Built on 80,000 Hours' framework and cited. Their material may NOT be
-    reproduced — see ./sources — so this is our argument in our sentences, with
-    their figures attributed to them and their articles linked. The Dutch
-    detail is the part they could not have written.
+    It used to be a 2,500-word essay in five movements (why the problem matters,
+    ITN, our five areas, solutions, eight leverage mechanisms), and it still
+    described the two-tier index the October bands replaced. Readers arrive here
+    from "How we choose" with one question — how does a job get on this board? —
+    so the page now answers that in three checks and the four kinds of role, and
+    hands the full argument to 80,000 Hours, whose argument it is. Their material
+    may NOT be reproduced (see ./sources), so this stays our sentences.
   */
-  problemChoiceHeading: string
-  problemChoiceLead: string
-  problemChoiceBody: string[]
-  problemChoiceSourceNote: string
-  problemChoiceLink: string
-
-  pressingHeading: string
-  pressingLead: string
-  pressingOutro: string
-
-  solutionsHeading: string
-  solutionsLead: string
-  solutionsBody: string[]
-  solutionsTests: { label: string; example: string }[]
-  solutionsSourceNote: string
-  solutionsLink: string
-
-  /*
-    The leverage section on the method page (September 2026).
-
-    The board's second tier rests entirely on this word, and until now the site
-    used it — in the hero, in the tier heading, on the fourth ITN card — without
-    ever explaining it. A reader who does not hold the concept cannot tell why a
-    bank is on an effective-altruism job board, and will reasonably conclude we
-    are padding the list.
-
-    The mechanisms mirror `LEVERAGE_TYPES` in ../taxonomy one-for-one, minus the
-    three that are not mechanisms (direct work, career capital, and the
-    provenance label). That correspondence is the point: the thing we explain to
-    readers and the thing the classifier scores are now the same list, so the
-    page cannot drift from the judgement it describes.
-
-    Written from 80,000 Hours' framework and cited as such. Their material may
-    NOT be reproduced — see ./sources — so every sentence here is ours, and the
-    Dutch examples are the part they could not have written.
-  */
-  leverageHeading: string
-  leverageLead: string
-  leverageBody: string[]
-  leverageMechanisms: { label: string; example: string }[]
-  leverageCaveatHeading: string
-  leverageCaveats: string[]
-  leverageSourceNote: string
-  leverageSourceLink: string
+  methodChecksHeading: string
+  methodChecksLead: string
+  methodChecks: { title: string; body: string }[]
+  methodCausesLabel: string
+  methodKindsHeading: string
+  methodKindsLead: string
+  methodWhyHeading: string
+  methodWhyBody: string[]
+  methodReadMore: string
+  methodLinkProblems: string
+  methodLinkSolutions: string
+  methodLinkLeverage: string
 
   // Contextual further reading
   readProblemChoice: string
@@ -438,6 +391,9 @@ type Strings = {
   cardWhyPrefix: string
   detailFrame: string
   detailFrameLink: string
+  /** Under the why-block on a listing: the beta caveat, attached to the judgement it is about. */
+  detailWhyCaveat: string
+  detailFactsHeading: string
   detailWhyHeading: string
   detailAboutHeading: string
   detailEligibilityHeading: string
@@ -590,104 +546,35 @@ const nl: Strings = {
   e2gBandFoundersPledge: 'Founders Pledge — voor oprichters die een deel van hun aandelen beloven',
   e2gBandProfitForGood: 'Profit for Good — bedrijven waarvan de winst naar goede doelen gaat',
 
-  problemChoiceHeading: 'Wat je kiest om aan te werken telt zwaarder dan bijna al het andere',
-  problemChoiceLead:
-    'Het gangbare advies is: doe waar je hart ligt. Wij denken dat de vraag daarvóór meer uitmaakt.',
-  problemChoiceBody: [
-    'Stel, je wilt dat je werk ergens toe doet. Klimaat, onderwijs, pandemieën, armoede — waar begin je? Meestal krijg je te horen dat je die dingen niet tegen elkaar kunt afwegen, en dat je dus het beste kunt kiezen wat je na aan het hart ligt. Dat is goed bedoeld advies, en het laat de belangrijkste vraag onbeantwoord.',
-    'Want problemen verschillen enorm van elkaar. Niet een beetje: in hoeveel mensen of dieren ze raken, in hoe zwaar dat weegt, en in hoeveel geld en talent er al naartoe gaat. Aan een probleem waar duizenden mensen aan werken voegt één paar handen minder toe dan aan een probleem waar bijna niemand naar kijkt. 80,000 Hours komt op grond daarvan tot de schatting dat je met een andere keuze van probleem meer dan honderd keer zoveel kunt betekenen.',
-    'Dat is geen oordeel over wat mensen belangrijk vinden. We zouden willen dat élk van deze problemen veel meer aandacht kreeg. Maar je hebt één loopbaan, en het beste wat je als individu kunt doen is kijken waar de grootste gaten vallen in wat er al gebeurt — en daar gaan staan.',
-    'Het is ook minder ingrijpend dan het klinkt. Je hoeft er niet per se een carrièreswitch voor te maken: geven, politieke betrokkenheid en anderen meenemen tellen ook mee. En binnen je eigen werk is er vaak meer speelruimte dan je denkt. Wie bij de Rijksoverheid werkt kan doorgaans van dossier wisselen, en dat is hier eerder regel dan uitzondering; wie in de media werkt kiest voor een deel zelf waar het over gaat. Zo’n verschuiving verdient wel echte aandacht — beduidend meer dan ze meestal krijgt.',
-  ],
-  problemChoiceSourceNote:
-    'Dit argument is niet van ons. 80,000 Hours heeft het uitgewerkt en onderbouwd met cijfers die wij hier niet overdoen.',
-  problemChoiceLink: 'Lees hun uitleg over de meest urgente problemen',
-
-  pressingHeading: 'Welke problemen wij dan het meest urgent vinden',
-  pressingLead:
-    'Vijf, en de keuze is aanvechtbaar. Dit is waar we op uitkomen als we de drie vragen hierboven serieus nemen.',
-  pressingOutro:
-    'Klimaat staat er niet bij, en dat heeft een aparte reden die verderop staat. Verder geldt: dit is ons oordeel en geen vaststaand feit. Vind je dat we er een missen, dan horen we dat graag — daar is dit bord nog jong genoeg voor.',
-
-  solutionsHeading: 'Binnen een probleem verschilt de ene aanpak enorm van de andere',
-  solutionsLead:
-    'Het juiste probleem kiezen is de halve vraag. De andere helft is wat je eraan doet.',
-  solutionsBody: [
-    'Twee organisaties kunnen aan hetzelfde probleem werken en er totaal verschillend resultaat mee halen. Dat verschil is zelden klein. In de mondiale gezondheidszorg, het gebied waar hier het meest aan gemeten is, lopen de kosten om één gezond levensjaar te winnen ver uiteen tussen aanpakken die op papier allemaal even redelijk klinken.',
-    'Daarom kijken we niet alleen naar het probleem waar een organisatie aan werkt, maar ook naar wát ze doet. Dat oordeel is moeilijker dan het klinkt, en het is precies de reden dat dit bord twee soorten vacatures uit elkaar houdt: bij de ene groep heeft een onafhankelijke beoordelaar het werk al doorgelicht, bij de andere is het ons eigen oordeel per functie.',
-  ],
-  solutionsTests: [
+  methodChecksHeading: 'Drie toetsen',
+  methodChecksLead:
+    'Een functie komt alleen op het bord als ze alle drie doorstaat. Onder elke vacature schrijven we hoe, zodat je zelf kunt oordelen.',
+  methodChecks: [
     {
-      label: 'Werkt het aantoonbaar?',
-      example: 'Is er onderzoek dat laat zien dat deze aanpak doet wat hij belooft, of is er vooral een goed verhaal?',
+      title: 'Is het probleem urgent?',
+      body: 'Het werk moet raken aan een van vijf problemen die wij ongewoon groot, oplosbaar en verwaarloosd vinden. De meeste goede doelen staan er niet bij. Niet omdat ze er niet toe doen, maar omdat één persoon meer toevoegt waar nog bijna niemand werkt.',
     },
     {
-      label: 'Kan het groter?',
-      example: 'Iets dat bij duizend mensen werkt en bij een miljoen vastloopt, is een ander soort oplossing.',
+      title: 'Houdt de aanpak stand?',
+      body: 'Binnen één probleem bereikt de ene aanpak veel meer dan de andere. Heeft een onafhankelijke evaluator of een EA-financier de organisatie al doorgelicht, dan volgen we dat. Anders is het oordeel van ons.',
     },
     {
-      label: 'Doet iemand anders het al?',
-      example: 'Binnen één probleemgebied kan de ene aanpak overvol zitten terwijl er naast de andere bijna niemand staat.',
-    },
-    {
-      label: 'Zit het op een knelpunt?',
-      example: 'Het onderdeel waar de rest op wacht is meer waard dan het onderdeel waar er al vijf van zijn.',
+      title: 'Verandert deze functie iets?',
+      body: 'Sommige functies beschikken over meer dan hun eigen uren: ze sturen geld, schrijven regels voor een hele sector, of leveren onderzoek dat iedereen kan gebruiken. Andere zijn de weg naar de teams die dat doen. Algemene ondersteuning bij een goede organisatie is meestal niet genoeg.',
     },
   ],
-  solutionsSourceNote:
-    'Ook dit is werk van 80,000 Hours. Zij gaan er dieper op in dan wij hier kunnen, met voorbeelden per probleemgebied.',
-  solutionsLink: 'Lees hun stuk over het kiezen van een aanpak',
-
-  leverageHeading: 'Wat we met een hefboom bedoelen',
-  leverageLead:
-    'Eén woord doet op dit bord het meeste werk, dus het is eerlijk om het uit te leggen.',
-  leverageBody: [
-    'Een hefboom is simpelweg: hoeveel kun je op het probleem richten, behalve je eigen uren? Bij de meeste banen is het antwoord "niets" — je doet je werk, dat werk is het resultaat, en dat is geen kritiek. Maar sommige functies beschikken over veel meer dan hun eigen tijd. Ze beslissen waar geld naartoe gaat. Ze schrijven regels waar een hele sector zich aan houdt. Ze bepalen wat tientallen anderen gaan doen. Of ze leveren een inzicht dat daarna gratis te kopiëren is.',
-    'Daarom staan er werkgevers op dit bord die zelf nooit zouden zeggen dat ze aan een wereldprobleem werken. Een investment officer bij een ontwikkelingsbank verplaatst per beslissing meer geld naar arme landen dan de meeste mensen in een loopbaan verdienen. Een beleidsmedewerker bij een toezichthouder schrijft de norm waar duizenden bedrijven zich naar voegen. Geen van beiden werkt bij een goed doel; beiden hebben een grotere hefboom dan de meeste mensen die dat wel doen.',
-    'Het omgekeerde geldt ook, en dat is het lastige deel: een functie bij een uitstekende organisatie kan een kleine hefboom hebben. Generieke IT of kantoorondersteuning bij een ministerie dat precies het juiste doet, verandert niet wat dat ministerie besluit. Nuttig zijn voor een team met een hefboom is niet hetzelfde als er zelf een hebben. Dat is precies het onderscheid dat we per vacature proberen te maken.',
+  methodCausesLabel: 'De vijf problemen',
+  methodKindsHeading: 'Vier soorten functies',
+  methodKindsLead: 'Wat erdoor komt, valt in een van vier groepen. Elke groep staat hier om een andere reden.',
+  methodWhyHeading: 'Waarom het probleem voorop staat',
+  methodWhyBody: [
+    'Problemen verschillen enorm: in hoeveel mensen of dieren ze raken, en in hoeveel geld en talent er al naartoe gaat. Eén paar handen extra voegt weinig toe aan een probleem waar duizenden aan werken, en veel aan een probleem waar bijna niemand naar kijkt. 80,000 Hours schat dat alleen al de keuze van probleem een verschil van meer dan honderd keer kan maken.',
+    'Dat is geen oordeel over wat iemand belangrijk vindt. Het is een reden om goed na te denken over waar je je ene loopbaan inzet.',
   ],
-  leverageMechanisms: [
-    {
-      label: 'Geldstromen sturen',
-      example: 'Een investment officer bij FMO, een programma-officer bij een vermogensfonds, een kredietanalist bij een landbouwbank.',
-    },
-    {
-      label: 'Regels en toezicht',
-      example: 'Een beleidsmedewerker op een ministerie, een toezichthouder bij de ACM of de AFM, iemand die een norm opstelt.',
-    },
-    {
-      label: 'Onderzoek en technologie',
-      example: 'Een onderzoeker aan een universiteit of kennisinstituut. Een vondst kost bijna niets om te kopiëren en verdwijnt niet meer.',
-    },
-    {
-      label: 'Het veld opbouwen',
-      example: 'Mensen vinden en naar het werk toe leiden. Iemand met een betere match voor een functie vinden dan jij bent, is zelf een manier om die functie te doen.',
-    },
-    {
-      label: 'Ideeën verspreiden',
-      example: 'Journalistiek, documentaire, publieke communicatie, campagnes. Bereikt meer mensen per uur dan welk gesprek dan ook.',
-    },
-    {
-      label: 'Organisaties bouwen',
-      example: 'Oprichten, leiden, of de operatie laten werken — zodat honderd mensen samen meer voor elkaar krijgen dan apart.',
-    },
-    {
-      label: 'Iemand met bereik versterken',
-      example: 'Chief of staff of rechterhand van iemand wiens eigen werk veel verandert. De hefboom is geleend, maar wel echt.',
-    },
-    {
-      label: 'Goed verdienen en weggeven',
-      example: 'Een baan die je vaardigheden gebruikt en waarmee je het werk van anderen kunt financieren. Dit bord heeft er een eigen pagina voor.',
-    },
-  ],
-  leverageCaveatHeading: 'Twee dingen die een hefboom níet is',
-  leverageCaveats: [
-    'Het is geen garantie dat het werkt. Een enorme hefboom gericht op een zwakke oplossing levert nog steeds weinig op. Daarom kijken we er niet alleen naar: de eerste vraag blijft of het probleem groot en verwaarloosd is, en of deze aanpak er iets aan verandert.',
-    'Het zegt niets over of het bij jóu past. We beoordelen de functie zoals die voor een geschikte kandidaat zou zijn, niet voor jou specifiek. Of jij hier goed in zou zijn en het jaren zou willen doen, is een vraag die wij niet voor je kunnen beantwoorden — en die vaak zwaarder weegt dan alles wat wij hier opschrijven.',
-  ],
-  leverageSourceNote:
-    'Dit idee is niet van ons. 80,000 Hours heeft het uitgewerkt en er veel meer over geschreven dan hier past, met voorbeelden uit loopbanen die wij niet hebben. Als één stuk op deze pagina de moeite waard is om zelf te lezen, is het dat.',
-  leverageSourceLink: 'Lees het artikel van 80,000 Hours over hefbomen',
+  methodReadMore: 'Dit argument is van 80,000 Hours, niet van ons. Lees het daar volledig:',
+  methodLinkProblems: 'De meest urgente problemen',
+  methodLinkSolutions: 'Een aanpak kiezen',
+  methodLinkLeverage: 'Hefboom',
 
   readProblemChoice: 'Waarom je keuze van probleem zoveel uitmaakt',
   readCareerGuide: 'De loopbaangids van 80,000 Hours',
@@ -844,6 +731,8 @@ const nl: Strings = {
   detailFrame:
     'Deze functie staat op ons bord omdat we denken dat het een ongewoon effectieve manier is om een loopbaan te besteden.',
   detailFrameLink: 'Zo redeneren we',
+  detailWhyCaveat: 'Dit bord is in bèta en dit is ons oordeel. Denk je dat we het mis hebben, laat het weten.',
+  detailFactsHeading: 'In het kort',
   detailWhyHeading: 'Waarom staat dit op het bord',
   detailAboutHeading: 'Over de functie',
   detailEligibilityHeading: 'Voorwaarden',
@@ -1071,103 +960,35 @@ const en: Strings = {
   e2gBandFoundersPledge: 'Founders Pledge — for founders committing a share of their equity',
   e2gBandProfitForGood: 'Profit for Good — companies whose profits go to charity',
 
-  problemChoiceHeading: 'What you choose to work on matters more than almost anything else',
-  problemChoiceLead:
-    'The usual advice is to follow what you care about. We think the question before that one matters more.',
-  problemChoiceBody: [
-    'Say you want your work to count for something. Climate, education, pandemics, poverty — where do you start? Most people are told these things cannot be weighed against each other, and that they should therefore pick whatever they feel most strongly about. It is well-meant advice, and it leaves the most important question unanswered.',
-    'Because problems differ enormously. Not slightly: in how many people or animals they affect, in how heavily that weighs, and in how much money and talent already goes to them. One more pair of hands adds less to a problem thousands of people work on than to one almost nobody is looking at. On that basis 80,000 Hours estimates that choosing a different problem could let you achieve over a hundred times as much.',
-    'That is not a verdict on what anyone cares about. We would like every one of these problems to get far more attention than it does. But you have one career, and the best a single person can do is find the largest gaps in what is already happening, and go and stand in one.',
-    'It is also less drastic than it sounds. It need not mean changing career: giving, political engagement and bringing others with you all count. And there is usually more room inside your current job than you would think. People in the Dutch civil service can typically move between policy files, and here that is the rule rather than the exception; people in the media choose part of what they cover. A shift like that does deserve real thought — considerably more than it usually gets.',
-  ],
-  problemChoiceSourceNote:
-    'This argument is not ours. 80,000 Hours worked it out and backed it with figures we are not going to reproduce here.',
-  problemChoiceLink: 'Read their case on the most pressing problems',
-
-  pressingHeading: 'Which problems we think are most pressing',
-  pressingLead:
-    'Five, and the choice is arguable. This is where we land when we take the three questions above seriously.',
-  pressingOutro:
-    'Climate is not among them, for a separate reason set out further down. Beyond that: this is our judgement, not a settled fact. If you think we are missing one, we would like to hear it — the board is still young enough for that to change things.',
-
-  solutionsHeading: 'Within a problem, one approach can beat another by a wide margin',
-  solutionsLead:
-    'Choosing the right problem is half the question. The other half is what you actually do about it.',
-  solutionsBody: [
-    'Two organisations can work on the same problem and get very different results from it. That gap is rarely small. In global health, the area where this has been measured most, the cost of gaining one healthy year of life varies widely between approaches that all sound equally sensible on paper.',
-    'So we look not only at the problem an organisation works on but at what it does about it. That judgement is harder than it sounds, and it is exactly why this board separates two kinds of vacancy: for one group an independent evaluator has already assessed the work, and for the other the judgement is ours, made role by role.',
-  ],
-  solutionsTests: [
+  methodChecksHeading: 'Three checks',
+  methodChecksLead:
+    'A role gets onto the board only if it passes all three. Under every listing we write how it passed, so you can judge for yourself.',
+  methodChecks: [
     {
-      label: 'Is there evidence it works?',
-      example: 'Is there research showing this approach does what it claims, or mainly a compelling story?',
+      title: 'Is the problem pressing?',
+      body: 'The work has to bear on one of five problems we think are unusually large, solvable and neglected. Most good causes are not on the list. Not because they do not matter, but because one more person adds more where almost nobody is working yet.',
     },
     {
-      label: 'Can it get bigger?',
-      example: 'Something that works for a thousand people and stalls at a million is a different kind of solution.',
+      title: 'Does the approach hold up?',
+      body: 'Within one problem, some approaches achieve far more than others. Where an independent evaluator or an EA funder has already vetted the organisation, we rely on that. Otherwise the judgement is ours.',
     },
     {
-      label: 'Is somebody already doing it?',
-      example: 'Within one problem area, one approach can be crowded while almost nobody stands next to another.',
-    },
-    {
-      label: 'Does it sit on a bottleneck?',
-      example: 'The piece everything else is waiting on is worth more than the piece there are already five of.',
+      title: 'Does this role move it?',
+      body: 'Some roles command more than their own hours: they direct money, write rules a whole sector follows, or produce research anyone can use. Others are the way into the teams that do. Generic support at a good organisation is usually not enough.',
     },
   ],
-  solutionsSourceNote:
-    'This is 80,000 Hours\' work too. They go deeper into it than we can here, with examples for each problem area.',
-  solutionsLink: 'Read their piece on choosing a solution',
-
-  leverageHeading: 'What we mean by leverage',
-  leverageLead: 'One word does most of the work on this board, so it is only fair to explain it.',
-  leverageBody: [
-    'Leverage is just this: how much can you point at the problem, besides your own hours? For most jobs the answer is nothing — you do the work, the work is the result, and that is not a criticism. But some roles command far more than their own time. They decide where money goes. They write rules a whole sector follows. They set what dozens of other people spend their year on. Or they produce an insight that is free to copy afterwards.',
-    'This is why the board carries employers who would never describe themselves as working on a global problem. An investment officer at a development bank moves more money towards poor countries with one decision than most people earn in a career. A policy officer at a regulator writes the standard thousands of companies then comply with. Neither works at a charity; both have more leverage than most people who do.',
-    'The reverse holds too, and it is the harder half: a role at an excellent organisation can have very little leverage. Generic IT or office support at a ministry doing exactly the right thing does not change what that ministry decides. Being useful to a team with leverage is not the same as having any. That is precisely the distinction we try to make, vacancy by vacancy.',
+  methodCausesLabel: 'The five problems',
+  methodKindsHeading: 'Four kinds of role',
+  methodKindsLead: 'What passes lands in one of four groups, each here for a different reason.',
+  methodWhyHeading: 'Why the problem comes first',
+  methodWhyBody: [
+    'Problems differ enormously: in how many people or animals they affect, and in how much money and talent already goes to them. One more pair of hands adds little to a problem thousands work on, and a lot to one almost nobody is looking at. 80,000 Hours estimates that the choice of problem alone can make more than a hundredfold difference.',
+    'That is not a verdict on what anyone cares about. It is a reason to think hard about where you put your one career.',
   ],
-  leverageMechanisms: [
-    {
-      label: 'Directing money',
-      example: 'An investment officer at FMO, a programme officer at a foundation, a credit analyst at an agricultural lender.',
-    },
-    {
-      label: 'Rules and regulation',
-      example: 'A policy officer at a ministry, a regulator at the ACM or the AFM, somebody drafting a standard.',
-    },
-    {
-      label: 'Research and technology',
-      example: 'A researcher at a university or a technical institute. A finding costs almost nothing to copy and does not go away.',
-    },
-    {
-      label: 'Building the field',
-      example: 'Finding people and routing them towards the work. Finding someone better suited to a job than you are is itself a way of doing that job.',
-    },
-    {
-      label: 'Spreading ideas',
-      example: 'Journalism, documentary, public communication, advocacy. Reaches more people per hour than any conversation can.',
-    },
-    {
-      label: 'Building organisations',
-      example: 'Founding, leading, or making the operation work — so that a hundred people together achieve more than they would apart.',
-    },
-    {
-      label: 'Amplifying someone with reach',
-      example: 'Chief of staff or right hand to someone whose own work changes a great deal. The leverage is borrowed, but it is real.',
-    },
-    {
-      label: 'Earning well and giving it away',
-      example: 'A job that uses your strengths and lets you fund other people’s work. This board has its own page for it.',
-    },
-  ],
-  leverageCaveatHeading: 'Two things leverage is not',
-  leverageCaveats: [
-    'It is not a guarantee that anything works. Enormous leverage pointed at a weak solution still achieves very little. So we do not look at it alone: the first question is still whether the problem is large and neglected, and whether this approach moves it.',
-    'It says nothing about whether the job suits you. We judge the role as it would be for a competent typical holder, not for you. Whether you would be good at this and want to do it for years is a question we cannot answer for you — and it often matters more than anything we write here.',
-  ],
-  leverageSourceNote:
-    'This idea is not ours. 80,000 Hours worked it out and has written far more about it than fits here, with examples from careers we do not cover. If one thing on this page is worth reading in the original, it is that.',
-  leverageSourceLink: 'Read 80,000 Hours on leverage',
+  methodReadMore: 'This argument is 80,000 Hours’, not ours. Read it in full:',
+  methodLinkProblems: 'The most pressing problems',
+  methodLinkSolutions: 'Choosing an approach',
+  methodLinkLeverage: 'Leverage',
 
   readProblemChoice: 'Why your choice of problem matters so much',
   readCareerGuide: 'The 80,000 Hours career guide',
@@ -1322,6 +1143,8 @@ const en: Strings = {
   detailFrame:
     'This role is on our board because we think it is an unusually effective way to spend a career.',
   detailFrameLink: 'How we reason about it',
+  detailWhyCaveat: 'This board is in beta and this is our judgement. If you think we have it wrong, tell us.',
+  detailFactsHeading: 'At a glance',
   detailWhyHeading: 'Why this is on the board',
   detailAboutHeading: 'About the role',
   detailEligibilityHeading: 'Requirements',

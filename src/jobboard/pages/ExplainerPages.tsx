@@ -19,20 +19,19 @@ import {
   Container,
   Eyebrow,
   FeedbackBand,
-  FurtherReading,
   Hero,
   InternationalFirst,
   OnwardStep,
   Section,
 } from '../components/Chrome'
+import { BandGrid } from '../components/BrowseGrid'
 import { Icon } from '../components/Icon'
 import { EarningToGiveCard, ListingCard } from '../components/ListingCard'
 import { Callout, RichText, SourceAttribution, Uncertainties } from '../components/Prose'
 import { SuggestForm } from '../components/SuggestForm'
-import { loadFramework } from '../content/style'
+import { BANDS, bandOf, type Band } from '../lib/bands'
 import { ONWARD_LINKS, routes, t, type Locale } from '../content/i18n'
 import {
-  getBoardStats,
   getEarningToGiveListings,
   getEmployer,
   getEmployerListings,
@@ -213,11 +212,14 @@ export async function CausesIndexPage({ locale }: { locale: Locale }) {
 export async function MethodPage({ locale }: { locale: Locale }) {
   const copy = t(locale)
   const r = routes(locale)
-  const [explainer, framework, stats] = await Promise.all([
+  const [explainer, listings, earningToGive] = await Promise.all([
     getExplainer('method', locale),
-    loadFramework(),
-    getBoardStats(),
+    getLiveListings(),
+    getEarningToGiveListings(),
   ])
+  const bandCounts = Object.fromEntries(
+    BANDS.map((b) => [b, listings.filter((l) => bandOf(l) === b).length]),
+  ) as Record<Band, number>
 
   return (
     <>
@@ -235,280 +237,96 @@ export async function MethodPage({ locale }: { locale: Locale }) {
       />
       <Container>
         {/*
-          Before the framework, before the method, before anything about us: if
-          the reader can move, the honest advice is to look elsewhere. Putting
-          this after the ITN explanation would bury the one thing on the page
-          that costs us something to say.
+          The answer to the question the reader came with, first: three
+          checks, each one card. The third carries the `leverage` id, which the
+          index's Dutch band still links to.
         */}
         <Section first>
-          <InternationalFirst locale={locale} />
-        </Section>
-
-        {/*
-          Movement one: why the choice of problem dominates.
-
-          This now opens the argument, and everything after it is downstream.
-          The page used to begin with our four questions and our five areas —
-          operational detail that answers "what do you do" while never
-          answering "why is this the thing to agonise over". A reader who does
-          not already hold that premise has no reason to read on.
-        */}
-        <Section>
-          <Eyebrow>
-            <Icon name="telescope" />
-            {locale === 'nl' ? 'Eerst dit' : 'First this'}
-          </Eyebrow>
-          <h2 className={s.sectionHeading}>{copy.problemChoiceHeading}</h2>
-          <p className={s.sectionLead}>{copy.problemChoiceLead}</p>
-          <div className={`${s.prose} ${u.introBody}`}>
-            {copy.problemChoiceBody.map((p) => (
-              <p key={p.slice(0, 24)}>{p}</p>
+          <h2 className={s.sectionHeading}>{copy.methodChecksHeading}</h2>
+          <p className={s.sectionLead}>{copy.methodChecksLead}</p>
+          <ol className={u.checkList}>
+            {copy.methodChecks.map((c, i) => (
+              <li key={c.title} className={u.check} id={i === 2 ? 'leverage' : undefined}>
+                <span className={u.checkNum} aria-hidden="true">
+                  {i + 1}
+                </span>
+                <h3 className={u.checkTitle}>{c.title}</h3>
+                <p className={u.checkBody}>{c.body}</p>
+              </li>
             ))}
-          </div>
-          <p className={u.sourceNote}>{copy.problemChoiceSourceNote}</p>
-          <FurtherReading
-            href={ONWARD_LINKS.pressingProblems80k}
-            label={copy.problemChoiceLink}
-          />
-        </Section>
-
-        {/*
-          The ITN framework is the spine of this page. Using EA NL's existing
-          Dutch definitions rather than inventing a frame does double duty: it
-          explains the board, and it teaches the single most useful idea a
-          newcomer could take away — in vocabulary consistent with the rest of
-          the site (§9.5).
-        */}
-        <Section>
-          <Eyebrow>
-            <Icon name="scale" />
-            {locale === 'nl' ? framework.name : framework.nameEn}
-          </Eyebrow>
-          <h2 className={s.sectionHeading}>
-            {locale === 'nl' ? 'Drie vragen, en een vierde' : 'Three questions, and a fourth'}
-          </h2>
-          <p className={s.sectionLead}>
-            {locale === 'nl'
-              ? 'Voor de vraag welke problemen aandacht verdienen gebruiken we hetzelfde raamwerk als de rest van deze site.'
-              : 'For the question of which problems deserve attention we use the same framework as the rest of this site.'}
-          </p>
-          <div className={u.grid2}>
-            {framework.dimensions.map((d) => (
-              <div key={d.nl} className={u.card}>
-                <h3 className={u.cardTitle}>{locale === 'nl' ? d.nl : d.en}</h3>
-                <p style={{ color: 'var(--fg-muted)' }}>
-                  {locale === 'nl' ? d.question : d.questionEn}
-                </p>
-              </div>
-            ))}
-            <div className={u.card}>
-              <h3 className={u.cardTitle}>
-                {locale === 'nl' ? framework.fourth.nl : framework.fourth.en}
-              </h3>
-              <p style={{ color: 'var(--fg-muted)' }}>
-                {locale === 'nl' ? framework.fourth.question : framework.fourth.questionEn}
-              </p>
-              <p
-                style={{
-                  marginTop: 'var(--space-3)',
-                  fontSize: 'var(--text-sm)',
-                  color: 'var(--fg-subtle)',
-                }}
-              >
-                {locale === 'nl'
-                  ? 'Dit is wat dit bord toevoegt aan het raamwerk.'
-                  : 'This is what this board adds to the framework.'}
-              </p>
-            </div>
-          </div>
-        </Section>
-
-        {/*
-          Movement two: having argued that the choice matters, name the choice.
-
-          The five areas are rendered from the taxonomy rather than written out,
-          so this cannot fall out of step with what the classifier actually
-          assigns — the failure mode of a hand-written list. Each links to its
-          own explainer.
-        */}
-        <Section>
-          <Eyebrow>
-            <Icon name="filter" />
-            {locale === 'nl' ? 'Onze keuze' : 'Our choice'}
-          </Eyebrow>
-          <h2 className={s.sectionHeading}>{copy.pressingHeading}</h2>
-          <p className={s.sectionLead}>{copy.pressingLead}</p>
-          <ul className={u.mechanismList}>
+          </ol>
+          {/* Rendered from the taxonomy so it cannot drift from what the
+              classifier assigns. */}
+          <p className={u.checkCausesLabel}>{copy.methodCausesLabel}</p>
+          <ul className={u.subareaList}>
             {CAUSE_AREAS.map((cause) => (
-              <li key={cause} className={u.mechanism}>
-                <Link href={r.cause(cause)} className={u.mechanismLabel}>
-                  {copy.causeAreas[cause]}
-                </Link>
-                <span className={u.mechanismExample}>{copy.causeBlurbs[cause]}</span>
+              <li key={cause}>
+                <Link href={r.cause(cause)}>{copy.causeAreas[cause]}</Link>
               </li>
             ))}
           </ul>
-          <p className={u.sourceNote}>{copy.pressingOutro}</p>
+        </Section>
+
+        <Section>
+          <h2 className={s.sectionHeading}>{copy.methodKindsHeading}</h2>
+          <p className={s.sectionLead}>{copy.methodKindsLead}</p>
+          <BandGrid locale={locale} counts={bandCounts} earningToGive={earningToGive.length} />
         </Section>
 
         {/*
-          Movement three: the half of the question the board used to skip.
-
-          Having a pressing problem is not enough — within any one of them, what
-          an organisation actually does varies enormously in how much it
-          achieves. This is also where the index's two tiers get their
-          justification, so it sits directly before the leverage block that
-          explains the second tier.
+          The board's one piece of honesty that costs it something. No longer
+          first on the page — a reader asked how we choose, so that comes first —
+          but kept in full here, and in compact form on every listing.
         */}
         <Section>
-          <Eyebrow>
-            <Icon name="scale" />
-            {locale === 'nl' ? 'En dan de aanpak' : 'Then the approach'}
-          </Eyebrow>
-          <h2 className={s.sectionHeading}>{copy.solutionsHeading}</h2>
-          <p className={s.sectionLead}>{copy.solutionsLead}</p>
+          <InternationalFirst locale={locale} hideMethodLink />
+        </Section>
+
+        <Section>
+          <h2 className={s.sectionHeading}>{copy.methodWhyHeading}</h2>
           <div className={`${s.prose} ${u.introBody}`}>
-            {copy.solutionsBody.map((p) => (
+            {copy.methodWhyBody.map((p) => (
               <p key={p.slice(0, 24)}>{p}</p>
             ))}
           </div>
-          <ul className={u.mechanismList}>
-            {copy.solutionsTests.map((t) => (
-              <li key={t.label} className={u.mechanism}>
-                <span className={u.mechanismLabel}>{t.label}</span>
-                <span className={u.mechanismExample}>{t.example}</span>
+          <p className={u.readMoreLead}>{copy.methodReadMore}</p>
+          <ul className={u.readMoreList}>
+            {[
+              { href: ONWARD_LINKS.pressingProblems80k, label: copy.methodLinkProblems },
+              { href: ONWARD_LINKS.solutions80k, label: copy.methodLinkSolutions },
+              { href: ONWARD_LINKS.leverage80k, label: copy.methodLinkLeverage },
+            ].map((l) => (
+              <li key={l.href}>
+                <a href={l.href} rel="noopener">
+                  {l.label}
+                  <Icon name="external-link" />
+                </a>
               </li>
             ))}
           </ul>
-          <p className={u.sourceNote}>{copy.solutionsSourceNote}</p>
-          <FurtherReading href={ONWARD_LINKS.solutions80k} label={copy.solutionsLink} />
         </Section>
 
-        {/*
-          Leverage, explained properly.
-
-          Immediately after the ITN cards, because the fourth card raises the
-          word and then leaves the reader with a single question mark. The
-          board's whole second tier rests on this idea — it is the reason a bank
-          or a ministry appears on an effective-altruism job board at all — and
-          it was previously used in the hero, in the tier heading and on that
-          card without ever being defined.
-
-          The eight mechanisms are the same list the classifier scores against
-          (LEVERAGE_TYPES, minus direct work, career capital and the provenance
-          label, which are not mechanisms). Keeping them in step is deliberate:
-          if this page and the taxonomy disagree, the page is describing a
-          judgement the board does not actually make.
-
-          The `id` is linked from the second tier heading on the index.
-        */}
-        <Section id="leverage">
-          <Eyebrow>
-            <Icon name="stairs" />
-            {locale === 'nl' ? framework.fourth.nl : framework.fourth.en}
-          </Eyebrow>
-          <h2 className={s.sectionHeading}>{copy.leverageHeading}</h2>
-          <p className={s.sectionLead}>{copy.leverageLead}</p>
-
-          <div className={`${s.prose} ${u.introBody}`}>
-            {copy.leverageBody.map((p) => (
-              <p key={p.slice(0, 24)}>{p}</p>
-            ))}
-          </div>
-
-          <ul className={u.mechanismList}>
-            {copy.leverageMechanisms.map((m) => (
-              <li key={m.label} className={u.mechanism}>
-                <span className={u.mechanismLabel}>{m.label}</span>
-                <span className={u.mechanismExample}>{m.example}</span>
-              </li>
-            ))}
-          </ul>
-
-          {/* The honest limits, stated here rather than left for a reader to
-              discover. Leverage is the board's most persuasive idea and the
-              easiest to over-apply; a version of this page that only sold it
-              would be misrepresenting how we actually decide. */}
-          <div className={u.climateNote}>
-            <h3 className={u.uncertaintyHeading}>
-              <Icon name="scale" />
-              {copy.leverageCaveatHeading}
-            </h3>
-            <div className={u.uncertaintyBody}>
-              {copy.leverageCaveats.map((c) => (
-                <p key={c.slice(0, 24)}>{c}</p>
-              ))}
-            </div>
-          </div>
-
-          {/* Attribution in the body, as a recommendation we mean — not a
-              footnote, and not a claim that they have reviewed any of this. */}
-          <p className={u.sourceNote}>{copy.leverageSourceNote}</p>
-          <FurtherReading href={ONWARD_LINKS.leverage80k} label={copy.leverageSourceLink} />
-        </Section>
-
-        {explainer ? (
+        {/* Only the uncertainties from the Sanity explainer. Its body is the
+            pre-October essay (four questions, the old earning-to-give rule,
+            "twenty-five rather than two hundred") and repeated every section
+            above, so it is no longer rendered here. */}
+        {explainer?.uncertainties ? (
           <Section>
-            <RichText value={explainer.body} />
             <Uncertainties
               locale={locale}
               text={explainer.uncertainties}
               heading={locale === 'nl' ? 'Waar we het mis kunnen hebben' : 'Where we might be wrong'}
             />
           </Section>
-        ) : (
-          <Section>
-            <div className={s.prose}>
-              <Callout>
-                {locale === 'nl'
-                  ? 'De volledige methodepagina wordt nog geschreven.'
-                  : 'The full method page is still being written.'}
-              </Callout>
-            </div>
-          </Section>
-        )}
+        ) : null}
 
-        {/* Having just explained how a listing gets picked, answer the obvious
-            follow-up: what a reader will notice is missing. */}
-        <Section tight>
-          <ClimateNote locale={locale} />
-        </Section>
-
-        {/* The full beta statement earns its place on this page more than
-            anywhere else. This is the page that sets out how we judge a role,
-            so it is the page where "and here is how far we have actually got"
-            is part of the same answer rather than a caveat bolted to it. */}
-        <Section tight>
-          <BetaBand locale={locale} />
-        </Section>
-
+        {/* What a reader will notice is missing, side by side: climate, which
+            is left out on purpose, and the gaps that are not on purpose. */}
         <Section>
-          <h2 className={s.sectionHeading}>
-            {locale === 'nl' ? 'Hoe groot is dit bord?' : 'How big is this board?'}
-          </h2>
-          <p className={s.sectionLead}>
-            {locale === 'nl'
-              ? `Nu ${stats.live} open vacatures bij ${stats.employers} organisaties. We houden de lijst kort met opzet.`
-              : `Right now ${stats.live} open jobs at ${stats.employers} organisations. We keep the list short on purpose.`}
-          </p>
-          <p className={u.linkRow}>
-            <Link href={r.index}>{copy.causeAllRoles}</Link>
-            <Link href={r.causes}>
-              {locale === 'nl' ? 'Probleemgebieden' : 'Problem areas'}
-            </Link>
-            <a href={ONWARD_LINKS.glossary}>
-              {locale === 'nl' ? 'Begrippenlijst' : 'Glossary'}
-            </a>
-            <a href={ONWARD_LINKS.careerGuide}>
-              {locale === 'nl' ? 'Loopbaangids' : 'Career guide'}
-            </a>
-          </p>
-        </Section>
-
-        {/* A reader who has followed the whole method has the most considered
-            objection anyone on the board could give us. Ask for it here. */}
-        <Section tight>
-          <FeedbackBand locale={locale} />
+          <div className={u.noteGrid}>
+            <ClimateNote locale={locale} />
+            <BetaBand locale={locale} />
+          </div>
         </Section>
 
         <Section tight>

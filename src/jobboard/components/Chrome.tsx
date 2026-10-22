@@ -443,9 +443,12 @@ export function FeedbackBand({ locale }: { locale: Locale }) {
 export function InternationalFirst({
   locale,
   compact,
+  hideMethodLink,
 }: {
   locale: Locale
   compact?: boolean
+  /** On the method page itself, where "why we say this" would link to itself. */
+  hideMethodLink?: boolean
 }) {
   const copy = t(locale)
   const r = routes(locale)
@@ -509,11 +512,13 @@ export function InternationalFirst({
       </ul>
 
       <p className={u.intlFallback}>{copy.intlFallback}</p>
-      <p className={u.linkRow}>
-        <Link href={r.method}>
-          {copy.intlLink} <Icon name="arrow-right" />
-        </Link>
-      </p>
+      {hideMethodLink ? null : (
+        <p className={u.linkRow}>
+          <Link href={r.method}>
+            {copy.intlLink} <Icon name="arrow-right" />
+          </Link>
+        </p>
+      )}
     </div>
   )
 }
