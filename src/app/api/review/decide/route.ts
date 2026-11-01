@@ -11,7 +11,7 @@ import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { SESSION_COOKIE, verifyToken } from '@jobboard/review/auth'
 import { isRejectCategory } from '@jobboard/review/categories'
-import { acceptListing, DecisionError, rejectListing } from '@jobboard/review/decide'
+import { acceptListing, DecisionError, rejectListing, validatePlacement } from '@jobboard/review/decide'
 
 export const dynamic = 'force-dynamic'
 
@@ -41,7 +41,8 @@ export async function POST(request: Request) {
   try {
     if (body.action === 'accept') {
       const note = typeof body.note === 'string' ? body.note : undefined
-      const { publishedId } = await acceptListing(draftId, note)
+      const placement = body.listing === undefined ? undefined : validatePlacement(body.listing)
+      const { publishedId } = await acceptListing(draftId, note, placement)
       return NextResponse.json({ ok: true, publishedId })
     }
     if (body.action === 'reject') {

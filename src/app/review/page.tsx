@@ -14,9 +14,13 @@ import s from '@jobboard/components/review.module.css'
 import u from '@jobboard/components/ui.module.css'
 import { isReviewConfigured, issueToken, LINK_TTL_MS, SESSION_COOKIE, verifyToken } from '@jobboard/review/auth'
 import { anchorFor } from '@jobboard/review/digest'
+import { SITE_URL } from '@jobboard/lib/seo'
 import { loadReviewQueue } from '@jobboard/review/queue'
 
 export const dynamic = 'force-dynamic'
+// Room for loadReviewQueue to translate roles promoted since the last
+// translate cron, so the queue opens in English.
+export const maxDuration = 60
 
 export const metadata: Metadata = {
   title: 'Review queue',
@@ -75,7 +79,7 @@ export default async function ReviewPage({
     )
   }
 
-  const items = await loadReviewQueue()
+  const items = await loadReviewQueue({ translate: true })
 
   return (
     <Frame>
@@ -92,7 +96,7 @@ export default async function ReviewPage({
           : 'Read the note, fix it if it needs it, and publish. If a role does not belong, reject it — and if you say why, the classifier sees your reason on its next run.'}
       </p>
       {items.length ? (
-        <ReviewQueue items={items} anchors={items.map(anchorFor)} />
+        <ReviewQueue items={items} anchors={items.map(anchorFor)} boardOrigin={SITE_URL} />
       ) : (
         <p className={s.empty}>No roles waiting.</p>
       )}

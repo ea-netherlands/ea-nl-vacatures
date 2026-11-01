@@ -16,6 +16,8 @@ import { getDb } from '../db/client'
 import { t } from '../content/i18n'
 import type { CauseArea, LeverageType, Skill, SubArea } from '../taxonomy'
 import { isSanityConfigured, writeClient } from '../sanity/client'
+import { needsTranslation, runTranslation } from '../sanity/translate'
+import type { ListingPlacement } from './placement'
 
 export type ReviewItem = {
   /** The draft's id, `drafts.jobListing-N`. */
@@ -26,8 +28,16 @@ export type ReviewItem = {
   title: string
   employerName: string | null
   applyUrl: string | null
+  /** The Dutch note: the source, and what a curator edits and publishes. */
   note: string
+  /**
+   * The English of the note and the role summary, for a curator who reads
+   * English. Null when there is none yet or it was made from a different
+   * Dutch text, so a stale translation is never shown as if it were current.
+   */
+  noteEn: string | null
   excerpt: string | null
+  excerptEn: string | null
   cause: string | null
   subArea: string | null
   skills: string[]
@@ -41,6 +51,9 @@ export type ReviewItem = {
   reasoning: string | null
   pipelineListingId: number | null
   slug: string | null
+  employerSlug: string | null
+  /** The raw values behind the labels above, for placement.ts. */
+  placement: ListingPlacement
 }
 
 type DraftRow = {
@@ -50,7 +63,14 @@ type DraftRow = {
   employerName?: string | null
   applyUrl?: string | null
   whyThisMattersNl?: string | null
+  whyThisMattersEn?: string | null
   excerpt?: string | null
+  excerptEn?: string | null
+  translatedFrom?: { whyThisMattersEn?: string; excerptEn?: string } | null
+  listingKind?: string | null
+  secondaryCauses?: string[] | null
+  languageRequirement?: string | null
+  employerSlug?: string | null
   primaryCause?: string | null
   subArea?: string | null
   skills?: string[] | null
@@ -80,22 +100,62 @@ export function publishedIdOf(draftId: string): string {
   return draftId.replace(/^drafts\./, '')
 }
 
-export async function loadReviewQueue(): Promise<ReviewItem[]> {
+const DRAFTS_QUERY = `*[_type == "jobListing" && _id in path("drafts.**")
+     && (!defined(expiresAt) || expiresAt > now())]
+    | order(llmScore desc, _createdAt desc) {
+      _id, _createdAt, title, "employerName": employer->name,
+      "employerSlug": employer->slug.current, applyUrl,
+      whyThisMattersNl, whyThisMattersEn, excerpt, excerptEn, translatedFrom,
+      listingKind, primaryCause, secondaryCauses, subArea, skills, leverage,
+      locationCity, locationMode, languageRequirement, seniority, salaryText, salaryPeriod,
+      deadlineAt, expiresAt, llmScore, llmReasoning, pipelineListingId,
+      "slug": slug.current
+    }`
+
+function englishIsStale(d: DraftRow): boolean {
+  return (
+    needsTranslation(d.whyThisMattersNl, d.whyThisMattersEn, d.translatedFrom?.whyThisMattersEn, false) ||
+    needsTranslation(d.excerpt, d.excerptEn, d.translatedFrom?.excerptEn, false)
+  )
+}
+
+/** The English, or null when it is missing or was made from older Dutch. */
+function current(
+  dutch: string | null | undefined,
+  english: string | null | undefined,
+  recorded: string | undefined,
+): string | null {
+  return needsTranslation(dutch, english, recorded, false) ? null : (english ?? null)
+}
+
+/**
+ * @param translate fill in missing English before returning, within
+ *   `budgetMs`. The translate cron covers drafts too, but runs every three
+ *   hours, so a role promoted since then would otherwise arrive in Dutch.
+ *   Whatever does not fit in the budget comes back with English null and the
+ *   dashboard says so.
+ */
+export async function loadReviewQueue(
+  options: { translate?: boolean; budgetMs?: number } = {},
+): Promise<ReviewItem[]> {
   if (!isSanityConfigured) return []
   const client = writeClient()
 
-  const drafts = await client.fetch<DraftRow[]>(
-    `*[_type == "jobListing" && _id in path("drafts.**")
-       && (!defined(expiresAt) || expiresAt > now())]
-      | order(llmScore desc, _createdAt desc) {
-        _id, _createdAt, title, "employerName": employer->name, applyUrl,
-        whyThisMattersNl, excerpt, primaryCause, subArea, skills, leverage,
-        locationCity, locationMode, seniority, salaryText, salaryPeriod,
-        deadlineAt, expiresAt, llmScore, llmReasoning, pipelineListingId,
-        "slug": slug.current
-      }`,
-  )
+  let drafts = await client.fetch<DraftRow[]>(DRAFTS_QUERY)
   if (!drafts.length) return []
+
+  if (options.translate) {
+    const stale = drafts.filter(englishIsStale).map((d) => d._id)
+    if (stale.length) {
+      try {
+        const report = await runTranslation({ ids: stale, budgetMs: options.budgetMs ?? 20_000 })
+        if (report.documentsPatched) drafts = await client.fetch<DraftRow[]>(DRAFTS_QUERY)
+      } catch (err) {
+        // No API key, or the model is down: show the Dutch rather than nothing.
+        console.error('[review:queue] translation failed', err)
+      }
+    }
+  }
 
   const published = new Set(
     await client.fetch<string[]>(`*[_type == "jobListing" && _id in $ids]._id`, {
@@ -138,7 +198,9 @@ export async function loadReviewQueue(): Promise<ReviewItem[]> {
       employerName: d.employerName ?? null,
       applyUrl: d.applyUrl ?? null,
       note: d.whyThisMattersNl ?? '',
+      noteEn: current(d.whyThisMattersNl, d.whyThisMattersEn, d.translatedFrom?.whyThisMattersEn),
       excerpt: d.excerpt ?? null,
+      excerptEn: current(d.excerpt, d.excerptEn, d.translatedFrom?.excerptEn),
       cause: label(en.causeAreas as Record<CauseArea, string>, d.primaryCause),
       subArea: label(en.subAreas as Record<SubArea, string>, d.subArea),
       skills: (d.skills ?? []).map((s) => label(en.skills as Record<Skill, string>, s) ?? s),
@@ -157,5 +219,17 @@ export async function loadReviewQueue(): Promise<ReviewItem[]> {
       reasoning: d.llmReasoning ?? null,
       pipelineListingId: d.pipelineListingId ?? null,
       slug: d.slug ?? null,
+      employerSlug: d.employerSlug ?? null,
+      placement: {
+        listingKind: (d.listingKind ?? 'job') as ListingPlacement['listingKind'],
+        primaryCause: (d.primaryCause ?? null) as ListingPlacement['primaryCause'],
+        secondaryCauses: (d.secondaryCauses ?? []) as ListingPlacement['secondaryCauses'],
+        subArea: (d.subArea ?? null) as ListingPlacement['subArea'],
+        skills: (d.skills ?? []) as ListingPlacement['skills'],
+        leverage: (d.leverage ?? null) as ListingPlacement['leverage'],
+        locationMode: (d.locationMode ?? null) as ListingPlacement['locationMode'],
+        languageRequirement: (d.languageRequirement ?? null) as ListingPlacement['languageRequirement'],
+        seniority: (d.seniority ?? null) as ListingPlacement['seniority'],
+      },
     }))
 }

@@ -14,6 +14,8 @@ import { issueToken, verifyToken } from './auth'
 import { renderCalibration } from './calibration'
 import { renderDigestHtml, renderDigestText, subjectFor } from './digest'
 import type { ReviewItem } from './queue'
+import { explainPlacement } from './placement'
+import { describeRelisting, validatePlacement } from './decide'
 import { needsTranslation, sourceHash } from '../sanity/translate'
 
 test('a link token verifies, and only for its own purpose', () => {
@@ -78,7 +80,9 @@ const item = (over: Partial<ReviewItem> = {}): ReviewItem => ({
   employerName: 'Kairos',
   applyUrl: 'https://example.org/job',
   note: 'Wie dit doet, beslist welke programma’s er komen.',
+  noteEn: null,
   excerpt: null,
+  excerptEn: null,
   cause: 'Global catastrophic risks',
   subArea: null,
   skills: [],
@@ -92,6 +96,18 @@ const item = (over: Partial<ReviewItem> = {}): ReviewItem => ({
   reasoning: null,
   pipelineListingId: 7,
   slug: null,
+  employerSlug: 'kairos',
+  placement: {
+    listingKind: 'job',
+    primaryCause: 'global-catastrophic-risks',
+    secondaryCauses: [],
+    subArea: 'ai-safety',
+    skills: ['operations'],
+    leverage: 'field-building',
+    locationMode: 'remote',
+    languageRequirement: 'english-sufficient',
+    seniority: 'mid',
+  },
   ...over,
 })
 
@@ -114,4 +130,63 @@ test('the digest escapes listing text and links each role to its card', () => {
   const text = renderDigestText([], [item()], link)
   assert.match(text, /still waiting/)
   assert.match(text, /3 days/)
+})
+
+test('the digest shows the English note when there is one', () => {
+  const link = () => 'https://board.test/review'
+  const text = renderDigestText([item({ noteEn: 'Whoever does this decides which programmes run.' })], [], link)
+  assert.match(text, /Whoever does this decides/)
+  assert.doesNotMatch(text, /Wie dit doet/)
+})
+
+test('placement names the band and why, and follows a relisting', () => {
+  const p = item().placement
+  const rows = explainPlacement('Head of projects', p, { name: 'Kairos', slug: 'kairos' }, 'https://x.test')
+  const section = rows.find((r) => r.where === 'Section')!
+  assert.equal(section.value, 'With leverage in the Netherlands')
+  assert.equal(section.href, 'https://x.test/en/jobs?band=dutch')
+  assert.match(rows.find((r) => r.where === 'Problem area')!.value, /AI safety/i)
+
+  const asRoute = explainPlacement('Head of projects', { ...p, leverage: 'career-capital' }, null, 'https://x.test')
+  assert.equal(asRoute.find((r) => r.where === 'Section')!.value, 'Ways in')
+  assert.match(asRoute.find((r) => r.where === 'Section')!.why!, /career capital/)
+
+  const e2g = explainPlacement('Trader', { ...p, leverage: 'earning-to-give' }, null, 'https://x.test')
+  assert.equal(e2g.find((r) => r.where === 'Section')!.href, 'https://x.test/en/jobs/earning-to-give')
+})
+
+test('a relisting is validated against the taxonomy', () => {
+  const ok = validatePlacement({ ...item().placement, secondaryCauses: ['global-catastrophic-risks', 'better-futures'] })
+  // The primary cause is never also a secondary one.
+  assert.deepEqual(ok.secondaryCauses, ['better-futures'])
+  assert.throws(() => validatePlacement({ ...item().placement, subArea: 'animal-law' }), /different problem area/)
+  assert.throws(() => validatePlacement({ ...item().placement, skills: [] }), /skills/)
+  assert.throws(() => validatePlacement({ ...item().placement, leverage: 'vibes' }), /unknown value/)
+})
+
+test('a relisting is described field by field for the classifier', () => {
+  const draft = { primaryCause: 'better-futures', subArea: 'ai-governance', skills: ['policy'], leverage: 'policy-regulation' }
+  const lines = describeRelisting(draft, {
+    ...item().placement,
+    skills: ['policy'],
+    leverage: 'policy-regulation',
+  })
+  assert.ok(lines.includes('primaryCause: better-futures → global-catastrophic-risks'))
+  assert.ok(lines.includes('subArea: ai-governance → ai-safety'))
+  assert.ok(!lines.some((l) => l.startsWith('skills')))
+
+  const rendered = renderCalibration([
+    {
+      action: 'published',
+      reason: `published as drafted; relisted: ${lines.join('; ')}`,
+      category: null,
+      title: 'Beleidsmedewerker AI',
+      employer_name: 'BZK',
+      primary_cause: 'better-futures',
+      leverage: 'policy-regulation',
+      cause_score: 3,
+      leverage_score: 3,
+    },
+  ])
+  assert.match(rendered, /Curator corrected the listing — primaryCause: better-futures → global-catastrophic-risks/)
 })

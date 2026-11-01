@@ -33,7 +33,7 @@ export type Band = (typeof BANDS)[number]
  * Titles that name a traineeship, which the seniority scale files as entry
  * level. No leading word boundary: Dutch compounds it ("Rijkstraineeship").
  */
-const TRAINEESHIP = /trainee(ship)?s?\b|traineeprogramma|\btrainingsprogramma\b/i
+export const TRAINEESHIP = /trainee(ship)?s?\b|traineeprogramma|\btrainingsprogramma\b/i
 
 export function bandOf(listing: {
   title: string
