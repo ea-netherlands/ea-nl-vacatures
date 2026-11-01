@@ -49,7 +49,13 @@ async function loadDraft(draftId: string) {
  * in one click: the note is the product, and the curator saw it, and could
  * change it, before accepting.
  */
-export async function acceptListing(draftId: string, note?: string): Promise<{ publishedId: string }> {
+export async function acceptListing(
+  draftId: string,
+  note?: string,
+  // The backfill in promote.ts publishes as the pipeline, so its decisions stay
+  // out of curator calibration like every other auto-publish.
+  decidedBy: { actor: string; reason: string } | null = null,
+): Promise<{ publishedId: string }> {
   const { client, draft } = await loadDraft(draftId)
   const finalNote = (note ?? (draft.whyThisMattersNl as string | undefined) ?? '').trim()
   // The API bypasses Studio validation, so enforce the same rule here: a
@@ -84,8 +90,8 @@ export async function acceptListing(draftId: string, note?: string): Promise<{ p
       await getDb(),
       listingId,
       'published',
-      CURATOR_ACTOR,
-      edited ? 'published with an edited note' : 'published as drafted',
+      decidedBy?.actor ?? CURATOR_ACTOR,
+      decidedBy?.reason ?? (edited ? 'published with an edited note' : 'published as drafted'),
       publishedId,
     )
   }

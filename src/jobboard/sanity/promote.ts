@@ -17,7 +17,7 @@ import { getDb } from '../db/client'
 import { recordDecision } from '../classify/run'
 import { sourceRankSql } from '../ingest/dedup'
 import { slugify, urlWithoutQuery } from '../lib/text'
-import { NOTE_MAX, NOTE_MIN } from '../review/decide'
+import { acceptListing, DecisionError, NOTE_MAX, NOTE_MIN } from '../review/decide'
 import { meetsPromotionThreshold } from '../taxonomy'
 import { isSanityConfigured, writeClient } from './client'
 
@@ -331,6 +331,82 @@ export async function runPromotion(options: PromoteOptions = {}): Promise<Promot
     }
   }
 
+  return report
+}
+
+export type TrustedDraftsReport = {
+  considered: number
+  published: number
+  /** Drafts the dashboard's own publish checks refused (note, expiry, already decided). */
+  leftInQueue: { listingId: number; reason: string }[]
+  dryRun: boolean
+}
+
+/**
+ * Publishes drafts already waiting in the review queue that `autoPublishes`
+ * would have published had it existed when they were promoted.
+ *
+ * A one-off backfill for the switch to auto-publish, November 2026, though safe
+ * to rerun: it only looks at listings with a 'promoted' decision and no later
+ * one. Snoozed listings are left alone, since a curator chose to wait on them.
+ *
+ * It publishes through `acceptListing`, the dashboard's own route, rather than
+ * repeating the write here. The Sanity draft is what gets published, so a note
+ * a curator has already started editing is kept, and the dashboard's checks on
+ * note length and expiry decide whether it can go live.
+ */
+export async function publishTrustedDrafts(
+  options: { dryRun?: boolean; onLog?: (line: string) => void } = {},
+): Promise<TrustedDraftsReport> {
+  const db = await getDb()
+  const log = (l: string) => options.onLog?.(l)
+  const report: TrustedDraftsReport = { considered: 0, published: 0, leftInQueue: [], dryRun: options.dryRun ?? false }
+
+  const { rows } = await db.query<AutoPublishInput & { id: number; title: string; employer_name: string }>(
+    `select l.id, l.title, l.employer_name,
+            c.nl_eligible, c.leverage, c.primary_cause, c.skills,
+            c.cause_score, c.leverage_score, c.draft_note,
+            exists (
+              select 1
+                from listing l3
+               where l3.dedup_key = l.dedup_key
+                 and l3.closed_at is null
+                 and l3.source_id = any($1::text[])
+            ) as listed_by_trusted_board
+       from listing l
+       join classification c on c.listing_id = l.id
+      where l.closed_at is null
+        and exists (select 1 from decision d
+                     where d.listing_id = l.id and d.action = 'promoted')
+        and not exists (select 1 from decision d
+                         where d.listing_id = l.id
+                           and d.action in ('published', 'rejected', 'snoozed'))
+      order by l.id`,
+    [[...AUTO_PUBLISH_SOURCES]],
+  )
+
+  for (const row of rows) {
+    if (!autoPublishes(row)) continue
+    report.considered++
+    const draftId = `drafts.jobListing-${row.id}`
+    if (options.dryRun) {
+      log(`would publish #${row.id} — ${row.title} @ ${row.employer_name}`)
+      report.published++
+      continue
+    }
+    try {
+      const { publishedId } = await acceptListing(draftId, undefined, {
+        actor: 'pipeline',
+        reason: 'auto-published from the review queue: listed by 80,000 Hours or Probably Good',
+      })
+      report.published++
+      log(`published #${row.id} → ${publishedId}`)
+    } catch (err) {
+      if (!(err instanceof DecisionError)) throw err
+      report.leftInQueue.push({ listingId: row.id, reason: err.message })
+      log(`left #${row.id} in the queue — ${err.message}`)
+    }
+  }
   return report
 }
 
