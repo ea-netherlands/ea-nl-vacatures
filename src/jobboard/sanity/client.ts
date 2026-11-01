@@ -31,8 +31,9 @@ export function readClient(): SanityClient {
 
 /**
  * Write client for the promotion job and the expiry automation. Needs a token
- * with Editor rights — the pipeline creates drafts, never published documents,
- * because nothing is auto-published in v1 (§8.3).
+ * with Editor rights — the pipeline creates drafts for the review queue, and
+ * published documents only for roles the trusted EA boards already list
+ * (autoPublishes in promote.ts).
  */
 export function writeClient(): SanityClient {
   const token = process.env.SANITY_API_WRITE_TOKEN

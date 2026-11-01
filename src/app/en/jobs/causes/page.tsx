@@ -11,6 +11,7 @@ export const metadata: Metadata = bilingualMetadata({
   enPath: ROUTES.en.causes,
   title: 'Problem areas',
   description: 'Why we think these problems matter, and what kind of Dutch work bears on them.',
+  image: { page: 'causes' },
 })
 
 export default async function Page() {

@@ -12,6 +12,7 @@ export const metadata: Metadata = bilingualMetadata({
   title: 'Earning to give',
   description:
     'Jobs that are not the point in themselves, but pay enough to fund a lot of good. Including the case against.',
+  image: { page: 'earning-to-give' },
 })
 
 export default async function Page() {

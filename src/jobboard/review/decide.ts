@@ -139,6 +139,9 @@ export function describeRelisting(draft: Record<string, unknown>, next: ListingP
 export async function acceptListing(
   draftId: string,
   note?: string,
+  // The backfill in promote.ts publishes as the pipeline, so its decisions stay
+  // out of curator calibration like every other auto-publish.
+  decidedBy: { actor: string; reason: string } | null = null,
   placement?: ListingPlacement,
 ): Promise<{ publishedId: string }> {
   const { client, draft } = await loadDraft(draftId)
@@ -192,13 +195,14 @@ export async function acceptListing(
       await getDb(),
       listingId,
       'published',
-      CURATOR_ACTOR,
-      [
-        edited ? 'published with an edited note' : 'published as drafted',
-        relisted.length ? `relisted: ${relisted.join('; ')}` : null,
-      ]
-        .filter(Boolean)
-        .join('; '),
+      decidedBy?.actor ?? CURATOR_ACTOR,
+      decidedBy?.reason ??
+        [
+          edited ? 'published with an edited note' : 'published as drafted',
+          relisted.length ? `relisted: ${relisted.join('; ')}` : null,
+        ]
+          .filter(Boolean)
+          .join('; '),
       publishedId,
     )
   }

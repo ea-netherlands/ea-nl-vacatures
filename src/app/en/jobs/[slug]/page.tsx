@@ -29,6 +29,7 @@ export async function generateMetadata({
     title: `${listing.title}${listing.employer ? ` — ${listing.employer.name}` : ''}`,
     description:
       firstLine(noteFor(listing, 'en'), 155) || (excerptFor(listing, 'en') ?? undefined),
+    image: { listing: slug },
   })
 }
 

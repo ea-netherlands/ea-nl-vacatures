@@ -12,6 +12,7 @@ export const metadata: Metadata = bilingualMetadata({
   title: 'Waarom deze banen?',
   description:
     'Hoe een vacature op dit bord terechtkomt: belangrijkheid, oplosbaarheid, verwaarlozing — en hefboom.',
+  image: { page: 'method' },
 })
 
 export default async function Page() {

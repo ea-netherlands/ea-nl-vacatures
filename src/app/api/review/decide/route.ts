@@ -42,7 +42,7 @@ export async function POST(request: Request) {
     if (body.action === 'accept') {
       const note = typeof body.note === 'string' ? body.note : undefined
       const placement = body.listing === undefined ? undefined : validatePlacement(body.listing)
-      const { publishedId } = await acceptListing(draftId, note, placement)
+      const { publishedId } = await acceptListing(draftId, note, null, placement)
       return NextResponse.json({ ok: true, publishedId })
     }
     if (body.action === 'reject') {

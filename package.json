@@ -17,6 +17,7 @@
     "ingest": "tsx src/scripts/ingest.ts",
     "classify": "tsx src/scripts/classify.ts",
     "promote": "tsx src/scripts/promote.ts",
+    "publish-trusted-drafts": "tsx src/scripts/publish-trusted-drafts.ts",
     "translate": "tsx src/scripts/translate.ts",
     "notify": "tsx src/scripts/notify.ts",
     "review-digest": "tsx src/scripts/review-digest.ts",
