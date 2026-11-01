@@ -103,7 +103,12 @@ export function renderCalibration(rows: Row[]): string {
   }
   if (published.length) {
     lines.push('', '### Published')
-    for (const r of published) lines.push(`- ${describe(r)}.`)
+    for (const r of published) {
+      // A relisting is the curator correcting your labels on a role they kept:
+      // the most direct feedback on cause, sub-area and skill choices there is.
+      const relisted = r.reason?.match(/relisted: (.*)$/)?.[1]
+      lines.push(`- ${describe(r)}.${relisted ? ` Curator corrected the listing — ${relisted}.` : ''}`)
+    }
   }
   return lines.join('\n')
 }

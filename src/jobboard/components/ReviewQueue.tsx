@@ -10,6 +10,12 @@
  * publishing is still one click, and the note stays the product (README, "the
  * editorial note is the product").
  *
+ * Above the note: what the role is and why it is here, in English, and where it
+ * will appear on the board — which band, which problem and topic pages, which
+ * filters — with the reason for each. "Change listing" opens the same fields as
+ * controls; the explanation follows the edit, and publishing applies it and
+ * tells the classifier what it got wrong.
+ *
  * Rejecting has two speeds. "Reject" is the one-click version for the obvious
  * ones. "Tell us why" opens a reason — a category plus a sentence — and that
  * reason is shown to the classifier on its next run (review/calibration.ts),
@@ -22,6 +28,23 @@ import u from './ui.module.css'
 import s from './review.module.css'
 import { REJECT_CATEGORIES, type RejectCategory } from '../review/categories'
 import type { ReviewItem } from '../review/queue'
+import { explainPlacement, type ListingPlacement } from '../review/placement'
+import { t } from '../content/i18n'
+import {
+  CAUSE_AREAS,
+  LANGUAGE_REQUIREMENTS,
+  LEVERAGE_TYPES,
+  LISTING_KINDS,
+  LOCATION_MODES,
+  MAX_SKILLS_PER_LISTING,
+  SENIORITIES,
+  SKILLS,
+  SUB_AREAS_BY_CAUSE,
+  type CauseArea,
+} from '../taxonomy'
+
+const en = t('en')
+const KIND_LABELS = { job: 'Job', programme: 'Programme (fellowship, residency, bootcamp)' } as const
 
 const NOTE_MIN = 80
 const NOTE_MAX = 600
@@ -46,16 +69,189 @@ async function decide(payload: Record<string, unknown>): Promise<{ ok: true; pub
   return { ok: true, publishedId: data.publishedId }
 }
 
+function samePlacement(a: ListingPlacement, b: ListingPlacement): boolean {
+  return JSON.stringify(a) === JSON.stringify(b)
+}
+
+function Select<T extends string>({
+  label,
+  value,
+  options,
+  labels,
+  onChange,
+  empty,
+  hint,
+}: {
+  label: string
+  value: T | null
+  options: readonly T[]
+  labels: Record<T, string>
+  onChange: (value: T | null) => void
+  /** Offer "none" as a choice, labelled with this. */
+  empty?: string
+  hint?: string
+}) {
+  return (
+    <label className={u.filterField}>
+      <span className={u.filterLabel}>{label}</span>
+      <select
+        className={u.select}
+        value={value ?? ''}
+        onChange={(e) => onChange((e.target.value || null) as T | null)}
+      >
+        {empty !== undefined ? <option value="">{empty}</option> : null}
+        {options.map((o) => (
+          <option key={o} value={o}>
+            {labels[o]}
+          </option>
+        ))}
+      </select>
+      {hint ? <span className={s.fieldHint}>{hint}</span> : null}
+    </label>
+  )
+}
+
+/** The listing's fields as controls. Every change re-runs the explanation above. */
+function PlacementEditor({
+  value,
+  onChange,
+}: {
+  value: ListingPlacement
+  onChange: (next: ListingPlacement) => void
+}) {
+  const set = <K extends keyof ListingPlacement>(key: K, v: ListingPlacement[K]) => onChange({ ...value, [key]: v })
+  const subAreas = value.primaryCause ? SUB_AREAS_BY_CAUSE[value.primaryCause] : []
+  const toggle = <T extends string>(list: T[], item: T) =>
+    list.includes(item) ? list.filter((x) => x !== item) : [...list, item]
+
+  return (
+    <div className={s.editor}>
+      <div className={s.editorGrid}>
+        <Select
+          label="Problem area"
+          value={value.primaryCause}
+          options={CAUSE_AREAS}
+          labels={en.causeAreas}
+          onChange={(c) =>
+            onChange({
+              ...value,
+              primaryCause: c,
+              // A sub-area from the old problem area would be invalid.
+              subArea: null,
+              secondaryCauses: value.secondaryCauses.filter((x) => x !== c),
+            })
+          }
+        />
+        <Select
+          label="Topic"
+          value={value.subArea}
+          options={subAreas}
+          labels={en.subAreas}
+          onChange={(v) => set('subArea', v)}
+          empty="None (cross-cutting)"
+        />
+        <Select
+          label="Leverage"
+          value={value.leverage}
+          options={LEVERAGE_TYPES}
+          labels={en.leverage}
+          onChange={(v) => set('leverage', v)}
+          hint="Not shown to readers, but it decides the section."
+        />
+        <Select
+          label="Kind"
+          value={value.listingKind}
+          options={LISTING_KINDS}
+          labels={KIND_LABELS}
+          onChange={(v) => set('listingKind', v ?? 'job')}
+        />
+        <Select
+          label="Seniority"
+          value={value.seniority}
+          options={SENIORITIES}
+          labels={en.seniorities}
+          onChange={(v) => set('seniority', v)}
+          empty="Not stated"
+        />
+        <Select
+          label="Location"
+          value={value.locationMode}
+          options={LOCATION_MODES}
+          labels={en.locationModes}
+          onChange={(v) => set('locationMode', v)}
+          empty="Not stated"
+        />
+        <Select
+          label="Language"
+          value={value.languageRequirement}
+          options={LANGUAGE_REQUIREMENTS}
+          labels={en.languageRequirements}
+          onChange={(v) => set('languageRequirement', v)}
+          empty="Not stated"
+        />
+      </div>
+
+      <fieldset className={s.editorSet}>
+        <legend className={u.filterLabel}>
+          Skills <span className={s.count}>pick 1 or {MAX_SKILLS_PER_LISTING}</span>
+        </legend>
+        <div className={s.chips}>
+          {SKILLS.map((k) => {
+            const on = value.skills.includes(k)
+            return (
+              <label key={k} className={`${s.chip} ${on ? s.chipActive : ''}`}>
+                <input
+                  type="checkbox"
+                  className={s.chipInput}
+                  checked={on}
+                  disabled={!on && value.skills.length >= MAX_SKILLS_PER_LISTING}
+                  onChange={() => set('skills', toggle(value.skills, k))}
+                />
+                {en.skills[k]}
+              </label>
+            )
+          })}
+        </div>
+      </fieldset>
+
+      <fieldset className={s.editorSet}>
+        <legend className={u.filterLabel}>Also under</legend>
+        <div className={s.chips}>
+          {CAUSE_AREAS.filter((c) => c !== value.primaryCause).map((c) => {
+            const on = value.secondaryCauses.includes(c)
+            return (
+              <label key={c} className={`${s.chip} ${on ? s.chipActive : ''}`}>
+                <input
+                  type="checkbox"
+                  className={s.chipInput}
+                  checked={on}
+                  onChange={() => set('secondaryCauses', toggle<CauseArea>(value.secondaryCauses, c))}
+                />
+                {en.causeAreas[c]}
+              </label>
+            )
+          })}
+        </div>
+      </fieldset>
+    </div>
+  )
+}
+
 function ReviewCard({
   item,
   anchor,
+  boardOrigin,
   onDecided,
 }: {
   item: ReviewItem
   anchor: string
+  boardOrigin: string
   onDecided: (outcome: Outcome) => void
 }) {
   const [note, setNote] = useState(item.note)
+  const [placement, setPlacement] = useState<ListingPlacement>(item.placement)
+  const [editing, setEditing] = useState(false)
+  const [dutchOpen, setDutchOpen] = useState(!item.noteEn)
   const [busy, setBusy] = useState<'accept' | 'reject' | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [reasonOpen, setReasonOpen] = useState(false)
@@ -65,12 +261,31 @@ function ReviewCard({
   const length = note.trim().length
   const noteOk = length >= NOTE_MIN && length <= NOTE_MAX
   const closes = formatDate(item.deadlineAt)
+  const relisted = !samePlacement(placement, item.placement)
+  const placementOk =
+    placement.primaryCause != null &&
+    placement.leverage != null &&
+    placement.skills.length >= 1 &&
+    placement.skills.length <= MAX_SKILLS_PER_LISTING
+  const rows = explainPlacement(
+    item.title,
+    placement,
+    item.employerName ? { name: item.employerName, slug: item.employerSlug } : null,
+    boardOrigin,
+  )
+  const noteEdited = note.trim() !== item.note.trim()
+  const about = item.excerptEn ?? item.excerpt
 
   async function accept() {
     setBusy('accept')
     setError(null)
     try {
-      await decide({ action: 'accept', draftId: item.draftId, note })
+      await decide({
+        action: 'accept',
+        draftId: item.draftId,
+        note,
+        ...(relisted ? { listing: placement } : {}),
+      })
       onDecided({ kind: 'published', href: item.slug ? `/vacatures/${item.slug}` : null })
     } catch (err) {
       setError((err as Error).message)
@@ -125,46 +340,122 @@ function ReviewCard({
             </span>
           ) : null}
         </p>
-        <div className={u.cardTags}>
-          {item.cause ? <span className={`${u.badge} ${u.badgeCause}`}>{item.cause}</span> : null}
-          {item.subArea ? <span className={`${u.badge} ${u.badgeNeutral}`}>{item.subArea}</span> : null}
-          {item.skills.map((skill) => (
-            <span key={skill} className={`${u.badge} ${u.badgeNeutral}`}>
-              {skill}
-            </span>
-          ))}
-          {item.leverage ? <span className={`${u.badge} ${u.badgeOutline}`}>{item.leverage}</span> : null}
-          {item.score != null ? (
+        {item.score != null ? (
+          <div className={u.cardTags}>
             <span className={`${u.badge} ${u.badgeOutline}`}>Score {item.score}</span>
-          ) : null}
-        </div>
+          </div>
+        ) : null}
       </header>
 
-      <label className={s.noteField}>
-        <span className={s.noteLabel}>
-          Why this is on the board
+      {about ? (
+        <section className={s.block}>
+          <h3 className={s.blockHeading}>What the role is</h3>
+          <p className={s.prose}>{about}</p>
+          {!item.excerptEn ? <p className={s.fieldHint}>In Dutch: there is no English translation yet.</p> : null}
+        </section>
+      ) : null}
+
+      <section className={s.block}>
+        <h3 className={s.blockHeading}>
+          Why it is on the board
           <span className={noteOk ? s.count : s.countBad}>
             {length} / {NOTE_MIN}–{NOTE_MAX}
           </span>
-        </span>
-        <textarea
-          className={`${u.suggestTextarea} ${s.note}`}
-          value={note}
-          rows={4}
-          onChange={(e) => setNote(e.target.value)}
-          disabled={busy !== null}
-        />
-      </label>
+        </h3>
+        {item.noteEn && !noteEdited ? (
+          <p className={`${s.prose} ${s.note}`}>{item.noteEn}</p>
+        ) : item.noteEn ? (
+          <p className={s.fieldHint}>
+            You have edited the Dutch, so the English above it is out of date. It is translated again after you
+            publish.
+          </p>
+        ) : null}
+        {dutchOpen ? (
+          <label className={s.noteField}>
+            <span className={s.noteLabel}>
+              {item.noteEn ? 'The Dutch note, which is what gets published' : 'In Dutch: there is no English translation yet'}
+            </span>
+            <textarea
+              className={`${u.suggestTextarea} ${s.note}`}
+              value={note}
+              rows={4}
+              lang="nl"
+              onChange={(e) => setNote(e.target.value)}
+              disabled={busy !== null}
+            />
+          </label>
+        ) : (
+          <button type="button" className={s.textButton} onClick={() => setDutchOpen(true)}>
+            Edit the Dutch note
+          </button>
+        )}
+      </section>
+
+      <section className={s.block}>
+        <h3 className={s.blockHeading}>
+          Where it will be listed
+          {relisted ? <span className={s.changed}>Changed</span> : null}
+        </h3>
+        <dl className={s.placement}>
+          {rows.map((row, i) => (
+            <div key={`${row.where}-${i}`} className={s.placementRow}>
+              <dt>{row.where}</dt>
+              <dd>
+                {row.href ? (
+                  <a href={row.href} target="_blank" rel="noopener noreferrer">
+                    {row.value}
+                  </a>
+                ) : (
+                  <strong>{row.value}</strong>
+                )}
+                {row.why ? <span className={s.placementWhy}>{row.why}</span> : null}
+              </dd>
+            </div>
+          ))}
+        </dl>
+        <div className={s.placementActions}>
+          <button
+            type="button"
+            className={`${u.btn} ${u.btnGhost} ${u.btnSmall}`}
+            onClick={() => setEditing((open) => !open)}
+            aria-expanded={editing}
+            disabled={busy !== null}
+          >
+            <Icon name="filter" />
+            {editing ? 'Done changing' : 'Change listing'}
+          </button>
+          {relisted ? (
+            <button
+              type="button"
+              className={`${u.btn} ${u.btnGhost} ${u.btnSmall}`}
+              onClick={() => setPlacement(item.placement)}
+              disabled={busy !== null}
+            >
+              <Icon name="x" />
+              Undo changes
+            </button>
+          ) : null}
+        </div>
+        {editing ? <PlacementEditor value={placement} onChange={setPlacement} /> : null}
+        {relisted ? (
+          <p className={s.hint}>
+            Publishing lists it as shown above, and the classifier sees what you changed on its next run.
+          </p>
+        ) : null}
+        {!placementOk ? (
+          <p className={s.hint}>Pick a problem area, a leverage type and one or two skills before you publish.</p>
+        ) : null}
+      </section>
 
       <div className={s.actions}>
         <button
           type="button"
           className={`${u.btn} ${u.btnSolid}`}
           onClick={accept}
-          disabled={busy !== null || !noteOk}
+          disabled={busy !== null || !noteOk || !placementOk}
         >
           <Icon name="circle-check" />
-          {busy === 'accept' ? 'Publishing…' : 'Publish'}
+          {busy === 'accept' ? 'Publishing…' : relisted ? 'Publish with changes' : 'Publish'}
         </button>
         <button
           type="button"
@@ -245,16 +536,10 @@ function ReviewCard({
         </p>
       ) : null}
 
-      {item.reasoning || item.excerpt ? (
+      {item.reasoning ? (
         <details className={s.details}>
           <summary>Why the classifier passed it</summary>
-          {item.reasoning ? <p>{item.reasoning}</p> : null}
-          {item.excerpt ? (
-            <>
-              <h3 className={s.detailsHeading}>From the ad</h3>
-              <p>{item.excerpt}</p>
-            </>
-          ) : null}
+          <p>{item.reasoning}</p>
           <p>
             <a href={`/studio/intent/edit/id=${item.draftId.replace(/^drafts\./, '')};type=jobListing/`}>
               Open in the Studio
@@ -267,7 +552,16 @@ function ReviewCard({
   )
 }
 
-export function ReviewQueue({ items, anchors }: { items: ReviewItem[]; anchors: string[] }) {
+export function ReviewQueue({
+  items,
+  anchors,
+  boardOrigin,
+}: {
+  items: ReviewItem[]
+  anchors: string[]
+  /** Where the public board lives, for the "where it will be listed" links. */
+  boardOrigin: string
+}) {
   const [outcomes, setOutcomes] = useState<Record<string, Outcome>>({})
   const remaining = items.filter((i) => !outcomes[i.draftId]).length
   const published = Object.values(outcomes).filter((o) => o.kind === 'published').length
@@ -311,6 +605,7 @@ export function ReviewQueue({ items, anchors }: { items: ReviewItem[]; anchors: 
               <ReviewCard
                 item={item}
                 anchor={anchors[index]}
+                boardOrigin={boardOrigin}
                 onDecided={(o) => setOutcomes((prev) => ({ ...prev, [item.draftId]: o }))}
               />
             </li>

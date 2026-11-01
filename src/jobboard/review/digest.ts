@@ -127,7 +127,7 @@ export function renderDigestText(
   lines.push('', `Open the review queue: ${link()}`, '')
   for (const item of fresh) {
     lines.push(`── ${item.title}`, meta(item))
-    if (item.note) lines.push(item.note)
+    if (item.noteEn ?? item.note) lines.push(item.noteEn ?? item.note)
     lines.push('')
   }
   if (older.length) {
@@ -159,7 +159,7 @@ export function renderDigestHtml(
       <a href="${escapeHtml(link(anchorFor(item)))}" style="display:block;text-decoration:none;color:${T.fg};background:${T.bg};border:1px solid ${T.border};border-radius:${T.radiusCard};padding:16px 18px;">
         <div style="font-family:${T.fontHeading};font-weight:500;font-size:18px;line-height:1.3;color:${T.fg};">${escapeHtml(item.title)}</div>
         <div style="font-family:${T.fontBody};font-size:13px;line-height:1.5;color:${T.fgMuted};padding-top:4px;">${escapeHtml(meta(item))}</div>
-        ${item.note ? `<div style="font-family:${T.fontBody};font-size:14px;line-height:1.55;color:${T.fg};padding-top:10px;">${escapeHtml(item.note)}</div>` : ''}
+        ${item.noteEn ?? item.note ? `<div style="font-family:${T.fontBody};font-size:14px;line-height:1.55;color:${T.fg};padding-top:10px;">${escapeHtml(item.noteEn ?? item.note)}</div>` : ''}
       </a>
     </td></tr>`
 
@@ -208,7 +208,8 @@ export async function runReviewDigest(
   const to = digestRecipients()
   const db = await getDb()
 
-  const queue = await loadReviewQueue()
+  // In English, like the dashboard. A dry run reads only: no model calls, no writes.
+  const queue = await loadReviewQueue({ translate: !options.dryRun, budgetMs: 120_000 })
   // "New" means promoted since the last digest that actually went out, so a
   // failed or skipped morning widens tomorrow's window instead of losing roles.
   const { rows } = await db.query<{ sent_at: string }>(

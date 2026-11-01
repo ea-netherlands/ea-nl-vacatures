@@ -207,6 +207,11 @@ export async function runTranslation(
      * budget is spent; the rest is picked up next run.
      */
     budgetMs?: number
+    /**
+     * Only these listing documents, and no employers. The review dashboard
+     * passes the drafts it is about to show, so it does not wait on the rest.
+     */
+    ids?: string[]
     onLog?: (line: string) => void
   } = {},
 ): Promise<TranslationReport> {
@@ -219,15 +224,19 @@ export async function runTranslation(
 
   // Drafts included on purpose: a curator reviewing an unpublished listing in
   // the Studio should see what the English page will actually say.
+  const only = options.ids
   const listings = await client.fetch<ListingRow[]>(
-    `*[_type == "jobListing"]{
+    `*[_type == "jobListing"${only ? ' && _id in $ids' : ''}]{
        _id, title, "employerName": employer->name,
        whyThisMattersNl, whyThisMattersEn, excerpt, excerptEn, translatedFrom
      }`,
+    { ids: only ?? [] },
   )
-  const employers = await client.fetch<EmployerRow[]>(
-    `*[_type == "employer" && defined(leverageNoteNl)]{ _id, name, leverageNoteNl, leverageNoteEn, translatedFrom }`,
-  )
+  const employers = only
+    ? []
+    : await client.fetch<EmployerRow[]>(
+        `*[_type == "employer" && defined(leverageNoteNl)]{ _id, name, leverageNoteNl, leverageNoteEn, translatedFrom }`,
+      )
 
   const jobs: Job[] = []
 
