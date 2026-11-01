@@ -12,6 +12,7 @@ export const metadata: Metadata = bilingualMetadata({
   title: 'Why these jobs?',
   description:
     'How a job ends up on this board: importance, tractability, neglectedness — and leverage.',
+  image: { page: 'method' },
 })
 
 export default async function Page() {

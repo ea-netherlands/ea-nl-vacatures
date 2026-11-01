@@ -26,6 +26,7 @@ export async function generateMetadata({
     // "werken bij Adessium" is exactly the query this page should win (§9.4).
     title: `Werken bij ${employer.name}`,
     description: employer.leverageNoteNl?.slice(0, 155) ?? undefined,
+    image: { employer: slug },
   })
 }
 

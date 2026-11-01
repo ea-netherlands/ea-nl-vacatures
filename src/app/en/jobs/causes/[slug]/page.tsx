@@ -27,6 +27,7 @@ export async function generateMetadata({
     enPath: ROUTES.en.cause(slug),
     title: explainer?.title ?? label,
     description: explainer?.summary,
+    image: { cause: slug },
   })
 }
 

@@ -39,6 +39,11 @@ const config: NextConfig = {
   // The ingestion worker runs as route handlers on Vercel Cron (spec §6.2a).
   // Long scrapes (AcademicTransfer) are chunked so they fit the timeout.
   serverExternalPackages: ['pg', '@electric-sql/pglite'],
+  // The share-card route reads its fonts and logo from disk (jobboard/og),
+  // which file tracing cannot see through a runtime path.
+  outputFileTracingIncludes: {
+    '/vacatures/og': ['./src/jobboard/og/fonts/*', './src/jobboard/og/*.png'],
+  },
   experimental: {
     // Sanity Studio ships its own client bundle; keep it out of the RSC graph.
     optimizePackageImports: ['sanity'],
