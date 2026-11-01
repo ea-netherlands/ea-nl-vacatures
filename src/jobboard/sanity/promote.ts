@@ -5,11 +5,11 @@
  * promoted to Sanity → a handful published. Each stage logs why things were
  * dropped, so the thresholds can be tuned rather than guessed at.
  *
- * Nothing is auto-published in v1. The board's entire value rests on trust in
- * the listings, and the curation capacity is there. Revisit auto-publish only
- * once there are a few hundred human decisions to calibrate against — at which
- * point the decision table gives real precision and recall numbers rather than
- * vibes.
+ * Almost nothing is auto-published. The board's entire value rests on trust in
+ * the listings, and the curation capacity is there. The one exception is a
+ * role that 80,000 Hours or Probably Good already lists (see `autoPublishes`):
+ * their own curation stands in for ours, so it goes live without a curator.
+ * Everything else lands as a draft in the review queue.
  */
 
 import type { Db } from '../db/client'
@@ -17,8 +17,54 @@ import { getDb } from '../db/client'
 import { recordDecision } from '../classify/run'
 import { sourceRankSql } from '../ingest/dedup'
 import { slugify, urlWithoutQuery } from '../lib/text'
+import { NOTE_MAX, NOTE_MIN } from '../review/decide'
 import { meetsPromotionThreshold } from '../taxonomy'
 import { isSanityConfigured, writeClient } from './client'
+
+/**
+ * The EA boards whose listings go live without a curator.
+ *
+ * James's call, November 2026: both boards already vet the organisations and
+ * roles they list, so a second human read here mostly re-checks their work.
+ * What they do not check is whether a Dutch resident can take the job, which
+ * is why the classifier's NL-eligibility verdict still decides.
+ */
+export const AUTO_PUBLISH_SOURCES = ['80000hours', 'probablygood'] as const
+
+export type AutoPublishInput = {
+  nl_eligible: boolean
+  listed_by_trusted_board: boolean
+  leverage: string | null
+  primary_cause: string | null
+  skills: string[] | null
+  cause_score: number
+  leverage_score: number
+  draft_note: string | null
+}
+
+/**
+ * Whether a promotable listing skips the review queue and is published as is.
+ *
+ * Every condition a curator-reviewed listing has to meet still applies; this
+ * only removes the human. On top of those:
+ *
+ *   • One of the trusted boards lists the role — this copy or any open copy
+ *     sharing its dedup key. Dedup prefers the employer's own ATS copy, so
+ *     looking only at this row's source would send most 80k roles to review.
+ *   • Not earning to give. That route onto the board deliberately skips the
+ *     cause score, and the employer is published with a not-an-endorsement
+ *     flag; it stays a curator's call.
+ *   • The drafted note already meets the length the dashboard enforces on
+ *     publish. No note, or a malformed one, means a human has to write it.
+ */
+export function autoPublishes(row: AutoPublishInput): boolean {
+  if (!row.listed_by_trusted_board || !row.nl_eligible) return false
+  if (!row.leverage || row.leverage === 'earning-to-give') return false
+  if (!row.primary_cause || !row.skills?.length) return false
+  if (!meetsPromotionThreshold(row.cause_score, row.leverage_score)) return false
+  const note = row.draft_note?.trim() ?? ''
+  return note.length >= NOTE_MIN && note.length <= NOTE_MAX
+}
 
 export type PromoteOptions = {
   limit?: number
@@ -28,7 +74,10 @@ export type PromoteOptions = {
 
 export type PromoteReport = {
   considered: number
+  /** Queued as drafts for a curator. */
   promoted: number
+  /** Published straight away under `autoPublishes`; not counted in `promoted`. */
+  autoPublished: number
   skippedAlreadyPromoted: number
   skippedBelowThreshold: number
   /** Another copy of the same role (same dedup key) is already in the queue or decided. */
@@ -80,6 +129,8 @@ type PromotableRow = {
   employer_cause_areas: string[] | null
   employer_ats: string | null
   employer_e2g: boolean | null
+  nl_eligible: boolean
+  listed_by_trusted_board: boolean
 }
 
 const DEFAULT_EXPIRY_DAYS = 60
@@ -90,6 +141,7 @@ export async function runPromotion(options: PromoteOptions = {}): Promise<Promot
   const report: PromoteReport = {
     considered: 0,
     promoted: 0,
+    autoPublished: 0,
     skippedAlreadyPromoted: 0,
     skippedBelowThreshold: 0,
     skippedDuplicate: 0,
@@ -154,14 +206,17 @@ export async function runPromotion(options: PromoteOptions = {}): Promise<Promot
       continue
     }
 
+    const publish = autoPublishes(row)
+
     try {
       if (options.dryRun) {
         log(
-          `would promote #${row.id} — ${row.title} @ ${row.employer_name} ` +
+          `would ${publish ? 'publish' : 'promote'} #${row.id} — ${row.title} @ ${row.employer_name} ` +
             `(${row.listing_kind === 'programme' ? 'programme, ' : ''}` +
             `${row.primary_cause}/${row.leverage}, score ${row.total_score})`,
         )
-        report.promoted++
+        if (publish) report.autoPublished++
+        else report.promoted++
         promotedKeys.add(row.dedup_key)
         continue
       }
@@ -171,9 +226,6 @@ export async function runPromotion(options: PromoteOptions = {}): Promise<Promot
       })
 
       const slugBase = slugify(`${row.title}-${row.employer_name}`)
-      // A deterministic document id keyed on the pipeline listing means a
-      // re-run finds the same draft instead of creating a second one.
-      const docId = `drafts.jobListing-${row.id}`
 
       /*
         The fallback window runs from when WE first saw the listing, not from
@@ -201,6 +253,16 @@ export async function runPromotion(options: PromoteOptions = {}): Promise<Promot
             DEFAULT_EXPIRY_DAYS * 864e5,
         ).toISOString()
 
+      // A fallback expiry already in the past would publish the listing and
+      // hide it in the same moment (the board filters on expiresAt > now), so
+      // that case goes to a curator, as it always has.
+      const live = publish && new Date(expiresAt).getTime() > Date.now()
+      // A deterministic document id keyed on the pipeline listing means a
+      // re-run finds the same document instead of creating a second one. The
+      // published id is the draft id without its prefix (review/queue.ts), so
+      // the two routes can never both create a document for one listing.
+      const docId = live ? `jobListing-${row.id}` : `drafts.jobListing-${row.id}`
+
       // createIfNotExists, not createOrReplace: if the decision insert below
       // ever fails, the next run reaches this listing again, and replacing
       // would overwrite whatever the curator had already edited in the draft.
@@ -218,7 +280,7 @@ export async function runPromotion(options: PromoteOptions = {}): Promise<Promot
         // valuable ergonomic feature (§6.5): the curator edits a sentence
         // rather than writing one, which is roughly the difference between a
         // four-minute and a twelve-minute review.
-        whyThisMattersNl: row.draft_note ?? '',
+        whyThisMattersNl: live ? row.draft_note!.trim() : (row.draft_note ?? ''),
 
         excerpt: buildExcerpt(row.description),
         primaryCause: row.primary_cause,
@@ -246,17 +308,22 @@ export async function runPromotion(options: PromoteOptions = {}): Promise<Promot
         llmReasoning: row.reasoning,
       })
 
+      // An auto-published listing records 'published' by the pipeline, which
+      // keeps it out of the review queue and, because calibration only counts
+      // non-pipeline actors, out of the human precision numbers too.
+      const score = `score ${row.total_score} (cause ${row.cause_score} + leverage ${row.leverage_score})`
       await recordDecision(
         db,
         row.id,
-        'promoted',
+        live ? 'published' : 'promoted',
         'pipeline',
-        `score ${row.total_score} (cause ${row.cause_score} + leverage ${row.leverage_score})`,
+        live ? `auto-published: listed by 80,000 Hours or Probably Good, ${score}` : score,
         docId,
       )
-      report.promoted++
+      if (live) report.autoPublished++
+      else report.promoted++
       promotedKeys.add(row.dedup_key)
-      log(`promoted #${row.id} → ${docId}`)
+      log(`${live ? 'published' : 'promoted'} #${row.id} → ${docId}`)
     } catch (err) {
       const message = (err as Error).message
       report.errors.push({ listingId: row.id, message })
@@ -307,7 +374,15 @@ async function loadPromotable(db: Db, limit: number): Promise<PromotableRow[]> {
             e.careers_url         as employer_careers_url,
             e.cause_areas         as employer_cause_areas,
             e.ats                 as employer_ats,
-            e.e2g_allowlisted     as employer_e2g
+            e.e2g_allowlisted     as employer_e2g,
+            c.nl_eligible,
+            exists (
+              select 1
+                from listing l3
+               where l3.dedup_key = l.dedup_key
+                 and l3.closed_at is null
+                 and l3.source_id = any($2::text[])
+            ) as listed_by_trusted_board
        from listing l
        join source s on s.id = l.source_id
        join classification c on c.listing_id = l.id
@@ -352,7 +427,7 @@ async function loadPromotable(db: Db, limit: number): Promise<PromotableRow[]> {
         )
       order by c.total_score desc, ${sourceRankSql('s.kind')} desc, l.first_seen_at desc
       limit $1`,
-    [limit],
+    [limit, [...AUTO_PUBLISH_SOURCES]],
   )
   return rows
 }

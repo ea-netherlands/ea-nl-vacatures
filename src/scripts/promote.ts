@@ -4,8 +4,9 @@
  *   npm run promote -- --dry-run    # see what would be promoted, no writes
  *   npm run promote
  *
- * Nothing is ever auto-published (§8.3). Every promoted listing lands as a
- * draft in the review queue with whyThisMattersNl pre-filled.
+ * Every promoted listing lands as a draft in the review queue with
+ * whyThisMattersNl pre-filled, except roles 80,000 Hours or Probably Good
+ * already list, which are published straight away (autoPublishes).
  */
 
 import { getDb } from '../jobboard/db/client'
@@ -23,6 +24,7 @@ void main(async () => {
   printReport(report.dryRun ? 'Promotion (dry run)' : 'Promotion', {
     considered: report.considered,
     promoted: report.promoted,
+    'auto-published': report.autoPublished,
     'below threshold on recheck': report.skippedBelowThreshold,
     'employers created': report.employersCreated,
     errors: report.errors.map((e) => `#${e.listingId}: ${e.message}`),

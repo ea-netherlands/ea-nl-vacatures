@@ -70,6 +70,7 @@ import {
   meetsPromotionThreshold,
 } from './taxonomy'
 import { firstLine } from './lib/note'
+import { autoPublishes, type AutoPublishInput } from './sanity/promote'
 
 const noFlags: EmployerGateFlags = {
   e2g_allowlisted: false,
@@ -1058,4 +1059,51 @@ test('parseDutchClosingDate rolls a year-less date into next year only when it m
   // A date a few weeks past stays in this year, so the listing reads as closed.
   const november = new Date('2026-11-20T12:00:00Z')
   assert.equal(parseDutchClosingDate('Vacature sluit op 18 oktober', november)?.getUTCFullYear(), 2026)
+})
+
+// ---- Auto-publish for roles the trusted EA boards list ----
+
+const trustedRole: AutoPublishInput = {
+  nl_eligible: true,
+  listed_by_trusted_board: true,
+  leverage: 'direct-work',
+  primary_cause: 'ai-safety',
+  skills: ['research'],
+  cause_score: 3,
+  leverage_score: 2,
+  draft_note:
+    'Een onderzoeksrol bij een organisatie die 80,000 Hours aanbeveelt, volledig remote vanuit Nederland te doen.',
+}
+
+test('a role 80k or Probably Good lists, NL-eligible and above threshold, publishes without review', () => {
+  assert.equal(autoPublishes(trustedRole), true)
+})
+
+test('auto-publish needs the trusted board: the same role from any other source is reviewed', () => {
+  assert.equal(autoPublishes({ ...trustedRole, listed_by_trusted_board: false }), false)
+})
+
+test('auto-publish never overrides NL eligibility', () => {
+  assert.equal(autoPublishes({ ...trustedRole, nl_eligible: false }), false)
+})
+
+test('auto-publish keeps the promotion threshold', () => {
+  assert.equal(autoPublishes({ ...trustedRole, cause_score: 1, leverage_score: 3 }), false)
+  assert.equal(autoPublishes({ ...trustedRole, primary_cause: null }), false)
+  assert.equal(autoPublishes({ ...trustedRole, leverage: null }), false)
+  assert.equal(autoPublishes({ ...trustedRole, skills: [] }), false)
+})
+
+test('earning to give from a trusted board still goes to a curator', () => {
+  assert.equal(
+    autoPublishes({ ...trustedRole, leverage: 'earning-to-give', primary_cause: null, cause_score: 0 }),
+    false,
+  )
+  assert.equal(autoPublishes({ ...trustedRole, leverage: 'earning-to-give' }), false)
+})
+
+test('auto-publish needs a note a curator could have published as is', () => {
+  assert.equal(autoPublishes({ ...trustedRole, draft_note: null }), false)
+  assert.equal(autoPublishes({ ...trustedRole, draft_note: 'Te kort.' }), false)
+  assert.equal(autoPublishes({ ...trustedRole, draft_note: 'x'.repeat(601) }), false)
 })
