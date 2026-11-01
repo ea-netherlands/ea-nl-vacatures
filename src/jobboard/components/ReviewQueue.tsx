@@ -278,8 +278,10 @@ function ReviewCard({
   const noteOk = length >= NOTE_MIN && length <= NOTE_MAX
   const closes = formatDate(item.deadlineAt)
   const relisted = !samePlacement(placement, item.placement)
+  // Earning-to-give roles are there for the pay, so most have no honest
+  // problem area (the Studio schema allows the same).
   const placementOk =
-    placement.primaryCause != null &&
+    (placement.primaryCause != null || placement.leverage === 'earning-to-give') &&
     placement.leverage != null &&
     placement.skills.length >= 1 &&
     placement.skills.length <= MAX_SKILLS_PER_LISTING
@@ -459,7 +461,11 @@ function ReviewCard({
           </p>
         ) : null}
         {!placementOk ? (
-          <p className={s.hint}>Pick a problem area, a leverage type and one or two skills before you publish.</p>
+          <p className={s.hint}>
+            {placement.leverage === 'earning-to-give'
+              ? 'Pick one or two skills before you publish.'
+              : 'Pick a problem area, a leverage type and one or two skills before you publish.'}
+          </p>
         ) : null}
       </section>
 
