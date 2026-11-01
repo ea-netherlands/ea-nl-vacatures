@@ -197,6 +197,21 @@ export const jobListing = defineType({
       validation: (r) => r.required().min(1).max(MAX_SKILLS_PER_LISTING),
     }),
     defineField({
+      name: 'section',
+      title: 'Section on the index',
+      type: 'string',
+      group: 'taxonomy',
+      description:
+        'Leave empty to let the board decide: programmes, internships, traineeships and career capital are ways in; "recommended by an evaluator" is vetted; everything else is Dutch leverage. Set it only to override that.',
+      options: {
+        list: [
+          { title: 'At vetted organisations', value: 'vetted' },
+          { title: 'Ways in', value: 'routes' },
+          { title: 'With leverage in the Netherlands', value: 'dutch' },
+        ],
+      },
+    }),
+    defineField({
       name: 'leverage',
       title: 'Type of leverage',
       type: 'string',

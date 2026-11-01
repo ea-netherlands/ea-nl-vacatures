@@ -35,7 +35,11 @@ export type Band = (typeof BANDS)[number]
  */
 export const TRAINEESHIP = /trainee(ship)?s?\b|traineeprogramma|\btrainingsprogramma\b/i
 
-export function bandOf(listing: {
+/**
+ * The band the rules below would choose, ignoring a curator's override. The
+ * review dashboard shows it as the "automatic" option.
+ */
+export function automaticBand(listing: {
   title: string
   listingKind: ListingKind | null
   seniority: Seniority | null
@@ -51,6 +55,15 @@ export function bandOf(listing: {
   }
   if (listing.leverage === 'trusted-recommendation') return 'vetted'
   return 'dutch'
+}
+
+/**
+ * Where a listing goes. A curator's `section` wins: the rules are right for
+ * most roles, but some cannot be moved by them at all — a role whose title
+ * names a traineeship is a way in whatever its other fields say.
+ */
+export function bandOf(listing: Parameters<typeof automaticBand>[0] & { section?: Band | null }): Band {
+  return listing.section && isBand(listing.section) ? listing.section : automaticBand(listing)
 }
 
 export function isBand(value: string | undefined): value is Band {

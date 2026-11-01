@@ -104,6 +104,7 @@ const item = (over: Partial<ReviewItem> = {}): ReviewItem => ({
     subArea: 'ai-safety',
     skills: ['operations'],
     leverage: 'field-building',
+    section: null,
     locationMode: 'remote',
     languageRequirement: 'english-sufficient',
     seniority: 'mid',
@@ -189,4 +190,15 @@ test('a relisting is described field by field for the classifier', () => {
     },
   ])
   assert.match(rendered, /Curator corrected the listing — primaryCause: better-futures → global-catastrophic-risks/)
+})
+
+test('a hand-set section overrides the rules, even for a traineeship', () => {
+  const p = { ...item().placement, section: 'vetted' as const }
+  const rows = explainPlacement('Rijkstraineeship AI', p, null, 'https://x.test')
+  const section = rows.find((r) => r.where === 'Section')!
+  assert.equal(section.value, 'At vetted organisations')
+  assert.match(section.why!, /Set by hand.*Ways in/)
+  assert.equal(validatePlacement(p).section, 'vetted')
+  assert.equal(validatePlacement({ ...p, section: '' }).section, null)
+  assert.throws(() => validatePlacement({ ...p, section: 'elsewhere' }), /unknown value/)
 })

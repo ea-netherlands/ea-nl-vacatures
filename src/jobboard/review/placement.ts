@@ -13,7 +13,7 @@
  */
 
 import { routes, t } from '../content/i18n'
-import { bandOf, TRAINEESHIP } from '../lib/bands'
+import { automaticBand, bandOf, TRAINEESHIP, type Band } from '../lib/bands'
 import type {
   CauseArea,
   LanguageRequirement,
@@ -33,6 +33,8 @@ export type ListingPlacement = {
   subArea: SubArea | null
   skills: Skill[]
   leverage: LeverageType | null
+  /** The curator's override of the band; null lets the rules decide. */
+  section: Band | null
   locationMode: LocationMode | null
   languageRequirement: LanguageRequirement | null
   seniority: Seniority | null
@@ -52,6 +54,12 @@ export type PlacementRow = {
 const en = t('en')
 
 function bandReason(title: string, p: ListingPlacement): string {
+  if (p.section) {
+    const auto = automaticBand({ title, ...p })
+    return auto === p.section
+      ? 'Set by hand, and the rules would put it here too.'
+      : `Set by hand. The rules would put it in "${en.bandLabels[auto]}".`
+  }
   if (p.listingKind === 'programme') return 'It is a programme (fellowship, residency or bootcamp), and every programme is a way in.'
   if (p.seniority === 'internship') return 'It is an internship, and internships are always a way in.'
   if (p.leverage === 'career-capital') return 'Its leverage is "career capital", which files it as a way in.'
@@ -83,7 +91,7 @@ export function explainPlacement(
       href: `${origin}${r.earningToGive}`,
     })
   } else {
-    const band = bandOf({ title, listingKind: p.listingKind, seniority: p.seniority, leverage: p.leverage })
+    const band = bandOf({ title, ...p })
     rows.push({
       where: 'Section',
       value: en.bandLabels[band],

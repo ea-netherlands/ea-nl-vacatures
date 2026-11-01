@@ -7,6 +7,7 @@
 
 import { isSanityConfigured, readClient } from './client'
 import type { CauseArea, LeverageType } from '../taxonomy'
+import type { Band } from '../lib/bands'
 import type {
   LanguageRequirement,
   ListingKind,
@@ -33,6 +34,7 @@ const LISTING_FIELDS = /* groq */ `
   subArea,
   "skills": coalesce(skills, []),
   leverage,
+  section,
   locationCity,
   locationMode,
   seniority,
@@ -79,6 +81,8 @@ export type ListingView = {
    * section of ../taxonomy for why it survives the axis being retired.
    */
   leverage: LeverageType | null
+  /** A curator's override of the index band; see ../lib/bands. */
+  section: Band | null
   locationCity: string | null
   locationMode: LocationMode | null
   seniority: Seniority | null

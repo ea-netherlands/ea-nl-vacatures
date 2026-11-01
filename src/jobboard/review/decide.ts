@@ -15,6 +15,7 @@ import { writeClient } from '../sanity/client'
 import { publishedIdOf } from './queue'
 import type { RejectCategory } from './categories'
 import type { ListingPlacement } from './placement'
+import { BANDS } from '../lib/bands'
 import {
   CAUSE_AREAS,
   LANGUAGE_REQUIREMENTS,
@@ -64,6 +65,7 @@ const PLACEMENT_FIELDS = [
   'subArea',
   'skills',
   'leverage',
+  'section',
   'locationMode',
   'languageRequirement',
   'seniority',
@@ -107,6 +109,7 @@ export function validatePlacement(input: unknown): ListingPlacement {
     subArea,
     skills,
     leverage: oneOf(LEVERAGE_TYPES, p.leverage, 'leverage', false),
+    section: oneOf(BANDS, p.section, 'section'),
     locationMode: oneOf(LOCATION_MODES, p.locationMode, 'location'),
     languageRequirement: oneOf(LANGUAGE_REQUIREMENTS, p.languageRequirement, 'language'),
     seniority: oneOf(SENIORITIES, p.seniority, 'seniority'),
