@@ -6,9 +6,10 @@
  * dropped, so the thresholds can be tuned rather than guessed at.
  *
  * Almost nothing is auto-published. The board's entire value rests on trust in
- * the listings, and the curation capacity is there. The one exception is a
- * role that 80,000 Hours or Probably Good already lists (see `autoPublishes`):
- * their own curation stands in for ours, so it goes live without a curator.
+ * the listings, and the curation capacity is there. The exceptions are a
+ * role that 80,000 Hours or Probably Good already lists, whose own curation
+ * stands in for ours, and earning to give, whose mechanical gate already is
+ * the curation (see `autoPublishes`). Both go live without a curator.
  * Everything else lands as a draft in the review queue.
  */
 
@@ -46,24 +47,35 @@ export type AutoPublishInput = {
  * Whether a promotable listing skips the review queue and is published as is.
  *
  * Every condition a curator-reviewed listing has to meet still applies; this
- * only removes the human. On top of those:
+ * only removes the human. On top of those, one of:
  *
  *   • One of the trusted boards lists the role — this copy or any open copy
  *     sharing its dedup key. Dedup prefers the employer's own ATS copy, so
  *     looking only at this row's source would send most 80k roles to review.
- *   • Not earning to give. That route onto the board deliberately skips the
- *     cause score, and the employer is published with a not-an-endorsement
- *     flag; it stays a curator's call.
- *   • The drafted note already meets the length the dashboard enforces on
- *     publish. No note, or a malformed one, means a human has to write it.
+ *   • Earning to give. James's call, November 2026: classify only assigns it
+ *     when the employer is on the allowlist and the role passes the mechanical
+ *     gate (taxonomy/gates.ts), so a curator has nothing left to judge. It
+ *     needs no problem area and skips the cause score, as on promotion.
+ *
+ * And either way the drafted note already meets the length the dashboard
+ * enforces on publish. No note, or a malformed one, means a human has to
+ * write it.
  */
 export function autoPublishes(row: AutoPublishInput): boolean {
-  if (!row.listed_by_trusted_board || !row.nl_eligible) return false
-  if (!row.leverage || row.leverage === 'earning-to-give') return false
-  if (!row.primary_cause || !row.skills?.length) return false
-  if (!meetsPromotionThreshold(row.cause_score, row.leverage_score)) return false
+  if (!row.nl_eligible || !row.leverage || !row.skills?.length) return false
+  if (row.leverage !== 'earning-to-give') {
+    if (!row.listed_by_trusted_board || !row.primary_cause) return false
+    if (!meetsPromotionThreshold(row.cause_score, row.leverage_score)) return false
+  }
   const note = row.draft_note?.trim() ?? ''
   return note.length >= NOTE_MIN && note.length <= NOTE_MAX
+}
+
+/** Why `autoPublishes` let a row through, for the decision log. */
+function autoPublishReason(row: AutoPublishInput): string {
+  return row.leverage === 'earning-to-give'
+    ? 'earning to give, past the mechanical gate'
+    : 'listed by 80,000 Hours or Probably Good'
 }
 
 export type PromoteOptions = {
@@ -317,7 +329,7 @@ export async function runPromotion(options: PromoteOptions = {}): Promise<Promot
         row.id,
         live ? 'published' : 'promoted',
         'pipeline',
-        live ? `auto-published: listed by 80,000 Hours or Probably Good, ${score}` : score,
+        live ? `auto-published: ${autoPublishReason(row)}, ${score}` : score,
         docId,
       )
       if (live) report.autoPublished++
@@ -346,7 +358,7 @@ export type TrustedDraftsReport = {
  * Publishes drafts already waiting in the review queue that `autoPublishes`
  * would have published had it existed when they were promoted.
  *
- * A one-off backfill for the switch to auto-publish, November 2026, though safe
+ * A backfill for each widening of auto-publish, November 2026, though safe
  * to rerun: it only looks at listings with a 'promoted' decision and no later
  * one. Snoozed listings are left alone, since a curator chose to wait on them.
  *
@@ -397,7 +409,7 @@ export async function publishTrustedDrafts(
     try {
       const { publishedId } = await acceptListing(draftId, undefined, {
         actor: 'pipeline',
-        reason: 'auto-published from the review queue: listed by 80,000 Hours or Probably Good',
+        reason: `auto-published from the review queue: ${autoPublishReason(row)}`,
       })
       report.published++
       log(`published #${row.id} → ${publishedId}`)

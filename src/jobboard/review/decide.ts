@@ -83,13 +83,14 @@ function oneOf<T extends string>(allowed: readonly T[], value: unknown, field: s
 /**
  * Checks a curator's relisting against the taxonomy. The API bypasses the
  * Studio's validation, so the Studio's rules are repeated here: a primary
- * cause, one to MAX_SKILLS_PER_LISTING skills, a sub-area that belongs to the
- * primary cause.
+ * cause (except for earning to give), one to MAX_SKILLS_PER_LISTING skills, a
+ * sub-area that belongs to the primary cause.
  */
 export function validatePlacement(input: unknown): ListingPlacement {
   if (!input || typeof input !== 'object') throw new DecisionError('listing: expected an object', 400)
   const p = input as Record<string, unknown>
-  const primaryCause = oneOf(CAUSE_AREAS, p.primaryCause, 'problem area', false)!
+  const leverage = oneOf(LEVERAGE_TYPES, p.leverage, 'leverage', false)
+  const primaryCause = oneOf(CAUSE_AREAS, p.primaryCause, 'problem area', leverage === 'earning-to-give')
   const subArea = oneOf(SUB_AREAS, p.subArea, 'sub-area') as SubArea | null
   if (subArea && SUB_AREA_CAUSE[subArea] !== primaryCause) {
     throw new DecisionError('the sub-area belongs to a different problem area', 422)
@@ -108,7 +109,7 @@ export function validatePlacement(input: unknown): ListingPlacement {
     secondaryCauses,
     subArea,
     skills,
-    leverage: oneOf(LEVERAGE_TYPES, p.leverage, 'leverage', false),
+    leverage,
     section: oneOf(BANDS, p.section, 'section'),
     locationMode: oneOf(LOCATION_MODES, p.locationMode, 'location'),
     languageRequirement: oneOf(LANGUAGE_REQUIREMENTS, p.languageRequirement, 'language'),

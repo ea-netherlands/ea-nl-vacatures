@@ -1094,12 +1094,13 @@ test('auto-publish keeps the promotion threshold', () => {
   assert.equal(autoPublishes({ ...trustedRole, skills: [] }), false)
 })
 
-test('earning to give from a trusted board still goes to a curator', () => {
-  assert.equal(
-    autoPublishes({ ...trustedRole, leverage: 'earning-to-give', primary_cause: null, cause_score: 0 }),
-    false,
-  )
-  assert.equal(autoPublishes({ ...trustedRole, leverage: 'earning-to-give' }), false)
+test('earning to give publishes without review, from any source and with no problem area', () => {
+  const e2g = { ...trustedRole, leverage: 'earning-to-give', primary_cause: null, cause_score: 0, leverage_score: 0 }
+  assert.equal(autoPublishes(e2g), true)
+  assert.equal(autoPublishes({ ...e2g, listed_by_trusted_board: false }), true)
+  assert.equal(autoPublishes({ ...e2g, nl_eligible: false }), false)
+  assert.equal(autoPublishes({ ...e2g, skills: [] }), false)
+  assert.equal(autoPublishes({ ...e2g, draft_note: null }), false)
 })
 
 test('auto-publish needs a note a curator could have published as is', () => {

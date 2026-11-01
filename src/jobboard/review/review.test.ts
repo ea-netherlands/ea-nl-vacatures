@@ -163,6 +163,10 @@ test('a relisting is validated against the taxonomy', () => {
   assert.throws(() => validatePlacement({ ...item().placement, subArea: 'animal-law' }), /different problem area/)
   assert.throws(() => validatePlacement({ ...item().placement, skills: [] }), /skills/)
   assert.throws(() => validatePlacement({ ...item().placement, leverage: 'vibes' }), /unknown value/)
+  // A problem area is required, except for earning to give.
+  assert.throws(() => validatePlacement({ ...item().placement, primaryCause: null, subArea: null }), /problem area is required/)
+  const e2g = { ...item().placement, leverage: 'earning-to-give', primaryCause: null, subArea: null, secondaryCauses: [] }
+  assert.equal(validatePlacement(e2g).primaryCause, null)
 })
 
 test('a relisting is described field by field for the classifier', () => {
