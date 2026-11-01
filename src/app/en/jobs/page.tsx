@@ -11,6 +11,7 @@ export const metadata: Metadata = bilingualMetadata({
   enPath: ROUTES.en.index,
   title: 'Jobs',
   description: t('en').boardTagline,
+  image: { page: 'index' },
 })
 
 export default async function Page({

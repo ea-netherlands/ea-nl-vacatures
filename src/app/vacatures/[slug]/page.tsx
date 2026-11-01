@@ -31,6 +31,7 @@ export async function generateMetadata({
     // The editorial note is the description: it is what makes this listing
     // different from the same ad on LinkedIn.
     description: firstLine(listing.whyThisMattersNl, 155) || (listing.excerpt ?? undefined),
+    image: { listing: slug },
   })
 }
 

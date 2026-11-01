@@ -25,6 +25,7 @@ export async function generateMetadata({
     enPath: ROUTES.en.employer(slug),
     title: `Working at ${employer.name}`,
     description: (employer.leverageNoteEn ?? employer.leverageNoteNl)?.slice(0, 155) ?? undefined,
+    image: { employer: slug },
   })
 }
 

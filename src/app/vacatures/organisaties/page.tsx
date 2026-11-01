@@ -11,6 +11,7 @@ export const metadata: Metadata = bilingualMetadata({
   enPath: ROUTES.en.employers,
   title: 'Organisaties',
   description: 'Waar deze vacatures staan, en waarom we denken dat deze organisaties ertoe doen.',
+  image: { page: 'employers' },
 })
 
 export default async function Page() {

@@ -12,6 +12,7 @@ export const metadata: Metadata = bilingualMetadata({
   title: 'Feedback',
   description:
     'This board is still in beta. Know a vacancy or organisation that belongs here, spotted something wrong, or think we are missing something? Tell us.',
+  image: { page: 'suggest' },
 })
 
 export default async function Page() {

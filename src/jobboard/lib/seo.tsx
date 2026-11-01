@@ -12,6 +12,7 @@ import type { Metadata } from 'next'
 import { DEFAULT_LOCALE, type Locale } from '../content/i18n'
 import type { ListingView } from '../sanity/queries'
 import { excerptFor, noteFor } from './note'
+import { OG_SIZE, ogImagePath, type OgSpec } from '../og/content'
 
 export const SITE_URL = (
   process.env.NEXT_PUBLIC_SITE_URL ?? 'https://vacatures.effectiefaltruisme.nl'
@@ -47,8 +48,18 @@ export function bilingualMetadata(args: {
   title: string
   description?: string
   noIndex?: boolean
+  /**
+   * Which share card to show (../og). Every public page gets one: a link
+   * pasted into WhatsApp or Slack without an image reads as an afterthought.
+   */
+  image?: OgSpec
 }): Metadata {
   const selfPath = args.locale === 'nl' ? args.nlPath : args.enPath
+  const image = {
+    url: absolute(ogImagePath(args.image ?? { page: 'index' }, args.locale)),
+    ...OG_SIZE,
+    alt: args.title,
+  }
   return {
     title: args.title,
     description: args.description,
@@ -68,6 +79,13 @@ export function bilingualMetadata(args: {
       locale: args.locale === 'nl' ? 'nl_NL' : 'en_GB',
       siteName: 'Effectief Altruïsme Nederland',
       type: 'website',
+      images: [image],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: args.title,
+      description: args.description,
+      images: [image],
     },
     robots: args.noIndex ? { index: false, follow: true } : undefined,
   }
