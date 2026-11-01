@@ -29,6 +29,7 @@ import s from './review.module.css'
 import { REJECT_CATEGORIES, type RejectCategory } from '../review/categories'
 import type { ReviewItem } from '../review/queue'
 import { explainPlacement, type ListingPlacement } from '../review/placement'
+import { automaticBand, BANDS } from '../lib/bands'
 import { t } from '../content/i18n'
 import {
   CAUSE_AREAS,
@@ -113,9 +114,11 @@ function Select<T extends string>({
 
 /** The listing's fields as controls. Every change re-runs the explanation above. */
 function PlacementEditor({
+  title,
   value,
   onChange,
 }: {
+  title: string
   value: ListingPlacement
   onChange: (next: ListingPlacement) => void
 }) {
@@ -127,6 +130,19 @@ function PlacementEditor({
   return (
     <div className={s.editor}>
       <div className={s.editorGrid}>
+        <Select
+          label="Section"
+          value={value.section}
+          options={BANDS}
+          labels={en.bandLabels}
+          onChange={(v) => set('section', v)}
+          empty={`Automatic (${en.bandLabels[automaticBand({ title, ...value })]})`}
+          hint={
+            value.leverage === 'earning-to-give'
+              ? 'Earning-to-give roles have their own page, so this has no effect until you change the leverage.'
+              : 'Automatic follows the kind, seniority and leverage below.'
+          }
+        />
         <Select
           label="Problem area"
           value={value.primaryCause}
@@ -156,7 +172,7 @@ function PlacementEditor({
           options={LEVERAGE_TYPES}
           labels={en.leverage}
           onChange={(v) => set('leverage', v)}
-          hint="Not shown to readers, but it decides the section."
+          hint="Not shown to readers. Unless you pick a section, it helps decide it."
         />
         <Select
           label="Kind"
@@ -436,7 +452,7 @@ function ReviewCard({
             </button>
           ) : null}
         </div>
-        {editing ? <PlacementEditor value={placement} onChange={setPlacement} /> : null}
+        {editing ? <PlacementEditor title={item.title} value={placement} onChange={setPlacement} /> : null}
         {relisted ? (
           <p className={s.hint}>
             Publishing lists it as shown above, and the classifier sees what you changed on its next run.
