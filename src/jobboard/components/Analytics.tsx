@@ -131,7 +131,8 @@ function ApplyClickTracker() {
         window.gtag?.('event', 'job_apply_click', {
           job_slug: link.getAttribute('data-apply-slug') ?? undefined,
           organisation: link.getAttribute('data-apply-employer') ?? undefined,
-          language: link.getAttribute('data-apply-locale') ?? undefined,
+          // Not "language": gtag treats that as the browser-language field
+          site_language: link.getAttribute('data-apply-locale') ?? undefined,
           send_to: GA4_MEASUREMENT_ID,
         })
       }
