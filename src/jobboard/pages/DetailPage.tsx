@@ -109,7 +109,9 @@ function ApplyButton({ listing, locale, wide }: { listing: ListingView; locale: 
       rel="noopener"
       // Read by ApplyClickTracker for the apply_click conversion.
       data-apply-listing={listing.id}
+      data-apply-slug={listing.slug}
       data-apply-employer={listing.employer?.name}
+      data-apply-locale={locale}
     >
       {copy.detailApply}
       <Icon name="external-link" />
