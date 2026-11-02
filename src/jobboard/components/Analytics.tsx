@@ -24,6 +24,11 @@
  * replacement for it. Nothing is pushed without consent, because without
  * consent GTM is never loaded and the dataLayer has no reader.
  *
+ * GTM has no tag that forwards `apply_click` to GA4, so the same click is also
+ * sent to GA4 directly as `job_apply_click`, with analytics consent. A gtag()
+ * event only reaches the Google tag that GTM loads when it names the property
+ * in send_to (checked on the live site, 2 Nov 2026).
+ *
  * Rebuilt in plain elements rather than ported from the website's Chakra
  * version: this module deliberately has no UI framework (§6.2a), and at merge
  * time the website's own banner replaces this one.
@@ -103,6 +108,9 @@ function GoogleTagManager({ gtmId }: { gtmId: string }) {
   )
 }
 
+// GA4 property "EAN website", the one the Google tag in GTM-NJK5ZXD loads
+const GA4_MEASUREMENT_ID = 'G-KWJ584SDNL'
+
 /**
  * One delegated listener rather than an onClick on the apply button, so any
  * apply link the board renders now or later is counted without remembering to
@@ -119,6 +127,14 @@ function ApplyClickTracker() {
         listing_id: link.getAttribute('data-apply-listing'),
         employer: link.getAttribute('data-apply-employer') ?? undefined,
       })
+      if (readConsent()?.analytics) {
+        window.gtag?.('event', 'job_apply_click', {
+          job_slug: link.getAttribute('data-apply-slug') ?? undefined,
+          organisation: link.getAttribute('data-apply-employer') ?? undefined,
+          language: link.getAttribute('data-apply-locale') ?? undefined,
+          send_to: GA4_MEASUREMENT_ID,
+        })
+      }
     }
     // Capture phase, so the push lands before the navigation starts.
     document.addEventListener('click', onClick, true)
