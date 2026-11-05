@@ -69,7 +69,7 @@ function bandReason(title: string, p: ListingPlacement): string {
   if (p.leverage === 'trusted-recommendation')
     return 'Its leverage is "recommended by an evaluator": the employer has been vetted by an evaluator or an EA funder.'
   if (p.listedByEaBoard)
-    return '80,000 Hours, Probably Good or EA Opportunities lists it, so the organisation counts as vetted.'
+    return 'An EA job board (80,000 Hours, Probably Good, EA Opportunities or Animal Advocacy Careers) lists it, so the organisation counts as vetted.'
   return 'Not a way in, no EA board lists it, and the employer is not marked as vetted, so it goes in the Dutch-leverage band.'
 }
 

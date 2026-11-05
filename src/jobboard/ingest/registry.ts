@@ -3,6 +3,7 @@
  */
 
 import { aimCareers } from './adapters/aim'
+import { animalAdvocacyCareers } from './adapters/animal-advocacy-careers'
 import { ATS_ADAPTERS } from './adapters/ats'
 import { DUTCH_ADAPTERS } from './adapters/dutch'
 import { bookingJobs, optiverJobs } from './adapters/e2g-employers'
@@ -17,6 +18,7 @@ export const ADAPTERS: SourceAdapter[] = [
   ...DUTCH_ADAPTERS,
   ...EA_BOARD_ADAPTERS,
   eaOpportunitiesBoard,
+  animalAdvocacyCareers,
   jsonldCareers,
   aimCareers,
   optiverJobs,

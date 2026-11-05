@@ -29,8 +29,11 @@ import { isSanityConfigured, writeClient } from './client'
  * roles they list, so a second human read here mostly re-checks their work.
  * What they do not check is whether a Dutch resident can take the job, which
  * is why the classifier's NL-eligibility verdict still decides.
+ *
+ * Animal Advocacy Careers joined them the same month, also at James's request:
+ * it curates animal advocacy roles the way the other two curate theirs.
  */
-export const AUTO_PUBLISH_SOURCES = ['80000hours', 'probablygood'] as const
+export const AUTO_PUBLISH_SOURCES = ['80000hours', 'probablygood', 'animal-advocacy-careers'] as const
 
 export type AutoPublishInput = {
   nl_eligible: boolean
@@ -75,7 +78,7 @@ export function autoPublishes(row: AutoPublishInput): boolean {
 function autoPublishReason(row: AutoPublishInput): string {
   return row.leverage === 'earning-to-give'
     ? 'earning to give, past the mechanical gate'
-    : 'listed by 80,000 Hours or Probably Good'
+    : 'listed by 80,000 Hours, Probably Good or Animal Advocacy Careers'
 }
 
 export type PromoteOptions = {
