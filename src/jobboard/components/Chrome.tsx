@@ -8,7 +8,7 @@
 
 import Link from 'next/link'
 import { SiteHeader } from './SiteHeader'
-import { POLICY_PLAN_PDF, SITE_FOOTER } from '../content/site-chrome'
+import { loadSiteChrome, type SiteFooter, type SiteNav } from '../content/site-chrome-live'
 import type { ReactNode } from 'react'
 import {
   INTERNATIONAL_BOARDS,
@@ -118,11 +118,19 @@ export function Hero({
  * beta pill, its pages, and the feedback button — minus the language switch,
  * which moved up into the site's bar where the site has it.
  */
-function Header({ locale, switchHref }: { locale: Locale; switchHref: string }) {
+function Header({
+  locale,
+  nav,
+  switchHref,
+}: {
+  locale: Locale
+  nav: SiteNav
+  switchHref: string
+}) {
   const copy = t(locale)
   const r = routes(locale)
   return (
-    <SiteHeader locale={locale} switchHref={switchHref}>
+    <SiteHeader locale={locale} nav={nav} switchHref={switchHref}>
       <div className={s.boardBar}>
         <Container>
           <div className={s.headerInner}>
@@ -163,8 +171,7 @@ function Header({ locale, switchHref }: { locale: Locale; switchHref: string }) 
   )
 }
 
-function Footer({ locale }: { locale: Locale }) {
-  const f = SITE_FOOTER[locale]
+function Footer({ footer: f }: { footer: SiteFooter }) {
   return (
     <footer className={s.footer}>
       <div className={s.footerInner}>
@@ -210,7 +217,7 @@ function Footer({ locale }: { locale: Locale }) {
             <p>{f.anbi.body}</p>
             <p>{f.anbi.ids}</p>
             <p>
-              <a href={POLICY_PLAN_PDF} className={s.footerUnderline}>
+              <a href={f.anbi.href} className={s.footerUnderline}>
                 {f.anbi.link}
               </a>
             </p>
@@ -276,7 +283,7 @@ function DisagreeNote({ locale }: { locale: Locale }) {
   )
 }
 
-export function Shell({
+export async function Shell({
   locale,
   switchHref,
   children,
@@ -286,17 +293,19 @@ export function Shell({
   children: ReactNode
 }) {
   const copy = t(locale)
+  // The site's own header and footer, or the bundled copy if the site can't be reached.
+  const chrome = await loadSiteChrome(locale)
   return (
     <div className={`jb-root ${s.shell}`} lang={locale}>
       <a href="#board-main" className={s.skip}>
         {copy.skipToContent}
       </a>
-      <Header locale={locale} switchHref={switchHref} />
+      <Header locale={locale} nav={chrome.nav} switchHref={switchHref} />
       <main id="board-main" className={s.main}>
         {children}
       </main>
       <DisagreeNote locale={locale} />
-      <Footer locale={locale} />
+      <Footer footer={chrome.footer} />
       <Analytics locale={locale} />
     </div>
   )

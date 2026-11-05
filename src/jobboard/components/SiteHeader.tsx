@@ -8,7 +8,8 @@
  * "Start de gratis cursus" button — rendered by the board, with the board's
  * own navigation as a slim second row underneath (see `BoardNav` in Chrome).
  *
- * The menus are data in ../content/site-chrome.ts, copied from the site. Since
+ * The menus come from the site itself (../content/site-chrome-live.ts, with
+ * ../content/site-chrome.ts as the fallback), passed in by Chrome. Since
  * November 2026 they are the site's five pillars: a click opens a full-width
  * panel under the header with the pillar's grouped links, an optional feature
  * card and a "not sure where to start?" line. A second click, Escape or a
@@ -25,11 +26,8 @@
 import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
 import type { Locale } from "../content/i18n";
-import {
-  SITE_NAV,
-  type SiteNavLink,
-  type SitePillar,
-} from "../content/site-chrome";
+import type { SiteNavLink, SitePillar } from "../content/site-chrome";
+import type { SiteNav } from "../content/site-chrome-live";
 import { Icon } from "./Icon";
 import s from "./layout.module.css";
 import u from "./ui.module.css";
@@ -79,13 +77,13 @@ function PanelLink({
 }
 
 function Unsure({
-  locale,
+  nav,
   onNavigate,
 }: {
-  locale: Locale;
+  nav: SiteNav;
   onNavigate: () => void;
 }) {
-  const { unsure } = SITE_NAV[locale];
+  const { unsure } = nav;
   return (
     <p className={s.panelUnsure}>
       {unsure.text}{" "}
@@ -100,15 +98,15 @@ function Unsure({
 function Panel({
   id,
   pillar,
-  locale,
+  nav,
   onNavigate,
 }: {
   id: string;
   pillar: SitePillar;
-  locale: Locale;
+  nav: SiteNav;
   onNavigate: () => void;
 }) {
-  const { newTab } = SITE_NAV[locale];
+  const { newTab } = nav;
   const f = pillar.feature;
   return (
     <div id={id} className={s.panel}>
@@ -149,7 +147,7 @@ function Panel({
           ) : null}
         </div>
         <div className={s.panelFoot}>
-          <Unsure locale={locale} onNavigate={onNavigate} />
+          <Unsure nav={nav} onNavigate={onNavigate} />
         </div>
       </div>
     </div>
@@ -158,15 +156,17 @@ function Panel({
 
 export function SiteHeader({
   locale,
+  nav,
   switchHref,
   children,
 }: {
   locale: Locale;
+  /** The site's menus, from ../content/site-chrome-live.ts (the site's own, or the bundled copy). */
+  nav: SiteNav;
   switchHref: string;
   /** The board's own row, rendered under the site's bar inside the same sticky header. */
   children?: React.ReactNode;
 }) {
-  const nav = SITE_NAV[locale];
   const baseId = useId();
   const [open, setOpen] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -315,7 +315,7 @@ export function SiteHeader({
                 </div>
               </details>
             ))}
-            <Unsure locale={locale} onNavigate={close} />
+            <Unsure nav={nav} onNavigate={close} />
             <a
               href={nav.cta.href}
               className={`${u.btn} ${u.btnSolid} ${u.btnFull}`}
@@ -336,7 +336,7 @@ export function SiteHeader({
           <Panel
             id={`${baseId}-${openPillar.key}`}
             pillar={openPillar}
-            locale={locale}
+            nav={nav}
             onNavigate={close}
           />
         </div>
