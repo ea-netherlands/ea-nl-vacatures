@@ -12,10 +12,21 @@
  * So there are three bands, in this order (James's call):
  *
  * 1. `vetted` — any role at an organisation an independent evaluator or an EA
- *    funder has already vetted (`trusted-recommendation`).
+ *    funder has already vetted (`trusted-recommendation`), and any role that
+ *    80,000 Hours, Probably Good or EA Opportunities lists (`listedByEaBoard`).
  * 2. `routes` — ways in: programmes (fellowships, residencies, bootcamps),
  *    internships and traineeships, and anything classified as career capital.
- * 3. `dutch` — roles with leverage in Dutch institutions.
+ * 3. `dutch` — roles with leverage in Dutch institutions: organisations nobody
+ *    in EA has vetted, where we judged the role itself worth listing because
+ *    it moves money, rules or people at scale.
+ *
+ * The EA-board test was added in November 2026 at James's request. Before it,
+ * `vetted` was only the hand-kept employer allowlist, so every EA organisation
+ * missing from it (AVA International, First Domino, EA Funds, NOVAH, ...) fell
+ * through to `dutch`. That filled the leverage band with remote roles at EA
+ * organisations, which is the opposite of what the band is for. An EA board
+ * listing a role is the same signal the allowlist encodes: somebody in EA has
+ * already vetted the organisation.
  *
  * Membership is decided in a different order from display: a route in is a
  * route in wherever it is, so a Kairos fellowship goes in `routes` even though
@@ -44,6 +55,8 @@ export function automaticBand(listing: {
   listingKind: ListingKind | null
   seniority: Seniority | null
   leverage: LeverageType | null
+  /** 80,000 Hours, Probably Good or EA Opportunities lists the role (any copy). */
+  listedByEaBoard?: boolean | null
 }): Band {
   if (
     listing.listingKind === 'programme' ||
@@ -53,7 +66,7 @@ export function automaticBand(listing: {
   ) {
     return 'routes'
   }
-  if (listing.leverage === 'trusted-recommendation') return 'vetted'
+  if (listing.leverage === 'trusted-recommendation' || listing.listedByEaBoard) return 'vetted'
   return 'dutch'
 }
 

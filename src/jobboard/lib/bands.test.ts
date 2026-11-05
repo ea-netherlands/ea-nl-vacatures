@@ -84,3 +84,12 @@ test('isBand accepts the three bands and nothing else, so a stray ?band= cannot 
   assert.equal(isBand('nonsense'), false)
   assert.equal(isBand(undefined), false)
 })
+
+test('a role an EA board lists is vetted, wherever it is, even off the allowlist', () => {
+  assert.equal(bandOf(listing({ leverage: 'organisation-building', listedByEaBoard: true })), 'vetted')
+  assert.equal(bandOf(listing({ leverage: 'capital-allocation', listedByEaBoard: false })), 'dutch')
+  // A way in still wins: an EA-board internship is a way in.
+  assert.equal(bandOf(listing({ seniority: 'internship', listedByEaBoard: true })), 'routes')
+  // And a curator's override still wins over both.
+  assert.equal(bandOf({ ...listing({ listedByEaBoard: true }), section: 'dutch' }), 'dutch')
+})

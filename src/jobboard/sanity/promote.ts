@@ -143,6 +143,8 @@ type PromotableRow = {
   employer_e2g: boolean | null
   nl_eligible: boolean
   listed_by_trusted_board: boolean
+  /** Any EA board (kind 'ea-board') lists an open copy; decides the vetted band. */
+  listed_by_ea_board: boolean
 }
 
 const DEFAULT_EXPIRY_DAYS = 60
@@ -316,6 +318,7 @@ export async function runPromotion(options: PromoteOptions = {}): Promise<Promot
 
         pipelineListingId: Number(row.id),
         sourceId: row.source_id,
+        listedByEaBoard: row.listed_by_ea_board,
         llmScore: row.total_score,
         llmReasoning: row.reasoning,
       })
@@ -470,7 +473,15 @@ async function loadPromotable(db: Db, limit: number): Promise<PromotableRow[]> {
                where l3.dedup_key = l.dedup_key
                  and l3.closed_at is null
                  and l3.source_id = any($2::text[])
-            ) as listed_by_trusted_board
+            ) as listed_by_trusted_board,
+            exists (
+              select 1
+                from listing l4
+                join source s4 on s4.id = l4.source_id
+               where l4.dedup_key = l.dedup_key
+                 and l4.closed_at is null
+                 and s4.kind = 'ea-board'
+            ) as listed_by_ea_board
        from listing l
        join source s on s.id = l.source_id
        join classification c on c.listing_id = l.id

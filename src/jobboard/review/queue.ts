@@ -76,6 +76,7 @@ type DraftRow = {
   skills?: string[] | null
   leverage?: string | null
   section?: string | null
+  listedByEaBoard?: boolean | null
   locationCity?: string | null
   locationMode?: string | null
   seniority?: string | null
@@ -107,7 +108,7 @@ const DRAFTS_QUERY = `*[_type == "jobListing" && _id in path("drafts.**")
       _id, _createdAt, title, "employerName": employer->name,
       "employerSlug": employer->slug.current, applyUrl,
       whyThisMattersNl, whyThisMattersEn, excerpt, excerptEn, translatedFrom,
-      listingKind, primaryCause, secondaryCauses, subArea, skills, leverage, section,
+      listingKind, primaryCause, secondaryCauses, subArea, skills, leverage, section, listedByEaBoard,
       locationCity, locationMode, languageRequirement, seniority, salaryText, salaryPeriod,
       deadlineAt, expiresAt, llmScore, llmReasoning, pipelineListingId,
       "slug": slug.current
@@ -229,6 +230,7 @@ export async function loadReviewQueue(
         skills: (d.skills ?? []) as ListingPlacement['skills'],
         leverage: (d.leverage ?? null) as ListingPlacement['leverage'],
         section: (d.section ?? null) as ListingPlacement['section'],
+        listedByEaBoard: d.listedByEaBoard ?? null,
         locationMode: (d.locationMode ?? null) as ListingPlacement['locationMode'],
         languageRequirement: (d.languageRequirement ?? null) as ListingPlacement['languageRequirement'],
         seniority: (d.seniority ?? null) as ListingPlacement['seniority'],
