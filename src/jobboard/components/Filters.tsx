@@ -27,6 +27,9 @@ import { BANDS } from '../lib/bands'
 import { Icon } from './Icon'
 import u from './ui.module.css'
 
+/** Per filter, per option value, how many listings picking it would show. `''` is "All". */
+type OptionCounts = Partial<Record<keyof FilterState, Record<string, number>>>
+
 export type FilterState = {
   /**
    * Not a filter. `view=all` forces the index out of its browse state and into
@@ -70,10 +73,12 @@ export function Filters({
   locale,
   state,
   resultCount,
+  optionCounts,
 }: {
   locale: Locale
   state: FilterState
   resultCount: number
+  optionCounts?: OptionCounts
 }) {
   const copy = t(locale)
   const router = useRouter()
@@ -191,12 +196,22 @@ export function Filters({
               value={state[f.key] ?? ''}
               onChange={(e) => update(f.key, e.target.value)}
             >
-              <option value="">{copy.filterAny}</option>
-              {f.values.map((v) => (
-                <option key={v} value={v}>
-                  {f.labels[v] ?? v}
-                </option>
-              ))}
+              <option value="">{withCount(copy.filterAny, optionCounts?.[f.key]?.[''])}</option>
+              {f.values.map((v) => {
+                const n = optionCounts?.[f.key] ? (optionCounts[f.key]?.[v] ?? 0) : undefined
+                return (
+                  <option
+                    key={v}
+                    value={v}
+                    // An option that would empty the list is shown, so the reader
+                    // can see the board tracks it, but cannot be picked — unless
+                    // it is already the selection.
+                    disabled={n === 0 && state[f.key] !== v}
+                  >
+                    {withCount(f.labels[v] ?? v, n)}
+                  </option>
+                )
+              })}
             </select>
           </div>
         ))}
@@ -236,6 +251,11 @@ export function Filters({
       </div>
     </div>
   )
+}
+
+/** "Data (4)" — the count is what the list would show if this option were picked. */
+function withCount(label: string, n: number | undefined): string {
+  return n === undefined ? label : `${label} (${n})`
 }
 
 /**

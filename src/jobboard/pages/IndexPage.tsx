@@ -120,6 +120,65 @@ export function applyFilters(listings: ListingView[], f: FilterState): ListingVi
   })
 }
 
+/** The filters the bar offers as selects, each with its own per-option count. */
+export const FACET_KEYS = [
+  'band',
+  'cause',
+  'subarea',
+  'skill',
+  'location',
+  'language',
+  'seniority',
+] as const
+export type FacetKey = (typeof FACET_KEYS)[number]
+/** Per filter, per option value, how many listings it would show; `''` is "All". */
+export type OptionCounts = Record<FacetKey, Record<string, number>>
+
+/**
+ * How many listings each option in the filter bar would show if picked,
+ * keeping every other filter as it is — the usual faceted-search rule, so the
+ * number next to an option is exactly the result count the reader gets.
+ *
+ * Cause options are counted without the sub-area, matching the bar: picking
+ * a new cause drops a sub-area outside it. Sub-area options keep the cause,
+ * since the bar only offers the chosen cause's own sub-areas.
+ */
+export function facetCounts(all: ListingView[], state: FilterState): OptionCounts {
+  const out = {} as OptionCounts
+  for (const key of FACET_KEYS) {
+    const without: FilterState = { ...state, view: undefined, [key]: undefined }
+    if (key === 'cause') without.subarea = undefined
+    const base = applyFilters(all, without)
+    const counts: Record<string, number> = { '': base.length }
+    for (const l of base) {
+      for (const v of facetValues(l, key)) counts[v] = (counts[v] ?? 0) + 1
+    }
+    out[key] = counts
+  }
+  return out
+}
+
+/** The values of one facet a listing matches — mirrors applyFilters. */
+function facetValues(l: ListingView, key: FacetKey): string[] {
+  const one = (v: string | null | undefined) => (v ? [v] : [])
+  switch (key) {
+    case 'band':
+      return [bandOf(l)]
+    case 'cause':
+      return [...new Set([l.primaryCause, ...l.secondaryCauses].filter(Boolean) as string[])]
+    case 'subarea':
+      return one(l.subArea)
+    case 'skill':
+      return [...new Set(l.skills)]
+    case 'location':
+      return one(l.locationMode)
+    case 'language':
+      return one(l.languageRequirement)
+    case 'seniority':
+      return one(l.seniority)
+  }
+}
+
 /**
  * Adjacent filters to offer when a combination returns nothing: the causes that
  * do have live roles, minus the one that just failed.
@@ -295,7 +354,12 @@ export async function IndexPage({
               band lives. One line, so it does not sit between them and the
               results they asked for. */}
           <BetaNote locale={locale} />
-          <Filters locale={locale} state={state} resultCount={filtered.length} />
+          <Filters
+            locale={locale}
+            state={state}
+            resultCount={filtered.length}
+            optionCounts={facetCounts(all, state)}
+          />
         </Section>
 
         <Section tight>
