@@ -69,6 +69,7 @@ const LOCATION_ICONS: Record<LocationMode, IconName> = {
   remote: 'world',
   'on-site-nl': 'map-pin',
   'nl-flexible': 'building',
+  'temporary-abroad': 'calendar',
 }
 
 const SKILL_ICONS: Record<Skill, IconName> = {

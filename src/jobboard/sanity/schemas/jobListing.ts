@@ -235,7 +235,7 @@ export const jobListing = defineType({
       type: 'string',
       group: 'practical',
       description:
-        'remote = doable from anywhere in NL · on-site-nl = must be at a Dutch workplace · nl-flexible = Dutch employer with a Dutch office where hybrid is normal.',
+        'remote = doable from anywhere in NL · on-site-nl = must be at a Dutch workplace · nl-flexible = Dutch employer with a Dutch office where hybrid is normal · temporary-abroad = short paid programme held abroad.',
       options: { list: plainOptions(LOCATION_MODES) },
     }),
     defineField({

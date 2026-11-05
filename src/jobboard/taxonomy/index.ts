@@ -388,6 +388,11 @@ export type WorkAuthorisation = (typeof WORK_AUTHORISATIONS)[number]
  * - `on-site-nl`  you have to be at a specific Dutch workplace.
  * - `nl-flexible` a Dutch employer with a Dutch office where a hybrid
  *                 arrangement is normal — some days in, most days wherever.
+ * - `temporary-abroad` a short paid programme held abroad (added November
+ *                 2026). You go for a few weeks or months and come back, so
+ *                 it belongs on the board, but none of the three above is
+ *                 true of it. The classifier never picks this one: run.ts sets
+ *                 it for listings that pass the short-programme rule.
  *
  * Note what is deliberately NOT here. Most `remote` roles on this board are at
  * foreign organisations, and "remote at a US non-profit" is a materially
@@ -397,8 +402,11 @@ export type WorkAuthorisation = (typeof WORK_AUTHORISATIONS)[number]
  * both of which already have their own fields. Crowding it into the location
  * filter would give the reader four options that answer three questions again.
  */
-export const LOCATION_MODES = ['remote', 'on-site-nl', 'nl-flexible'] as const
+export const LOCATION_MODES = ['remote', 'on-site-nl', 'nl-flexible', 'temporary-abroad'] as const
 export type LocationMode = (typeof LOCATION_MODES)[number]
+
+/** The modes the classifier may choose; `temporary-abroad` is set by code. */
+export const CLASSIFIER_LOCATION_MODES = ['remote', 'on-site-nl', 'nl-flexible'] as const satisfies readonly LocationMode[]
 
 /**
  * The pre-August-2026 vocabulary, kept solely so the backfill and any listing

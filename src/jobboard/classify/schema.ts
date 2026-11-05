@@ -10,7 +10,7 @@ import {
   LANGUAGE_REQUIREMENTS,
   LEVERAGE_TYPES,
   LISTING_KINDS,
-  LOCATION_MODES,
+  CLASSIFIER_LOCATION_MODES,
   MAX_SKILLS_PER_LISTING,
   SENIORITIES,
   SKILLS,
@@ -121,7 +121,7 @@ export const TRIAGE_SCHEMA = {
       description: 'Short free-text detail on the screening requirement, or null.',
     },
     seniority: { type: 'string', enum: [...SENIORITIES] },
-    locationMode: { type: 'string', enum: [...LOCATION_MODES] },
+    locationMode: { type: 'string', enum: [...CLASSIFIER_LOCATION_MODES] },
     draftNoteNl: {
       type: 'string',
       description:
