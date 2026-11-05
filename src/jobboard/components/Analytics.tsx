@@ -29,6 +29,16 @@
  * event only reaches the Google tag that GTM loads when it names the property
  * in send_to (checked on the live site, 2 Nov 2026).
  *
+ * ## Vercel Web Analytics
+ *
+ * Also mounted here, so only public pages are counted (not the Studio or the
+ * review dashboard). It sets no cookies, so it runs without consent and counts
+ * every visitor, which GA4 can't since it waits for the banner. On
+ * effectiefaltruisme.nl its script and beacon live at /_vercel/insights on the
+ * main domain, which the website's Vercel project answers, so board views show
+ * up in the *website's* Vercel Analytics dashboard under /vacatures and
+ * /en/jobs. The apply click goes there too, as `job_apply_click`.
+ *
  * Rebuilt in plain elements rather than ported from the website's Chakra
  * version: this module deliberately has no UI framework (§6.2a), and at merge
  * time the website's own banner replaces this one.
@@ -39,6 +49,8 @@
 
 'use client'
 
+import { Analytics as VercelAnalytics } from '@vercel/analytics/next'
+import { track } from '@vercel/analytics'
 import Script from 'next/script'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ONWARD_LINKS, t, type Locale } from '../content/i18n'
@@ -74,6 +86,7 @@ export function Analytics({ locale }: { locale: Locale }) {
       <CookieConsent locale={locale} />
       {GTM_ID ? <GoogleTagManager gtmId={GTM_ID} /> : null}
       <ApplyClickTracker />
+      <VercelAnalytics />
     </>
   )
 }
@@ -120,7 +133,14 @@ function ApplyClickTracker() {
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
       const link = (e.target as Element | null)?.closest?.('a[data-apply-listing]')
-      if (!link || !hasAnyConsent(readConsent())) return
+      if (!link) return
+      // Cookieless, so no consent needed: counts every apply click
+      track('job_apply_click', {
+        job_slug: link.getAttribute('data-apply-slug') ?? null,
+        organisation: link.getAttribute('data-apply-employer') ?? null,
+        site_language: link.getAttribute('data-apply-locale') ?? null,
+      })
+      if (!hasAnyConsent(readConsent())) return
       window.dataLayer = window.dataLayer || []
       window.dataLayer.push({
         event: 'apply_click',
