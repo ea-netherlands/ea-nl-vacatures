@@ -1943,6 +1943,15 @@ export const SEED_SOURCES: SeedSource[] = [
       'CEA’s board. Added October 2026 for programmes (fellowships, residencies), which it labels; also takes its NL-reachable jobs. The whole dataset is in the page, so one request a run, plus a week-cached fetch of each programme’s own page.',
   },
   {
+    id: 'animal-advocacy-careers',
+    kind: 'ea-board',
+    adapter: 'animal-advocacy-careers',
+    returnsCompleteSet: true,
+    config: { apiUrl: 'https://animaladvocacycareers.org/wp-json/wp/v2/job-listings' },
+    notes:
+      'Animal Advocacy Careers’ curated board. Added November 2026 at James’s request: auto-published like 80k and Probably Good, and its roles file under vetted organisations. WP Job Manager over the WordPress REST API; two pages of 100.',
+  },
+  {
     id: 'manual',
     kind: 'manual',
     adapter: 'manual',
