@@ -46,6 +46,7 @@ export type IconName =
   | "alert-hexagon"
   | "telescope"
   | "users-group"
+  | "chart-bar"
   | "speakerphone"
   | "chart-dots"
   | "tool"
@@ -135,6 +136,8 @@ const PATHS: Record<IconName, string> = {
     "M19.875 6.27c.7 .398 1.13 1.143 1.125 1.948v7.284c0 .809 -.443 1.555 -1.158 1.948l-6.75 4.27a2.269 2.269 0 0 1 -2.184 0l-6.75 -4.27a2.225 2.225 0 0 1 -1.158 -1.948v-7.285c0 -.809 .443 -1.554 1.158 -1.947l6.75 -3.98a2.33 2.33 0 0 1 2.25 0l6.75 3.98h-.033M12 8v4M12 16h.01",
   telescope:
     "M6 21l6 -5l6 5M12 13v8M3.294 13.678l.166 .281c.52 .88 1.624 1.265 2.605 .91l14.242 -5.165a1.023 1.023 0 0 0 .565 -1.456l-2.62 -4.705a1.087 1.087 0 0 0 -1.447 -.42l-.056 .032l-12.694 7.618c-1.02 .613 -1.357 1.897 -.76 2.905l-.001 0M14 5l3 5.5",
+  "chart-bar":
+    "M3 13a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v6a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1zM15 9a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v10a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1zM9 5a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v14a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1zM4 20h14",
   "users-group":
     "M10 13a2 2 0 1 0 4 0a2 2 0 0 0 -4 0M8 21v-1a2 2 0 0 1 2 -2h4a2 2 0 0 1 2 2v1M15 5a2 2 0 1 0 4 0a2 2 0 0 0 -4 0M17 10h2a2 2 0 0 1 2 2v1M5 5a2 2 0 1 0 4 0a2 2 0 0 0 -4 0M3 13v-1a2 2 0 0 1 2 -2h2",
   speakerphone:
@@ -202,6 +205,11 @@ const PATHS: Record<IconName, string> = {
     "M15 10l4.553 -2.276a1 1 0 0 1 1.447 .894v6.764a1 1 0 0 1 -1.447 .894l-4.553 -2.276v-4z M3 6m0 2a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2z",
   "arrow-up-right": "M17 7l-10 10 M8 7l9 0l0 9",
 };
+
+/** True for a name this file can draw. The site's menus arrive as plain strings. */
+export function isIconName(name: string): name is IconName {
+  return Object.prototype.hasOwnProperty.call(PATHS, name);
+}
 
 export type IconProps = Omit<SVGProps<SVGSVGElement>, "name"> & {
   name: IconName;

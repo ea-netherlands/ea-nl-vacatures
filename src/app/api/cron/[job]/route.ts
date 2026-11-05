@@ -19,6 +19,7 @@ import { runExpiry, runPromotion } from '@jobboard/sanity/promote'
 import { runSuggestionDigest } from '@jobboard/sanity/notify'
 import { runTranslation } from '@jobboard/sanity/translate'
 import { runReviewDigest } from '@jobboard/review/digest'
+import { runSiteSync } from '@jobboard/lib/site-sync'
 
 export const dynamic = 'force-dynamic'
 /** Vercel's cron maximum on Pro. Adapters budget against this, minus a margin. */
@@ -33,6 +34,7 @@ const JOBS = [
   'translate',
   'notify',
   'review-digest',
+  'site-sync',
 ] as const
 type Job = (typeof JOBS)[number]
 
@@ -159,6 +161,17 @@ export async function GET(request: Request, { params }: { params: Promise<{ job:
       */
       case 'review-digest': {
         const report = await runReviewDigest({
+          dryRun: url.searchParams.get('dryRun') === '1',
+          onLog,
+        })
+        return NextResponse.json({ job, report, logs })
+      }
+      /*
+        Checks that the site's header, footer and cookie consent still match
+        what the board reads, and mails only when they don't.
+      */
+      case 'site-sync': {
+        const report = await runSiteSync({
           dryRun: url.searchParams.get('dryRun') === '1',
           onLog,
         })

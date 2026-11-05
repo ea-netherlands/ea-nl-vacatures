@@ -26,6 +26,10 @@
       "schedule": "30 7 * * *"
     },
     {
+      "path": "/api/cron/site-sync",
+      "schedule": "50 7 * * *"
+    },
+    {
       "path": "/api/cron/expire",
       "schedule": "0 8 * * *"
     },

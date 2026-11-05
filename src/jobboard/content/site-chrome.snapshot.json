@@ -1,0 +1,976 @@
+{
+  "version": 1,
+  "consent": {
+    "storageKey": "ean-consent",
+    "version": 1,
+    "categories": [
+      "analytics",
+      "marketing"
+    ]
+  },
+  "nav": {
+    "pillars": [
+      {
+        "key": "learn",
+        "label": {
+          "nl": "Leren",
+          "en": "Learn"
+        },
+        "heading": {
+          "nl": "Leren",
+          "en": "Learn"
+        },
+        "intro": {
+          "nl": "Begrijp de ideeën achter effectief altruïsme, in je eigen tempo of samen met anderen.",
+          "en": "Understand the ideas behind effective altruism, at your own pace or with others."
+        },
+        "groups": [
+          {
+            "title": {
+              "nl": "Lezen",
+              "en": "Read"
+            },
+            "links": [
+              {
+                "label": {
+                  "nl": "Wat is effectief altruïsme?",
+                  "en": "What is effective altruism?"
+                },
+                "description": {
+                  "nl": "Een korte introductie tot de belangrijkste ideeën.",
+                  "en": "A short introduction to the main ideas."
+                },
+                "href": {
+                  "nl": "/wat-is-effectief-altruisme",
+                  "en": "/en/what-is-effective-altruism"
+                },
+                "icon": "bulb"
+              },
+              {
+                "label": {
+                  "nl": "Verhalen",
+                  "en": "Stories"
+                },
+                "description": {
+                  "nl": "Céline, Jesse en Nicoll over hun weg naar werk met impact.",
+                  "en": "Céline, Jesse and Nicoll on their path to high-impact work."
+                },
+                "href": {
+                  "nl": "/verhalen",
+                  "en": "/en/stories"
+                },
+                "icon": "quote"
+              }
+            ]
+          },
+          {
+            "title": {
+              "nl": "Cursussen",
+              "en": "Courses"
+            },
+            "links": [
+              {
+                "label": {
+                  "nl": "Gratis online cursus",
+                  "en": "Free online course"
+                },
+                "description": {
+                  "nl": "In je eigen tempo, in minder dan twee uur. In het Engels.",
+                  "en": "At your own pace, in under two hours."
+                },
+                "href": {
+                  "nl": "/en/courses/pressing-problems",
+                  "en": "/en/courses/pressing-problems"
+                },
+                "icon": "school"
+              },
+              {
+                "label": {
+                  "nl": "EA Fellowship",
+                  "en": "EA Fellowship"
+                },
+                "description": {
+                  "nl": "Een selectief programma waarin je de ideeën in een kleine groep verdiept.",
+                  "en": "A selective programme where you dig into the ideas in a small group."
+                },
+                "href": {
+                  "nl": "/ea-fellowship",
+                  "en": "/en/ea-fellowship"
+                },
+                "icon": "users"
+              }
+            ]
+          }
+        ],
+        "feature": {
+          "image": "/images/intro-learn.webp",
+          "title": {
+            "nl": "Start de gratis cursus",
+            "en": "Start the free course"
+          },
+          "text": {
+            "nl": "Ontdek in minder dan twee uur hoe je meer goed kunt doen.",
+            "en": "Find out how you can do more good, in under two hours."
+          },
+          "cta": {
+            "nl": "Begin nu",
+            "en": "Begin now"
+          },
+          "href": {
+            "nl": "/en/courses/pressing-problems",
+            "en": "/en/courses/pressing-problems"
+          }
+        }
+      },
+      {
+        "key": "community",
+        "label": {
+          "nl": "Community",
+          "en": "Community"
+        },
+        "heading": {
+          "nl": "Community, coworking en evenementen",
+          "en": "Community, coworking and events"
+        },
+        "intro": {
+          "nl": "Ontmoet mensen die net als jij zoeken naar de beste manieren om te helpen.",
+          "en": "Meet people who, like you, are looking for the best ways to help."
+        },
+        "groups": [
+          {
+            "title": {
+              "nl": "Ontmoeten",
+              "en": "Meet people"
+            },
+            "links": [
+              {
+                "label": {
+                  "nl": "Evenementen",
+                  "en": "Events"
+                },
+                "description": {
+                  "nl": "Lezingen, workshops en borrels door het hele land.",
+                  "en": "Talks, workshops and socials across the country."
+                },
+                "href": {
+                  "nl": "/evenementen",
+                  "en": "/en/events-page"
+                },
+                "icon": "calendar-event"
+              },
+              {
+                "label": {
+                  "nl": "Lokale groepen",
+                  "en": "Local groups"
+                },
+                "description": {
+                  "nl": "Groepen in negen steden, van Amsterdam tot Maastricht.",
+                  "en": "Groups in nine cities, from Amsterdam to Maastricht."
+                },
+                "href": {
+                  "nl": "/word-lid-van-een-groep",
+                  "en": "/en/join-a-group"
+                },
+                "icon": "map-pin"
+              },
+              {
+                "label": {
+                  "nl": "EA Global en EAGx",
+                  "en": "EA Global and EAGx"
+                },
+                "description": {
+                  "nl": "Internationale conferenties om mensen uit het veld te ontmoeten.",
+                  "en": "International conferences to meet people in the field."
+                },
+                "href": {
+                  "nl": "https://www.effectivealtruism.org/ea-global",
+                  "en": "https://www.effectivealtruism.org/ea-global"
+                },
+                "icon": "world"
+              }
+            ]
+          },
+          {
+            "title": {
+              "nl": "Blijf verbonden",
+              "en": "Stay connected"
+            },
+            "links": [
+              {
+                "label": {
+                  "nl": "Coworkingruimte",
+                  "en": "Co-working space"
+                },
+                "description": {
+                  "nl": "Werk in ons kantoor in Amsterdam, naast anderen die impact willen maken.",
+                  "en": "Work from our Amsterdam office, alongside others who want to make a difference."
+                },
+                "href": {
+                  "nl": "/coworking",
+                  "en": "/en/office"
+                },
+                "icon": "building-community"
+              },
+              {
+                "label": {
+                  "nl": "WhatsApp-community",
+                  "en": "WhatsApp community"
+                },
+                "description": {
+                  "nl": "Blijf op de hoogte en stel je vragen.",
+                  "en": "Stay up to date and ask your questions."
+                },
+                "href": {
+                  "nl": "https://chat.whatsapp.com/HtPYuTVHp45CwXlPCek83i",
+                  "en": "https://chat.whatsapp.com/HtPYuTVHp45CwXlPCek83i"
+                },
+                "icon": "brand-whatsapp"
+              },
+              {
+                "label": {
+                  "nl": "Community health",
+                  "en": "Community health"
+                },
+                "description": {
+                  "nl": "Onze gedragscode, vertrouwenspersonen en een anoniem meldformulier.",
+                  "en": "Our code of conduct, trust persons and an anonymous reporting form."
+                },
+                "href": {
+                  "nl": "/gedragscode-ea-nederland",
+                  "en": "/en/legal/code-of-conduct"
+                },
+                "icon": "shield-check"
+              }
+            ]
+          }
+        ],
+        "feature": {
+          "image": "/images/home/community/eagx-utrecht.jpg",
+          "title": {
+            "nl": "Kom naar een evenement",
+            "en": "Come to an event"
+          },
+          "text": {
+            "nl": "Bekijk wat er de komende weken bij jou in de buurt gebeurt.",
+            "en": "See what's happening near you in the coming weeks."
+          },
+          "cta": {
+            "nl": "Bekijk de agenda",
+            "en": "See the calendar"
+          },
+          "href": {
+            "nl": "/evenementen",
+            "en": "/en/events-page"
+          }
+        }
+      },
+      {
+        "key": "careers",
+        "label": {
+          "nl": "Carrière",
+          "en": "Careers"
+        },
+        "heading": {
+          "nl": "Carrière",
+          "en": "Careers"
+        },
+        "intro": {
+          "nl": "Gebruik je loopbaan om een groot verschil te maken.",
+          "en": "Use your career to make a big difference."
+        },
+        "groups": [
+          {
+            "title": {
+              "nl": "Advies",
+              "en": "Advice"
+            },
+            "links": [
+              {
+                "label": {
+                  "nl": "Carrièregids",
+                  "en": "Career guide"
+                },
+                "description": {
+                  "nl": "Onze gids voor een loopbaan met impact.",
+                  "en": "Our guide to a high-impact career."
+                },
+                "href": {
+                  "nl": "/carrieregids",
+                  "en": "/en/career-guide"
+                },
+                "icon": "compass"
+              },
+              {
+                "label": {
+                  "nl": "Gesprek met ons team",
+                  "en": "Call with our team"
+                },
+                "description": {
+                  "nl": "Bespreek je volgende stap in een videogesprek.",
+                  "en": "Talk through your next step on a video call."
+                },
+                "href": {
+                  "nl": "/virtuele-koffie",
+                  "en": "/en/virtual-coffee"
+                },
+                "icon": "video"
+              },
+              {
+                "label": {
+                  "nl": "Probably Good-advies",
+                  "en": "Probably Good advising"
+                },
+                "description": {
+                  "nl": "Gratis één-op-één loopbaanadvies, voor studenten en professionals.",
+                  "en": "Free one-on-one career advice, for students and professionals."
+                },
+                "href": {
+                  "nl": "https://probablygood.org/advising/",
+                  "en": "https://probablygood.org/advising/"
+                },
+                "icon": "messages"
+              }
+            ]
+          },
+          {
+            "title": {
+              "nl": "Programma's",
+              "en": "Programmes"
+            },
+            "links": [
+              {
+                "label": {
+                  "nl": "EA Career Bootcamp",
+                  "en": "EA Career Bootcamp"
+                },
+                "description": {
+                  "nl": "Drie weken online begeleiding om over te stappen naar werk met impact.",
+                  "en": "Three weeks of online support to move into high-impact work."
+                },
+                "href": {
+                  "nl": "https://www.effectivealtruism.org/courses/bootcamp",
+                  "en": "https://www.effectivealtruism.org/courses/bootcamp"
+                },
+                "icon": "rocket"
+              },
+              {
+                "label": {
+                  "nl": "Impact Accelerator",
+                  "en": "Impact Accelerator"
+                },
+                "description": {
+                  "nl": "Een programma van zes weken van High Impact Professionals.",
+                  "en": "A six-week programme from High Impact Professionals."
+                },
+                "href": {
+                  "nl": "https://www.highimpactprofessionals.org/impact-accelerator",
+                  "en": "https://www.highimpactprofessionals.org/impact-accelerator"
+                },
+                "icon": "trending-up"
+              }
+            ]
+          },
+          {
+            "title": {
+              "nl": "Kansen",
+              "en": "Opportunities"
+            },
+            "links": [
+              {
+                "label": {
+                  "nl": "Vacatures",
+                  "en": "Jobs board"
+                },
+                "description": {
+                  "nl": "Banen, stages en programma's met impact.",
+                  "en": "High-impact jobs, internships and programmes."
+                },
+                "href": {
+                  "nl": "/vacatures",
+                  "en": "/en/jobs"
+                },
+                "icon": "briefcase"
+              },
+              {
+                "label": {
+                  "nl": "Vrijwilligerswerk",
+                  "en": "Volunteer"
+                },
+                "description": {
+                  "nl": "Help mee bij EA Nederland.",
+                  "en": "Help out at EA Netherlands."
+                },
+                "href": {
+                  "nl": "/vrijwilliger",
+                  "en": "/en/volunteer"
+                },
+                "icon": "heart-handshake"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "key": "giving",
+        "label": {
+          "nl": "Geven",
+          "en": "Giving"
+        },
+        "heading": {
+          "nl": "Geven",
+          "en": "Giving"
+        },
+        "intro": {
+          "nl": "Zorg dat je donaties zo veel mogelijk goed doen.",
+          "en": "Make sure your donations do as much good as possible."
+        },
+        "groups": [
+          {
+            "title": {
+              "nl": "Waar geef je aan?",
+              "en": "Where to give"
+            },
+            "links": [
+              {
+                "label": {
+                  "nl": "Donatiegids",
+                  "en": "Donation guide"
+                },
+                "description": {
+                  "nl": "Goede doelen waar je geld het meeste verschil maakt.",
+                  "en": "Charities where your money makes the biggest difference."
+                },
+                "href": {
+                  "nl": "/donatie-gids-effectieve-goede-doelen",
+                  "en": "/en/donation-guide-effective-charities"
+                },
+                "icon": "list-check"
+              },
+              {
+                "label": {
+                  "nl": "Doneer Effectief",
+                  "en": "Doneer Effectief"
+                },
+                "description": {
+                  "nl": "Het Nederlandse platform om aan effectieve goede doelen te geven.",
+                  "en": "The Dutch platform for giving to effective charities."
+                },
+                "href": {
+                  "nl": "https://doneereffectief.nl",
+                  "en": "https://doneereffectief.nl"
+                },
+                "icon": "coin"
+              }
+            ]
+          },
+          {
+            "title": {
+              "nl": "Hoe geef je?",
+              "en": "How to give"
+            },
+            "links": [
+              {
+                "label": {
+                  "nl": "De 10%-belofte",
+                  "en": "The 10% pledge"
+                },
+                "description": {
+                  "nl": "Beloof met Giving What We Can om 10% van je inkomen te geven.",
+                  "en": "Pledge with Giving What We Can to give 10% of your income."
+                },
+                "href": {
+                  "nl": "https://www.givingwhatwecan.org/pledge/ea-netherlands",
+                  "en": "https://www.givingwhatwecan.org/pledge/ea-netherlands"
+                },
+                "icon": "heart"
+              }
+            ]
+          }
+        ],
+        "feature": {
+          "title": {
+            "nl": "Nieuw bij effectief geven?",
+            "en": "New to effective giving?"
+          },
+          "text": {
+            "nl": "Begin met onze donatiegids: een korte lijst goede doelen waar je geld het meeste doet.",
+            "en": "Start with our donation guide: a short list of charities where your money goes furthest."
+          },
+          "cta": {
+            "nl": "Lees de donatiegids",
+            "en": "Read the donation guide"
+          },
+          "href": {
+            "nl": "/donatie-gids-effectieve-goede-doelen",
+            "en": "/en/donation-guide-effective-charities"
+          }
+        }
+      },
+      {
+        "key": "about",
+        "label": {
+          "nl": "Over ons",
+          "en": "About us"
+        },
+        "heading": {
+          "nl": "Over EA Nederland",
+          "en": "About EA Netherlands"
+        },
+        "intro": {
+          "nl": "Wie we zijn en hoe je ons bereikt.",
+          "en": "Who we are and how to reach us."
+        },
+        "groups": [
+          {
+            "title": {
+              "nl": "Organisatie",
+              "en": "Organisation"
+            },
+            "links": [
+              {
+                "label": {
+                  "nl": "Wie we zijn",
+                  "en": "Who we are"
+                },
+                "description": {
+                  "nl": "Ons team en onze missie.",
+                  "en": "Our team and our mission."
+                },
+                "href": {
+                  "nl": "/effectief-altruisme-nederland",
+                  "en": "/en/about"
+                },
+                "icon": "users-group"
+              },
+              {
+                "label": {
+                  "nl": "Onze impact",
+                  "en": "Our impact"
+                },
+                "description": {
+                  "nl": "Wat ons werk oplevert, in cijfers.",
+                  "en": "What our work achieves, in numbers."
+                },
+                "href": {
+                  "nl": "/onze-impact",
+                  "en": "/en/our-impact"
+                },
+                "icon": "chart-bar"
+              },
+              {
+                "label": {
+                  "nl": "Steun ons",
+                  "en": "Support us"
+                },
+                "description": {
+                  "nl": "Help ons meer mensen te bereiken.",
+                  "en": "Help us reach more people."
+                },
+                "href": {
+                  "nl": "/steun-ons",
+                  "en": "/en/support-us"
+                },
+                "icon": "heart"
+              }
+            ]
+          },
+          {
+            "title": {
+              "nl": "Contact",
+              "en": "Contact"
+            },
+            "links": [
+              {
+                "label": {
+                  "nl": "Contact",
+                  "en": "Contact"
+                },
+                "description": {
+                  "nl": "Stel je vraag of stuur ons een bericht.",
+                  "en": "Ask a question or send us a message."
+                },
+                "href": {
+                  "nl": "/contact",
+                  "en": "/en/contact-us"
+                },
+                "icon": "mail"
+              },
+              {
+                "label": {
+                  "nl": "Community health",
+                  "en": "Community health"
+                },
+                "description": {
+                  "nl": "Onze gedragscode, vertrouwenspersonen en een anoniem meldformulier.",
+                  "en": "Our code of conduct, trust persons and an anonymous reporting form."
+                },
+                "href": {
+                  "nl": "/gedragscode-ea-nederland",
+                  "en": "/en/legal/code-of-conduct"
+                },
+                "icon": "shield-check"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "unsure": {
+      "text": {
+        "nl": "Weet je niet waar je moet beginnen?",
+        "en": "Not sure where to start?"
+      },
+      "link": {
+        "label": {
+          "nl": "Plan een gesprek met ons team",
+          "en": "Book a call with our team"
+        },
+        "href": {
+          "nl": "/virtuele-koffie",
+          "en": "/en/virtual-coffee"
+        }
+      }
+    }
+  },
+  "footer": {
+    "columns": [
+      {
+        "title": {
+          "nl": "Leren",
+          "en": "Learn"
+        },
+        "links": [
+          {
+            "label": {
+              "nl": "Wat is effectief altruïsme?",
+              "en": "What is effective altruism?"
+            },
+            "href": {
+              "nl": "/wat-is-effectief-altruisme",
+              "en": "/en/what-is-effective-altruism"
+            }
+          },
+          {
+            "label": {
+              "nl": "Verhalen",
+              "en": "Stories"
+            },
+            "href": {
+              "nl": "/verhalen",
+              "en": "/en/stories"
+            }
+          },
+          {
+            "label": {
+              "nl": "Gratis cursus (Engels)",
+              "en": "Free course"
+            },
+            "href": {
+              "nl": "/en/courses/pressing-problems",
+              "en": "/en/courses/pressing-problems"
+            }
+          },
+          {
+            "label": {
+              "nl": "EA Fellowship",
+              "en": "EA Fellowship"
+            },
+            "href": {
+              "nl": "/ea-fellowship",
+              "en": "/en/ea-fellowship"
+            }
+          },
+          {
+            "label": {
+              "nl": "Artikelen",
+              "en": "Articles"
+            },
+            "href": {
+              "nl": "/artikelen",
+              "en": "/en/articles"
+            }
+          }
+        ]
+      },
+      {
+        "title": {
+          "nl": "Community",
+          "en": "Community"
+        },
+        "links": [
+          {
+            "label": {
+              "nl": "Evenementen",
+              "en": "Events"
+            },
+            "href": {
+              "nl": "/evenementen",
+              "en": "/en/events-page"
+            }
+          },
+          {
+            "label": {
+              "nl": "Lokale groepen",
+              "en": "Local groups"
+            },
+            "href": {
+              "nl": "/word-lid-van-een-groep",
+              "en": "/en/join-a-group"
+            }
+          },
+          {
+            "label": {
+              "nl": "Coworkingruimte",
+              "en": "Co-working space"
+            },
+            "href": {
+              "nl": "/coworking",
+              "en": "/en/office"
+            }
+          },
+          {
+            "label": {
+              "nl": "WhatsApp-community",
+              "en": "WhatsApp community"
+            },
+            "href": {
+              "nl": "https://chat.whatsapp.com/HtPYuTVHp45CwXlPCek83i",
+              "en": "https://chat.whatsapp.com/HtPYuTVHp45CwXlPCek83i"
+            }
+          }
+        ]
+      },
+      {
+        "title": {
+          "nl": "Carrière",
+          "en": "Careers"
+        },
+        "links": [
+          {
+            "label": {
+              "nl": "Carrièregids",
+              "en": "Career guide"
+            },
+            "href": {
+              "nl": "/carrieregids",
+              "en": "/en/career-guide"
+            }
+          },
+          {
+            "label": {
+              "nl": "Gesprek met ons team",
+              "en": "Call with our team"
+            },
+            "href": {
+              "nl": "/virtuele-koffie",
+              "en": "/en/virtual-coffee"
+            }
+          },
+          {
+            "label": {
+              "nl": "Vacatures",
+              "en": "Jobs board"
+            },
+            "href": {
+              "nl": "/vacatures",
+              "en": "/en/jobs"
+            }
+          },
+          {
+            "label": {
+              "nl": "Vrijwilligerswerk",
+              "en": "Volunteer"
+            },
+            "href": {
+              "nl": "/vrijwilliger",
+              "en": "/en/volunteer"
+            }
+          }
+        ]
+      },
+      {
+        "title": {
+          "nl": "Geven",
+          "en": "Giving"
+        },
+        "links": [
+          {
+            "label": {
+              "nl": "Donatiegids",
+              "en": "Donation guide"
+            },
+            "href": {
+              "nl": "/donatie-gids-effectieve-goede-doelen",
+              "en": "/en/donation-guide-effective-charities"
+            }
+          },
+          {
+            "label": {
+              "nl": "Doneer Effectief",
+              "en": "Doneer Effectief"
+            },
+            "href": {
+              "nl": "https://doneereffectief.nl",
+              "en": "https://doneereffectief.nl"
+            }
+          },
+          {
+            "label": {
+              "nl": "De 10%-belofte",
+              "en": "The 10% pledge"
+            },
+            "href": {
+              "nl": "https://www.givingwhatwecan.org/pledge/ea-netherlands",
+              "en": "https://www.givingwhatwecan.org/pledge/ea-netherlands"
+            }
+          }
+        ]
+      },
+      {
+        "title": {
+          "nl": "Over ons",
+          "en": "About us"
+        },
+        "links": [
+          {
+            "label": {
+              "nl": "Wie we zijn",
+              "en": "Who we are"
+            },
+            "href": {
+              "nl": "/effectief-altruisme-nederland",
+              "en": "/en/about"
+            }
+          },
+          {
+            "label": {
+              "nl": "Onze impact",
+              "en": "Our impact"
+            },
+            "href": {
+              "nl": "/onze-impact",
+              "en": "/en/our-impact"
+            }
+          },
+          {
+            "label": {
+              "nl": "Contact",
+              "en": "Contact"
+            },
+            "href": {
+              "nl": "/contact",
+              "en": "/en/contact-us"
+            }
+          },
+          {
+            "label": {
+              "nl": "Steun ons",
+              "en": "Support us"
+            },
+            "href": {
+              "nl": "/steun-ons",
+              "en": "/en/support-us"
+            }
+          }
+        ]
+      }
+    ],
+    "legal": [
+      {
+        "label": {
+          "nl": "Gedragscode",
+          "en": "Code of conduct"
+        },
+        "href": {
+          "nl": "/gedragscode-ea-nederland",
+          "en": "/en/legal/code-of-conduct"
+        }
+      },
+      {
+        "label": {
+          "nl": "Privacybeleid",
+          "en": "Privacy policy"
+        },
+        "href": {
+          "nl": "/legal/privacy-policy",
+          "en": "/en/legal/privacy-policy"
+        }
+      },
+      {
+        "label": {
+          "nl": "Beleidsplan (pdf)",
+          "en": "Policy plan (PDF)"
+        },
+        "href": {
+          "nl": "https://cdn.sanity.io/files/315e81a9/production/52ea4ad10e40b58d23da198c07fad7ea4b5a0a04.pdf",
+          "en": "https://cdn.sanity.io/files/315e81a9/production/52ea4ad10e40b58d23da198c07fad7ea4b5a0a04.pdf"
+        }
+      },
+      {
+        "label": {
+          "nl": "Financiële overzichten (pdf)",
+          "en": "Financial statements (PDF)"
+        },
+        "href": {
+          "nl": "https://cdn.sanity.io/files/315e81a9/production/756796ebbb98a31df12e984d5ea837eb9bf25734.pdf",
+          "en": "https://cdn.sanity.io/files/315e81a9/production/756796ebbb98a31df12e984d5ea837eb9bf25734.pdf"
+        }
+      },
+      {
+        "label": {
+          "nl": "Credits",
+          "en": "Credits"
+        },
+        "href": {
+          "nl": "/legal/credits",
+          "en": "/en/legal/credits"
+        }
+      }
+    ],
+    "org": {
+      "anbi": {
+        "title": {
+          "nl": "ANBI",
+          "en": "ANBI"
+        },
+        "body": {
+          "nl": "Effectief Altruïsme Nederland is een erkende ANBI (algemeen nut beogende instelling). Je giften aan ons zijn daardoor aftrekbaar van de belasting.",
+          "en": "Effectief Altruïsme Nederland is a registered ANBI (public benefit organisation), so donations to us are tax-deductible in the Netherlands."
+        },
+        "numbers": "RSIN 857171367 · KvK 67780903",
+        "link": {
+          "label": {
+            "nl": "Onze ANBI-gegevens staan in ons beleidsplan (pdf)",
+            "en": "Our ANBI information is in our policy plan (PDF)"
+          },
+          "href": {
+            "nl": "https://cdn.sanity.io/files/315e81a9/production/52ea4ad10e40b58d23da198c07fad7ea4b5a0a04.pdf",
+            "en": "https://cdn.sanity.io/files/315e81a9/production/52ea4ad10e40b58d23da198c07fad7ea4b5a0a04.pdf"
+          }
+        }
+      },
+      "addresses": [
+        {
+          "title": {
+            "nl": "Postadres",
+            "en": "Postal address"
+          },
+          "lines": [
+            "Van Diemenstraat 92",
+            "1013 CN Amsterdam"
+          ]
+        },
+        {
+          "title": {
+            "nl": "Vestigingsadres",
+            "en": "Registered address"
+          },
+          "lines": [
+            "Dorpsstraat 40",
+            "3481 EL Harmelen"
+          ]
+        }
+      ]
+    }
+  }
+}
