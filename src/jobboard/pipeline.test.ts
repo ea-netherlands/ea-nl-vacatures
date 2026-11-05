@@ -399,11 +399,11 @@ test('the skill axis is Probably Good\u2019s, and every skill is defined', () =>
   for (const skill of SKILLS) assert.ok(SKILL_DEFINITIONS[skill], `${skill} needs a definition`)
 })
 
-test('where-you-work is three options, and every retired one maps forward', () => {
+test('where-you-work is four options, and every retired one maps forward', () => {
   // The four-value vocabulary answered two questions at once. Anything still
   // emitting an old value must land somewhere rather than falling through to
   // an unlabelled listing.
-  assert.deepEqual([...LOCATION_MODES], ['remote', 'on-site-nl', 'nl-flexible'])
+  assert.deepEqual([...LOCATION_MODES], ['remote', 'on-site-nl', 'nl-flexible', 'temporary-abroad'])
   for (const legacy of ['on-site', 'hybrid', 'remote-nl', 'remote-eu']) {
     const mapped = LEGACY_LOCATION_MODE_MAP[legacy]
     assert.ok(mapped, `${legacy} must map forward`)

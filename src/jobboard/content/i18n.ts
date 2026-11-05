@@ -587,7 +587,7 @@ const nl: Strings = {
     'Als het je niet uitmaakt aan welk probleem je werkt, maar je wel weet waar je goed in bent.',
   browseSkillAside: 'Dezelfde indeling die Probably Good gebruikt.',
   browseLocationHeading: 'Kies op locatie',
-  browseLocationBody: 'Waar je wilt werken: thuis, op locatie in Nederland of een mix van beide.',
+  browseLocationBody: 'Waar je wilt werken: thuis, op locatie in Nederland, een mix van beide, of een paar weken tot maanden in het buitenland.',
   browseRoleCount: (n) => (n === 1 ? '1 vacature' : `${n} vacatures`),
   browseEmptyTile: 'Nu niets open',
   browseShowAll: (n) => `Bekijk alle ${n} vacatures`,
@@ -881,6 +881,7 @@ const nl: Strings = {
     remote: 'Op afstand',
     'on-site-nl': 'Op locatie in Nederland',
     'nl-flexible': 'Nederlandse werkgever, flexibel',
+    'temporary-abroad': 'Tijdelijk in het buitenland',
   },
   languageRequirements: {
     'dutch-required': 'Nederlands vereist',
@@ -1001,7 +1002,7 @@ const en: Strings = {
     'For when the problem matters less to you than what you are good at.',
   browseSkillAside: 'The same categories Probably Good uses.',
   browseLocationHeading: 'Browse by location',
-  browseLocationBody: 'Where you want to work: from home, on site in the Netherlands, or a mix of both.',
+  browseLocationBody: 'Where you want to work: from home, on site in the Netherlands, a mix of both, or abroad for a few weeks or months.',
   browseRoleCount: (n) => (n === 1 ? '1 job' : `${n} jobs`),
   browseEmptyTile: 'Nothing open now',
   browseShowAll: (n) => `See all ${n} jobs`,
@@ -1293,6 +1294,7 @@ const en: Strings = {
     remote: 'Remote',
     'on-site-nl': 'On site in the Netherlands',
     'nl-flexible': 'Dutch employer, flexible',
+    'temporary-abroad': 'Temporarily abroad',
   },
   languageRequirements: {
     'dutch-required': 'Dutch required',

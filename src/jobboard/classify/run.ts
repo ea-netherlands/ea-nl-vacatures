@@ -333,10 +333,9 @@ export async function runClassification(
           raw.securityScreening,
           raw.securityNote,
           raw.seniority,
-          // None of the three location modes describes a residency abroad:
-          // "on-site-nl" would be false and "remote" worse. Leave it empty
-          // and let the city and the listing kind say where it is.
-          programmeVerdict ? null : raw.locationMode,
+          // A short programme abroad is neither remote nor at a Dutch
+          // workplace, so it gets its own mode rather than the model's guess.
+          programmeVerdict ? 'temporary-abroad' : raw.locationMode,
           draftNote,
           programmeVerdict ? `${raw.reasoning}\n\nNL eligibility: ${programmeVerdict.reason}.` : raw.reasoning,
           JSON.stringify(gated.violations),
