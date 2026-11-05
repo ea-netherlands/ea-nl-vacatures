@@ -357,6 +357,15 @@ export const jobListing = defineType({
       readOnly: true,
     }),
     defineField({
+      name: 'listedByEaBoard',
+      title: 'Listed by an EA board',
+      description:
+        '80,000 Hours, Probably Good or EA Opportunities lists this role. Files it under vetted organisations unless you pick a section.',
+      type: 'boolean',
+      group: 'provenance',
+      readOnly: true,
+    }),
+    defineField({
       name: 'llmScore',
       title: 'Classifier score',
       type: 'number',

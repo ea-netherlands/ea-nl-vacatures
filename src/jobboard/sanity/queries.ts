@@ -35,6 +35,7 @@ const LISTING_FIELDS = /* groq */ `
   "skills": coalesce(skills, []),
   leverage,
   section,
+  listedByEaBoard,
   locationCity,
   locationMode,
   seniority,
@@ -83,6 +84,8 @@ export type ListingView = {
   leverage: LeverageType | null
   /** A curator's override of the index band; see ../lib/bands. */
   section: Band | null
+  /** 80,000 Hours, Probably Good or EA Opportunities lists the role; files it as vetted. */
+  listedByEaBoard: boolean | null
   locationCity: string | null
   locationMode: LocationMode | null
   seniority: Seniority | null

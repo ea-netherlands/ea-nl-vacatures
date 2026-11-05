@@ -675,7 +675,7 @@ const nl: Strings = {
   sortLeverage: 'Grootste hefboom eerst',
   tierRecommendedHeading: 'De beste organisaties ter wereld in wat ze doen',
   tierRecommendedBody:
-    'Hier gaat het om de oplossing zelf. Van deze organisaties zijn we er redelijk zeker van dat ze wereldwijd tot de besten behoren in hun vak — doorgelicht door GiveWell, Animal Charity Evaluators, Founders Pledge of The Life You Can Save, of uitgelicht door 80,000 Hours. Iemand anders heeft dus al beoordeeld dat wat deze organisatie doet werkt, en daarom staat hier elke functie die openstaat voor iemand in Nederland, ook ondersteunend of operationeel werk. Reken wel op stevige concurrentie, en op werk op afstand of verhuizen.',
+    'Hier gaat het om de oplossing zelf. Van deze organisaties zijn we er redelijk zeker van dat ze wereldwijd tot de besten behoren in hun vak — doorgelicht door GiveWell, Animal Charity Evaluators, Founders Pledge of The Life You Can Save, of vermeld door 80,000 Hours, Probably Good of EA Opportunities. Iemand anders heeft dus al beoordeeld dat wat deze organisatie doet werkt, en daarom staat hier elke functie die openstaat voor iemand in Nederland, ook ondersteunend of operationeel werk. Reken wel op stevige concurrentie, en op werk op afstand of verhuizen.',
   tierRecommendedCount: (n) => (n === 1 ? '1 vacature' : `${n} vacatures`),
   tierDutchHeading: 'Functies met een hefboom, hier in Nederland',
   tierDutchBody:
@@ -693,7 +693,7 @@ const nl: Strings = {
   },
   bandBlurbs: {
     vetted:
-      'Elke functie bij organisaties die een onafhankelijke evaluator of een EA-financier al heeft doorgelicht. Reken op stevige concurrentie, vaak op afstand.',
+      'Elke functie bij organisaties die een onafhankelijke evaluator, een EA-financier of een EA-vacaturebank al heeft doorgelicht. Reken op stevige concurrentie, vaak op afstand.',
     routes:
       'Stages, traineeships en betaalde programma’s: de opstap naar de teams waar het werk aan deze problemen gebeurt.',
     dutch:
@@ -1088,7 +1088,7 @@ const en: Strings = {
   sortLeverage: 'Highest leverage first',
   tierRecommendedHeading: 'Among the best in the world at what they do',
   tierRecommendedBody:
-    'This tier is about the solution itself. We are fairly confident these organisations are among the best in the world in their field — vetted by GiveWell, Animal Charity Evaluators, Founders Pledge or The Life You Can Save, or featured by 80,000 Hours. Somebody else has already judged that what they do works, so we list every role there that is open to someone in the Netherlands, including support and operations work. Expect fierce competition, and expect remote work or a move.',
+    'This tier is about the solution itself. We are fairly confident these organisations are among the best in the world in their field — vetted by GiveWell, Animal Charity Evaluators, Founders Pledge or The Life You Can Save, or listed by 80,000 Hours, Probably Good or EA Opportunities. Somebody else has already judged that what they do works, so we list every role there that is open to someone in the Netherlands, including support and operations work. Expect fierce competition, and expect remote work or a move.',
   tierRecommendedCount: (n) => (n === 1 ? '1 role' : `${n} roles`),
   tierDutchHeading: 'Roles with leverage, here in the Netherlands',
   tierDutchBody:
@@ -1106,7 +1106,7 @@ const en: Strings = {
   },
   bandBlurbs: {
     vetted:
-      'Every role at organisations an independent evaluator or an EA funder has already vetted. Expect fierce competition, often remote.',
+      'Every role at organisations an independent evaluator, an EA funder or an EA job board has already vetted. Expect fierce competition, often remote.',
     routes:
       'Internships, traineeships and paid programmes: the step into the teams doing the work on these problems.',
     dutch:

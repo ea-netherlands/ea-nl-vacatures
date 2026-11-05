@@ -35,6 +35,8 @@ export type ListingPlacement = {
   leverage: LeverageType | null
   /** The curator's override of the band; null lets the rules decide. */
   section: Band | null
+  /** 80,000 Hours, Probably Good or EA Opportunities lists the role. */
+  listedByEaBoard?: boolean | null
   locationMode: LocationMode | null
   languageRequirement: LanguageRequirement | null
   seniority: Seniority | null
@@ -66,7 +68,9 @@ function bandReason(title: string, p: ListingPlacement): string {
   if (TRAINEESHIP.test(title)) return 'The title names a traineeship.'
   if (p.leverage === 'trusted-recommendation')
     return 'Its leverage is "recommended by an evaluator": the employer has been vetted by an evaluator or an EA funder.'
-  return 'Not a way in, and the employer is not marked as vetted, so it goes in the Dutch-leverage band.'
+  if (p.listedByEaBoard)
+    return '80,000 Hours, Probably Good or EA Opportunities lists it, so the organisation counts as vetted.'
+  return 'Not a way in, no EA board lists it, and the employer is not marked as vetted, so it goes in the Dutch-leverage band.'
 }
 
 /**
