@@ -54,6 +54,7 @@ import {
 import { BandGrid, CauseGrid, LocationGrid, SkillGrid, countFacets } from '../components/BrowseGrid'
 import { BAND_ICONS, ExpandableCardList, TierJump } from '../components/ExpandableCardList'
 import { Icon } from '../components/Icon'
+import { NewsletterBand } from '../components/NewsletterBand'
 import { routes, t, type Locale } from '../content/i18n'
 import { BANDS, bandOf, isBand, splitIntoBands, type Band } from '../lib/bands'
 import { getEarningToGiveListings, getLiveListings } from '../sanity/queries'
@@ -321,6 +322,11 @@ export async function IndexPage({
             <LocationGrid locale={locale} counts={counts} />
           </Section>
 
+          {/* Nothing here yet? The monthly email brings new roles to them. */}
+          <Section tight>
+            <NewsletterBand locale={locale} />
+          </Section>
+
           {/* One way onward for someone not ready to apply: the free course,
               or the fellowship after it. Earning to give, feedback and the
               organisations index are all in the header. */}
@@ -414,6 +420,10 @@ export async function IndexPage({
               })}
             </>
           )}
+        </Section>
+
+        <Section tight>
+          <NewsletterBand locale={locale} />
         </Section>
 
         <Section tight>
