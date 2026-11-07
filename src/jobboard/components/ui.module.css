@@ -37,18 +37,18 @@
   transform: translateY(1px);
 }
 
-/* The site's `subtle` variant is white with a 1px slate-200 border and
-   slate-700 ink — not a filled slate-50 chip. The border is what makes it read
+/* The site's `subtle` variant is white with a 1px stone-200 border and
+   stone-700 ink — not a filled stone-50 chip. The border is what makes it read
    as a pressable key next to a solid one. */
 .btnSubtle {
   background: var(--bg);
-  color: var(--slate-700);
+  color: var(--stone-700);
   border: 1px solid var(--border);
   box-shadow: var(--btn-subtle-shadow);
 }
 .btnSubtle:hover {
   background: var(--bg-subtle);
-  color: var(--slate-900);
+  color: var(--stone-900);
 }
 .btnSubtle:active {
   transform: translateY(1px);
@@ -805,13 +805,13 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-card);
   background: var(--bg);
-  box-shadow: var(--card-elevated-shadow);
+  box-shadow: var(--card-elevated-shadow), var(--shadow-md);
   transition: box-shadow var(--transition-common), border-color var(--transition-common);
 }
 
 .causeTile:hover {
   border-color: var(--primary-emphasized);
-  box-shadow: var(--card-elevated-shadow-hover);
+  box-shadow: var(--card-elevated-shadow-hover), var(--shadow-lg);
 }
 
 .causeTileMain {
@@ -938,7 +938,7 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-card);
   background: var(--bg);
-  box-shadow: var(--card-elevated-shadow);
+  box-shadow: var(--card-elevated-shadow), var(--shadow-md);
   text-decoration: none;
   color: var(--fg);
   font-size: var(--text-sm);
@@ -948,7 +948,7 @@
 .skillTile:hover {
   color: var(--fg);
   border-color: var(--primary-emphasized);
-  box-shadow: var(--card-elevated-shadow-hover);
+  box-shadow: var(--card-elevated-shadow-hover), var(--shadow-lg);
 }
 
 .skillTileIcon {

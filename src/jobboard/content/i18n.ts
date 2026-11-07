@@ -217,6 +217,12 @@ type Strings = {
   // Index — hero and the browse grid (rebuilt August 2026)
   heroTitle: string
   heroLead: string
+  /** The pill above the index's title, as on the home page's hero. */
+  heroEyebrow: string
+  /** The word of heroTitle that gets the pencil underline. Must occur in it. */
+  heroTitleMark: string
+  /** The phrase of heroLead behind the yellow marker. Must occur in it. */
+  heroLeadMarker: string
 
   // Earning to give, promoted to its own band on the index (August 2026)
   e2gBandHeading: string
@@ -536,6 +542,9 @@ const nl: Strings = {
   heroTitle: 'De banen in Nederland waarmee je het meeste goed doet',
   heroLead:
     'Een korte, met de hand samengestelde lijst, met bij elke vacature onze reden erbij.',
+  heroEyebrow: 'Vacatures van EA Nederland',
+  heroTitleMark: 'meeste',
+  heroLeadMarker: 'onze reden erbij',
 
   e2gBandHeading: 'Of verdien goed, en geef weg wat je overhoudt',
   e2gBandBody:
@@ -951,6 +960,9 @@ const en: Strings = {
   heroTitle: 'The most socially impactful jobs in the Netherlands',
   heroLead:
     'A short, hand-picked list, with our reason written down for every vacancy on it.',
+  heroEyebrow: 'Jobs from EA Netherlands',
+  heroTitleMark: 'most',
+  heroLeadMarker: 'our reason written down',
 
   e2gBandHeading: 'Or earn well, and give away what you do not need',
   e2gBandBody:

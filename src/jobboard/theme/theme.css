@@ -14,65 +14,13 @@
    Values are lifted verbatim from the EAN design system.
    ============================================================ */
 
-/* --- Webfonts. Declared at document level because @font-face
-       cannot be scoped; names are namespaced to avoid clashes
-       if the host app already registers the same families. --- */
-@font-face {
-  font-family: 'Sentient';
-  src: url('/vacatures-static/fonts/Sentient-Regular.woff2') format('woff2');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Sentient';
-  src: url('/vacatures-static/fonts/Sentient-Medium.woff2') format('woff2');
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Sentient';
-  src: url('/vacatures-static/fonts/Sentient-Bold.woff2') format('woff2');
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Atkinson Hyperlegible Next';
-  src: url('/vacatures-static/fonts/AtkinsonHyperlegibleNext-Regular.woff2') format('woff2');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Atkinson Hyperlegible Next';
-  src: url('/vacatures-static/fonts/AtkinsonHyperlegibleNext-RegularItalic.woff2') format('woff2');
-  font-weight: 400;
-  font-style: italic;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Atkinson Hyperlegible Next';
-  src: url('/vacatures-static/fonts/AtkinsonHyperlegibleNext-Medium.woff2') format('woff2');
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Atkinson Hyperlegible Next';
-  src: url('/vacatures-static/fonts/AtkinsonHyperlegibleNext-SemiBold.woff2') format('woff2');
-  font-weight: 600;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Atkinson Hyperlegible Next';
-  src: url('/vacatures-static/fonts/AtkinsonHyperlegibleNext-Bold.woff2') format('woff2');
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
+/* --- Webfonts. Loaded by next/font in src/app/layout.tsx since November
+       2026, which preloads them and sizes a fallback to match, and sets
+       --font-board-heading and --font-board-body (used below). The plain
+       @font-face rules that used to live here are gone: CSS family names are
+       case-insensitive, so next/font's "sentient" and this file's "Sentient"
+       were one family and the browser fetched both copies. At merge time the
+       site's own next/font setup takes over. --- */
 
 /* --- The one other rule that cannot be scoped.
 
@@ -110,17 +58,37 @@ body {
   --ea-teal-800: #0b424c;
   --ea-teal-900: #062328;
 
-  /* --- Neutral: Slate --- */
-  --slate-50: #f8fafc;
-  --slate-100: #f1f5f9;
-  --slate-200: #e2e8f0;
-  --slate-300: #cbd5e1;
-  --slate-400: #64748b;
-  --slate-500: #94a3b8;
-  --slate-600: #475569;
-  --slate-700: #334155;
-  --slate-800: #1e293b;
-  --slate-900: #0f172a;
+  /* --- Neutral: Stone (warm grey). The website moved from slate to stone in
+         November 2026; the board follows so the two read as one site.
+         Tailwind v3 stone, light to dark. --- */
+  --stone-50: #fafaf9;
+  --stone-100: #f5f5f4;
+  --stone-200: #e7e5e4;
+  --stone-300: #d6d3d1;
+  --stone-400: #a8a29e;
+  --stone-500: #78716c; /* 4.8:1 on white: the lightest grey for text */
+  --stone-600: #57534e;
+  --stone-700: #44403c;
+  --stone-800: #292524;
+  --stone-900: #1c1917;
+
+  /* Deprecated slate names, kept so older rules keep working. They resolve to
+     stone BY ROLE, as in the design system: the old ramp had its 400 and 500
+     stops swapped (400 was the dark one), so --slate-400 maps to stone-500. */
+  --slate-50: var(--stone-50);
+  --slate-100: var(--stone-100);
+  --slate-200: var(--stone-200);
+  --slate-300: var(--stone-300);
+  --slate-400: var(--stone-500);
+  --slate-500: var(--stone-400);
+  --slate-600: var(--stone-600);
+  --slate-700: var(--stone-700);
+  --slate-800: var(--stone-800);
+  --slate-900: var(--stone-900);
+
+  /* The yellow marker: a highlighter behind one key phrase per section at
+     most. Background only, never on teal text, buttons, links or icons. */
+  --marker: #fde68a;
 
   --black: #09090b;
   --white: #ffffff;
@@ -137,27 +105,23 @@ body {
 
   /* --- Surfaces --- */
   --bg: var(--white);
-  --bg-subtle: var(--slate-50);
-  --bg-muted: var(--slate-100);
-  --bg-emphasized: var(--slate-200);
+  --bg-subtle: var(--stone-50);
+  --bg-muted: var(--stone-100);
+  --bg-emphasized: var(--stone-200);
   --bg-inverted: var(--black);
 
   /* --- Foreground --- */
   --fg: var(--black);
-  --fg-muted: var(--slate-600);
-  /* The site's Chakra theme maps `fg.subtle` to neutral.400, which in its
-     slate ramp is the DARK #64748b — its 400 and 500 stops are transposed
-     relative to every other slate ramp. This was pointing at --slate-500
-     (#94a3b8), so every "subtle" label on the board rendered two stops
-     lighter than the site's and at 2.5:1 against white, under the 4.5:1
-     WCAG AA floor for small text. #64748b is 4.8:1. */
-  --fg-subtle: var(--slate-400);
-  --fg-inverted: var(--slate-50);
+  --fg-muted: var(--stone-600);
+  /* Meta text and placeholders. stone-500 is 4.8:1 on white, above the
+     4.5:1 WCAG AA floor for small text. */
+  --fg-subtle: var(--stone-500);
+  --fg-inverted: var(--stone-50);
 
   /* --- Borders --- */
-  --border: var(--slate-200);
-  --border-muted: var(--slate-100);
-  --border-emphasized: var(--slate-300);
+  --border: var(--stone-200);
+  --border-muted: var(--stone-100);
+  --border-emphasized: var(--stone-300);
 
   /* --- Primary roles --- */
   --primary-contrast: var(--white);
@@ -182,8 +146,10 @@ body {
   --link-hover: var(--ea-teal-700);
 
   /* --- Type --- */
-  --font-heading: 'Sentient', Georgia, 'Times New Roman', serif;
-  --font-body: 'Atkinson Hyperlegible Next', -apple-system, BlinkMacSystemFont,
+  /* --font-board-heading and --font-board-body are set by next/font in
+     src/app/layout.tsx (see the note at the top of this file). */
+  --font-heading: var(--font-board-heading, Georgia), Georgia, 'Times New Roman', serif;
+  --font-body: var(--font-board-body, -apple-system), -apple-system, BlinkMacSystemFont,
     'Segoe UI', Helvetica, Arial, sans-serif;
   --font-mono: SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
@@ -197,6 +163,7 @@ body {
   --text-3xl: 1.875rem;
   --text-4xl: 2.25rem;
   --text-5xl: 3rem;
+  --text-6xl: 3.75rem;
 
   --fw-regular: 400;
   --fw-medium: 500;
@@ -252,11 +219,11 @@ body {
   --container-site: 90rem;
 
   /* --- Effects: the "pressable key" is a brand signature --- */
-  --shadow-xs: 0px 1px 2px rgba(15, 23, 42, 0.1), 0px 0px 1px rgba(15, 23, 42, 0.2);
-  --shadow-sm: 0px 2px 4px rgba(15, 23, 42, 0.1), 0px 0px 1px rgba(15, 23, 42, 0.3);
-  --shadow-md: 0px 4px 8px rgba(15, 23, 42, 0.1), 0px 0px 1px rgba(15, 23, 42, 0.3);
+  --shadow-xs: 0px 1px 2px rgba(28, 25, 23, 0.1), 0px 0px 1px rgba(28, 25, 23, 0.2);
+  --shadow-sm: 0px 2px 4px rgba(28, 25, 23, 0.1), 0px 0px 1px rgba(28, 25, 23, 0.3);
+  --shadow-md: 0px 4px 8px rgba(28, 25, 23, 0.1), 0px 0px 1px rgba(28, 25, 23, 0.3);
   /* The site's dropdown menus. */
-  --shadow-lg: 0px 8px 16px rgba(15, 23, 42, 0.1), 0px 0px 1px rgba(15, 23, 42, 0.3);
+  --shadow-lg: 0px 8px 16px rgba(28, 25, 23, 0.1), 0px 0px 1px rgba(28, 25, 23, 0.3);
 
   --btn-solid-shadow: 0 0 0 4px rgba(3, 16, 18, 0.05), inset 0 -3px rgba(3, 16, 18, 0.1),
     inset 0 3px 0 0 rgba(255, 255, 255, 0.1);
@@ -280,9 +247,16 @@ body {
   --duration-moderate: 0.2s;
   --transition-common: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 
-  --pattern-url: url('/vacatures-static/img/pattern.png');
-  --pattern-size: 400px auto;
-  --pattern-opacity: 0.4;
+  /* The website's graph paper (its globals.css): teal major lines every
+     120px over warm-grey minor lines every 24px. Behind the hero and the
+     sections that hold cards, as on the home page. */
+  --graph-paper-major: color-mix(in srgb, var(--ea-teal-100) 55%, transparent);
+  --graph-paper-minor: color-mix(in srgb, var(--stone-100) 65%, transparent);
+  --graph-paper-image: linear-gradient(var(--graph-paper-major) 1px, transparent 1px),
+    linear-gradient(90deg, var(--graph-paper-major) 1px, transparent 1px),
+    linear-gradient(var(--graph-paper-minor) 1px, transparent 1px),
+    linear-gradient(90deg, var(--graph-paper-minor) 1px, transparent 1px);
+  --graph-paper-size: 120px 120px, 120px 120px, 24px 24px, 24px 24px;
 
   --rule-dashed: 1px dashed var(--border-emphasized);
 

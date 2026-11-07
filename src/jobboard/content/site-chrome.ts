@@ -80,7 +80,7 @@ export const BOARD_NAV: Record<
   nl: {
     home: SITE,
     cta: {
-      label: "Start de gratis cursus",
+      label: "Start de korte cursus",
       href: `${SITE}/en/courses/pressing-problems`,
     },
     otherLanguage: {
@@ -95,7 +95,7 @@ export const BOARD_NAV: Record<
   en: {
     home: `${SITE}/en`,
     cta: {
-      label: "Start the free course",
+      label: "Start the quick course",
       href: `${SITE}/en/courses/pressing-problems`,
     },
     otherLanguage: {

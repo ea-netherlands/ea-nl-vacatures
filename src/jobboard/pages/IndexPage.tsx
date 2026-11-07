@@ -48,6 +48,7 @@ import {
   FeedbackBand,
   Hero,
   OnwardStep,
+  PageSection,
   Section,
   TierHeading,
 } from '../components/Chrome'
@@ -55,6 +56,7 @@ import { BandGrid, CauseGrid, LocationGrid, SkillGrid, countFacets } from '../co
 import { BAND_ICONS, ExpandableCardList, TierJump } from '../components/ExpandableCardList'
 import { Icon } from '../components/Icon'
 import { NewsletterBand } from '../components/NewsletterBand'
+import { Marker, PenMark, withMark } from '../components/PenMark'
 import { routes, t, type Locale } from '../content/i18n'
 import { BANDS, bandOf, isBand, splitIntoBands, type Band } from '../lib/bands'
 import { getEarningToGiveListings, getLiveListings } from '../sanity/queries'
@@ -273,7 +275,12 @@ export async function IndexPage({
           meant a first-time reader met five things before a single job. The
           reasoning lives on the method page, linked from the header.
         */}
-        <Hero title={copy.heroTitle} lead={copy.heroLead}>
+        <Hero
+          feature
+          eyebrow={copy.heroEyebrow}
+          title={withMark(copy.heroTitle, copy.heroTitleMark, (w) => <PenMark>{w}</PenMark>)}
+          lead={withMark(copy.heroLead, copy.heroLeadMarker, (p) => <Marker>{p}</Marker>)}
+        >
           <p className={s.heroActions}>
             <Link href={`${r.index}?view=all`} className={`${u.btn} ${u.btnSolid}`}>
               {copy.browseShowAll(all.length)}
@@ -294,34 +301,46 @@ export async function IndexPage({
           stays in the header, with a one-line beta note on every list and
           listing. They are off this page because a reader should reach the
           jobs before the caveats.
+
+          Since November 2026 each is a full-width section set like the home
+          page's: big heading, lead, an optional button on the right, and the
+          grids of cards on graph paper, alternating with plain white.
         */}
-        <Container>
-          <Section first>
-            <h2 className={u.browseHeading}>{copy.browseBandHeading}</h2>
-            <p className={u.browseBody}>{copy.browseBandBody}</p>
-            <BandGrid locale={locale} counts={bandCounts} earningToGive={earningToGive.length} />
-          </Section>
+        <PageSection
+          paper
+          heading={copy.browseBandHeading}
+          lead={copy.browseBandBody}
+          action={{ href: r.method, label: locale === 'nl' ? 'Zo kiezen we' : 'How we choose' }}
+        >
+          <BandGrid locale={locale} counts={bandCounts} earningToGive={earningToGive.length} />
+        </PageSection>
 
-          <Section id="problemareas">
-            <h2 className={u.browseHeading}>{copy.browseCauseHeading}</h2>
-            <p className={u.browseBody}>{copy.browseCauseBody}</p>
-            <CauseGrid locale={locale} counts={counts} />
-          </Section>
+        <PageSection
+          id="problemareas"
+          heading={copy.browseCauseHeading}
+          lead={copy.browseCauseBody}
+          action={{ href: r.causes, label: locale === 'nl' ? 'Over de probleemgebieden' : 'About the problem areas' }}
+        >
+          <CauseGrid locale={locale} counts={counts} />
+        </PageSection>
 
-          <Section>
-            <h2 className={u.browseHeading}>{copy.browseSkillHeading}</h2>
-            <p className={u.browseBody}>
+        <PageSection
+          paper
+          heading={copy.browseSkillHeading}
+          lead={
+            <>
               {copy.browseSkillBody} <span className={u.browseAside}>{copy.browseSkillAside}</span>
-            </p>
-            <SkillGrid locale={locale} counts={counts} />
-          </Section>
+            </>
+          }
+        >
+          <SkillGrid locale={locale} counts={counts} />
+        </PageSection>
 
-          <Section>
-            <h2 className={u.browseHeading}>{copy.browseLocationHeading}</h2>
-            <p className={u.browseBody}>{copy.browseLocationBody}</p>
-            <LocationGrid locale={locale} counts={counts} />
-          </Section>
+        <PageSection heading={copy.browseLocationHeading} lead={copy.browseLocationBody}>
+          <LocationGrid locale={locale} counts={counts} />
+        </PageSection>
 
+        <Container>
           {/* Nothing here yet? The monthly email brings new roles to them. */}
           <Section tight>
             <NewsletterBand locale={locale} />
