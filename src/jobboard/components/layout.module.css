@@ -83,10 +83,13 @@
 }
 
 /* ---------------------------------------------------------------------------
-   The website's bar, on top (./SiteHeader, October 2026). Measured off
-   effectiefaltruisme.nl: 72px tall, logo 32px, menu labels at 14px medium in
-   slate 600 with a chevron, pill-radius hover, the language button in teal
-   with its flag, the solid "Start de gratis cursus" button on the right.
+   The website's bar, on top (./SiteHeader, October 2026). Re-measured off
+   effectiefaltruisme.nl in November 2026, because any difference shows as the
+   menu jumping sideways when a reader clicks from the site into the board:
+   68px plus the 1px hairline, logo 32px, menu buttons 36px tall with 12px
+   side padding, 2px apart, 14px medium in stone 600, an 8px-radius hover and
+   a stone 400 chevron 4px after the label; the language button in teal with
+   its flag, 4px before the solid course button.
    --------------------------------------------------------------------------- */
 .siteBarWrap {
   max-width: var(--container-max);
@@ -113,6 +116,7 @@
 .siteMenus {
   display: none;
   align-items: center;
+  gap: var(--space-0-5);
 }
 
 .siteMenu {
@@ -122,23 +126,27 @@
 .siteMenuButton {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-0-5);
-  height: var(--space-10);
-  padding-inline: var(--space-2);
+  gap: var(--space-1);
+  height: var(--space-9);
+  padding-block: 0;
+  padding-inline: var(--space-3);
   border: 1px solid transparent;
-  border-radius: var(--radius-control);
+  border-radius: var(--radius-lg);
   background: none;
   font: inherit;
   font-size: var(--text-sm);
   font-weight: var(--fw-medium);
-  color: var(--slate-600);
+  color: var(--stone-600);
   text-decoration: none;
   cursor: pointer;
 }
-.siteMenuButton:hover,
-.siteMenuButton[aria-expanded='true'] {
+.siteMenuButton:hover {
   background: var(--bg-subtle);
-  color: var(--fg);
+  color: var(--stone-900);
+}
+.siteMenuButton[aria-expanded='true'] {
+  background: var(--primary-subtle);
+  color: var(--primary-fg);
 }
 .siteMenuButton:focus-visible,
 .siteLang:focus-visible,
@@ -150,7 +158,7 @@
 .siteActions {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--space-1);
   margin-left: auto;
 }
 
@@ -160,6 +168,7 @@
   gap: var(--space-2);
   height: var(--space-9);
   padding-inline: var(--space-3-5);
+  border: 1px solid transparent;
   border-radius: var(--radius-control);
   font-size: var(--text-sm);
   font-weight: var(--fw-medium);
@@ -196,7 +205,7 @@
   flex-direction: column;
   gap: var(--space-4);
   /* The header is sticky, so a panel taller than the screen would hide its
-     own last items. It scrolls inside the space under the 72px bar. */
+     own last items. It scrolls inside the space under the 69px bar. */
   max-height: calc(100dvh - var(--space-16) - var(--space-2));
   overflow-y: auto;
   padding-block: var(--space-2) var(--space-6);
@@ -217,7 +226,7 @@
 }
 
 .siteMenuChevron {
-  color: var(--slate-500);
+  color: var(--stone-400);
   transition: transform 0.2s;
 }
 .siteMenuButton[aria-expanded='true'] .siteMenuChevron {
@@ -234,7 +243,7 @@
   left: 0;
   right: 0;
   height: 100dvh;
-  background: color-mix(in srgb, var(--slate-900) 30%, transparent);
+  background: color-mix(in srgb, var(--stone-900) 30%, transparent);
 }
 
 .panel {
@@ -354,7 +363,7 @@
 }
 
 .panelExternal {
-  color: var(--slate-500);
+  color: var(--stone-400);
 }
 
 .panelLinkDescription {
@@ -478,8 +487,11 @@
 }
 
 /* The board's own row, under the site's bar: its name and its pages. */
+/* Since November 2026 it sits under the sticky header, not inside it, so it
+   scrolls away with the page and the sticky part matches the site's. */
 .boardBar {
-  border-top: 1px solid var(--border);
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
 }
 .boardBar .headerInner {
   padding-block: var(--space-2-5);
@@ -575,7 +587,7 @@
   gap: var(--space-1-5);
   font-size: var(--text-sm);
   font-weight: var(--fw-medium);
-  color: var(--slate-700);
+  color: var(--stone-700);
   text-decoration: none;
   padding: var(--space-1-5) var(--space-3);
   background: var(--bg);
@@ -807,35 +819,18 @@
   font-size: var(--text-sm);
 }
 
-/* Hero: faint repeating wave pattern with a soft radial teal halo. */
+/* The website's graph paper, as behind its hero and its card sections. */
+.paper {
+  background-color: var(--bg);
+  background-image: var(--graph-paper-image);
+  background-size: var(--graph-paper-size);
+  background-position: center top;
+}
+
+/* Hero: on graph paper, closed by a dashed rule across the whole window. */
 .hero {
   position: relative;
-  overflow: hidden;
   border-bottom: var(--rule-dashed);
-}
-
-.heroPattern {
-  position: absolute;
-  inset: 0;
-  background-image: var(--pattern-url);
-  background-size: var(--pattern-size);
-  background-repeat: repeat;
-  opacity: var(--pattern-opacity);
-  pointer-events: none;
-}
-
-.heroHalo {
-  position: absolute;
-  inset-inline: 0;
-  top: -30%;
-  height: 140%;
-  background: radial-gradient(
-    ellipse 50% 50% at 50% 40%,
-    var(--primary-muted) 0%,
-    transparent 70%
-  );
-  opacity: 0.55;
-  pointer-events: none;
 }
 
 .heroInner {
@@ -860,6 +855,143 @@
   .heroTitle {
     font-size: var(--text-5xl);
   }
+}
+
+/* The index's hero, set like the home page's: the same size and weight of
+   title, the same lead, the same 24px rhythm between the parts. */
+.heroFeature {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-6);
+  padding-block: var(--space-16);
+}
+.heroFeature .heroTitle {
+  font-size: clamp(2.5rem, 5.4vw, var(--text-6xl));
+  font-weight: var(--fw-bold);
+  line-height: 1.04;
+  max-width: 18ch;
+}
+.heroFeature .heroLead {
+  margin-top: 0;
+  font-size: var(--text-xl);
+  line-height: var(--lh-normal);
+  max-width: 34rem;
+}
+.heroFeature .heroActions {
+  margin-top: 0;
+}
+
+/* The home page's hero pill: white, teal ring, a faint outer halo. */
+.heroEyebrow {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--space-9);
+  padding: var(--space-0-5) var(--space-4);
+  background: var(--bg);
+  color: var(--primary-fg);
+  border: 1px solid var(--primary-emphasized);
+  border-radius: var(--radius-full);
+  box-shadow: var(--badge-section-shadow);
+  font-size: var(--text-md);
+  line-height: var(--lh-tight);
+}
+
+/* The pencil underline (./PenMark): one word of the title in teal with a
+   hand-drawn stroke under it. Same geometry as the site's home.css. */
+.penMark {
+  position: relative;
+  white-space: nowrap;
+  color: var(--primary-fg);
+}
+.pen {
+  position: absolute;
+  left: -7%;
+  width: 114%;
+  /* Measured from the inline box, which runs below the tight 1.04 line height. */
+  bottom: -0.13em;
+  height: 0.5em;
+  overflow: visible;
+  pointer-events: none;
+}
+.pen g {
+  fill: var(--primary-fg);
+}
+/* The mask path reveals the ink along the centre line. Fully drawn by
+   default, so reduced motion shows the finished stroke. */
+.penDraw {
+  fill: none;
+  stroke: var(--white);
+  stroke-width: 20;
+  stroke-linecap: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .penDraw {
+    animation: jb-pen 0.55s 0.5s cubic-bezier(0.55, 0.1, 0.35, 1) both;
+  }
+}
+@keyframes jb-pen {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* The yellow marker: one phrase per section at most, background only. */
+.marker {
+  background: var(--marker);
+  color: inherit;
+  padding: 0.02em 0.16em;
+  border-radius: 0.15em;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+/* A full-width section of the index (Chrome's PageSection), as on the home
+   page: dashed rule under it edge to edge, 80px of air on a desktop, the
+   section head 40px above its grid. */
+.pageSection {
+  border-bottom: var(--rule-dashed);
+}
+.pageSectionInner {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  padding-block: var(--space-12);
+}
+@media (min-width: 48rem) {
+  .pageSectionInner {
+    gap: var(--space-10);
+    padding-block: var(--space-20);
+  }
+}
+
+.secHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-5);
+}
+.secHeadText {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  align-items: flex-start;
+}
+.secHeading {
+  font-size: clamp(2rem, 4.2vw, var(--text-5xl));
+  line-height: 1.05;
+}
+.secLead {
+  max-width: 42rem;
+  color: var(--fg-muted);
+  font-size: var(--text-lg);
+  line-height: var(--lh-relaxed);
 }
 
 /* White, teal-ringed section eyebrow pill. */

@@ -88,26 +88,78 @@ export function Eyebrow({ children }: { children: ReactNode }) {
 export function Hero({
   title,
   lead,
+  eyebrow,
+  feature,
   compact,
   children,
 }: {
-  title: string
-  lead?: string
+  title: ReactNode
+  lead?: ReactNode
+  /** The teal-ringed pill above the title, as on the home page's hero. */
+  eyebrow?: ReactNode
+  /** The index's hero, set at the home page's size. */
+  feature?: boolean
   compact?: boolean
   children?: ReactNode
 }) {
+  // Graph paper, as behind the website's own hero. It replaced the wave
+  // pattern and teal halo in November 2026: the pattern was a separate image
+  // that arrived after the first paint, and neither appears on the site.
   return (
-    <div className={s.hero}>
-      <div className={s.heroPattern} aria-hidden="true" />
-      <div className={s.heroHalo} aria-hidden="true" />
+    <div className={`${s.hero} ${s.paper}`}>
       <Container>
-        <div className={compact ? s.heroInnerCompact : s.heroInner}>
+        <div className={compact ? s.heroInnerCompact : feature ? s.heroFeature : s.heroInner}>
+          {eyebrow ? <span className={s.heroEyebrow}>{eyebrow}</span> : null}
           <h1 className={compact ? s.heroTitleCompact : s.heroTitle}>{title}</h1>
           {lead ? <p className={s.heroLead}>{lead}</p> : null}
           {children}
         </div>
       </Container>
     </div>
+  )
+}
+
+/**
+ * A full-width page section, as on the home page: a dashed rule under it
+ * across the whole window, optional graph paper behind it, and the 64rem
+ * container inside. `head` is the home page's section head: the heading and
+ * its lead on the left, one secondary button on the right.
+ */
+export function PageSection({
+  id,
+  paper,
+  heading,
+  lead,
+  action,
+  children,
+}: {
+  id?: string
+  paper?: boolean
+  heading: ReactNode
+  lead?: ReactNode
+  action?: { href: string; label: string }
+  children: ReactNode
+}) {
+  return (
+    <section id={id} className={paper ? `${s.pageSection} ${s.paper}` : s.pageSection}>
+      <Container>
+        <div className={s.pageSectionInner}>
+          <div className={s.secHead}>
+            <div className={s.secHeadText}>
+              <h2 className={s.secHeading}>{heading}</h2>
+              {lead ? <p className={s.secLead}>{lead}</p> : null}
+            </div>
+            {action ? (
+              <Link href={action.href} className={`${u.btn} ${u.btnSubtle}`}>
+                {action.label}
+                <Icon name="arrow-right" />
+              </Link>
+            ) : null}
+          </div>
+          {children}
+        </div>
+      </Container>
+    </section>
   )
 }
 
@@ -130,7 +182,11 @@ function Header({
   const copy = t(locale)
   const r = routes(locale)
   return (
-    <SiteHeader locale={locale} nav={nav} switchHref={switchHref}>
+    <>
+      <SiteHeader locale={locale} nav={nav} switchHref={switchHref} />
+      {/* The board's own row sits under the site's header rather than inside
+          it, so it scrolls away with the page: the sticky part is the site's
+          69px bar alone, as on every other page of the site. */}
       <div className={s.boardBar}>
         <Container>
           <div className={s.headerInner}>
@@ -167,7 +223,7 @@ function Header({
           </div>
         </Container>
       </div>
-    </SiteHeader>
+    </>
   )
 }
 

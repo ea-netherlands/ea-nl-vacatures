@@ -5,7 +5,7 @@
  * reader who clicked "Vacatures" in the site's header landed on a page with a
  * different header altogether, and lost the way back to everything else the
  * site offers. This is the site's own top bar — same logo, same menus, same
- * "Start de gratis cursus" button — rendered by the board, with the board's
+ * "Start de korte cursus" button — rendered by the board, with the board's
  * own navigation as a slim second row underneath (see `BoardNav` in Chrome).
  *
  * The menus come from the site itself (../content/site-chrome-live.ts, with
