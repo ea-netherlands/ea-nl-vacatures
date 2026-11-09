@@ -19,6 +19,7 @@ import {
 } from '../content/i18n'
 import { Analytics, CookieSettingsLink } from './Analytics'
 import { Icon, type IconName } from './Icon'
+import { FIELD_GUIDE_URLS, type FieldGuide } from '../lib/field-guides'
 import s from './layout.module.css'
 import u from './ui.module.css'
 
@@ -757,6 +758,59 @@ export function FurtherReading({ href, label }: { href: string; label: string })
         {label}
         <Icon name="external-link" />
       </a>
+    </p>
+  )
+}
+
+/**
+ * A one-line pointer to the website's guide for the field a reader is looking
+ * at (../lib/field-guides). Same quiet shape as the beta note, so it reads as
+ * an aside rather than a call to action competing with the listings.
+ */
+const FIELD_GUIDE_COPY: Record<FieldGuide, Record<Locale, { text: string; link: string }>> = {
+  'ai-safety': {
+    en: {
+      text: 'New to AI safety? Our guide covers why the field needs founders, what to study and where to work from the Netherlands.',
+      link: 'Read the AI safety guide',
+    },
+    nl: {
+      text: 'Nieuw in AI-veiligheid? Onze gids gaat over waarom het vakgebied oprichters nodig heeft, wat je kunt studeren en waar je vanuit Nederland kunt werken.',
+      link: 'Lees de gids voor AI-veiligheid',
+    },
+  },
+  'alternative-proteins': {
+    en: {
+      text: 'New to alternative proteins? Our guide covers where the Netherlands leads, what the sector needs most and the ways in.',
+      link: 'Read the alternative proteins guide',
+    },
+    nl: {
+      text: 'Nieuw in alternatieve eiwitten? Onze gids gaat over waar Nederland voorop loopt, wat de sector het meest nodig heeft en hoe je erin komt.',
+      link: 'Lees de gids voor alternatieve eiwitten',
+    },
+  },
+  policy: {
+    en: {
+      text: 'New to policy work? Our guide covers traineeships, ways in and where to work in The Hague and Brussels.',
+      link: 'Read the policy guide',
+    },
+    nl: {
+      text: 'Nieuw in beleid? Onze gids gaat over traineeships, ingangen en waar je kunt werken in Den Haag en Brussel.',
+      link: 'Lees de gids voor werken in beleid',
+    },
+  },
+}
+
+export function FieldGuideNote({ locale, guide }: { locale: Locale; guide: FieldGuide | null }) {
+  if (!guide) return null
+  const c = FIELD_GUIDE_COPY[guide][locale]
+  return (
+    <p className={u.betaShort}>
+      <Icon name="book" />
+      <span>
+        {c.text}{' '}
+        {/* A plain link: the guides are on the main site, outside this app */}
+        <a href={FIELD_GUIDE_URLS[guide][locale]}>{c.link}</a>
+      </span>
     </p>
   )
 }

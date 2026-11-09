@@ -16,7 +16,15 @@
 
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { Container, InternationalNote, OnwardStep, Section } from '../components/Chrome'
+import {
+  Container,
+  FieldGuideNote,
+  InternationalNote,
+  OnwardStep,
+  Section,
+} from '../components/Chrome'
+import { fieldGuideFor } from '../lib/field-guides'
+import { bandOf } from '../lib/bands'
 import { Icon } from '../components/Icon'
 import { excerptFor, noteFor, salaryFor } from '../components/ListingCard'
 import { Callout } from '../components/Prose'
@@ -276,6 +284,14 @@ export async function DetailPage({ locale, slug }: { locale: Locale; slug: strin
             {/* Most visitors arrive here rather than at the index, so the
                 look-elsewhere-first point is made on this page too. */}
             <InternationalNote locale={locale} />
+            <FieldGuideNote
+              locale={locale}
+              guide={fieldGuideFor({
+                subarea: listing.subArea,
+                band: bandOf(listing),
+                skills: listing.skills,
+              })}
+            />
           </aside>
         </div>
       </Section>

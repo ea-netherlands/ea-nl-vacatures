@@ -46,6 +46,7 @@ import {
   BetaNote,
   Container,
   FeedbackBand,
+  FieldGuideNote,
   Hero,
   OnwardStep,
   PageSection,
@@ -58,6 +59,7 @@ import { Icon } from '../components/Icon'
 import { NewsletterBand } from '../components/NewsletterBand'
 import { Marker, PenMark, withMark } from '../components/PenMark'
 import { routes, t, type Locale } from '../content/i18n'
+import { fieldGuideFor } from '../lib/field-guides'
 import { BANDS, bandOf, isBand, splitIntoBands, type Band } from '../lib/bands'
 import { getEarningToGiveListings, getLiveListings } from '../sanity/queries'
 import type { ListingView } from '../sanity/queries'
@@ -379,6 +381,14 @@ export async function IndexPage({
               band lives. One line, so it does not sit between them and the
               results they asked for. */}
           <BetaNote locale={locale} />
+          <FieldGuideNote
+            locale={locale}
+            guide={fieldGuideFor({
+              subarea: state.subarea,
+              band: state.band,
+              skills: state.skill ? [state.skill] : [],
+            })}
+          />
           <Filters
             locale={locale}
             state={state}
