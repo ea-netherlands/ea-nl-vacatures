@@ -223,6 +223,18 @@ export async function getListingById(id: string): Promise<ListingView | null> {
   )
 }
 
+/** Several listings by id, in the order asked for; missing ids are dropped. */
+export async function getListingsByIds(ids: string[]): Promise<ListingView[]> {
+  if (!ids.length) return []
+  const found = await fetchOrEmpty<ListingView[]>(
+    `*[_type == "jobListing" && _id in $ids] { ${LISTING_FIELDS} }`,
+    { ids },
+    [],
+  )
+  const byId = new Map(found.map((l) => [l.id, l]))
+  return ids.map((id) => byId.get(id)).filter((l): l is ListingView => Boolean(l))
+}
+
 export async function getAllListingSlugs(): Promise<{ slug: string; expiresAt: string | null }[]> {
   return fetchOrEmpty(
     `*[_type == "jobListing" && defined(slug.current)]{ "slug": slug.current, expiresAt }`,

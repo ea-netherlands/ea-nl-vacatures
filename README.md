@@ -269,8 +269,8 @@ listings, expired drafts.
 
 Every Tuesday at 09:00 a carousel of jobs goes to EA Nederland's Instagram and
 LinkedIn and to James's LinkedIn, modelled on Christians for Impact's weekly
-jobs posts. Everything about it is in English. It is being built in phases; so
-far only the first exists:
+jobs posts. Everything about it is in English. It is being built in phases;
+the first two exist:
 
 1. **Done: pick, draw, preview.** `src/jobboard/social/select.ts` chooses up to
    seven live roles (rules and reasons at the top of the file), `slides.tsx`
@@ -278,8 +278,14 @@ far only the first exists:
    `effectiefaltruisme.nl/en/newsletter`, served as 1080×1350 PNGs by
    `/vacatures/social/slide`. `/review/social` shows next Tuesday's post behind
    the review sign-in. Nothing is stored or posted.
-2. Captions, a record of past posts (no repeats within four weeks) and a
-   Monday approval email.
+2. **Done: captions and approval.** The Monday `social` cron saves the week as
+   a `socialPost-YYYY-MM-DD` document in Sanity (`social/store.ts`; not a
+   Studio type, on purpose), with captions for EA Nederland's Instagram, its
+   LinkedIn and James's LinkedIn. The model writes only each caption's opening,
+   closing and hashtags (`social/captions.ts`); the job list and every
+   UTM-tagged link come from code. James edits, removes roles, approves or
+   skips at `/review/social`. Approved weeks count as featured, so their roles
+   stay off the next four weeks' posts.
 3. Posting to Instagram, then James's LinkedIn, then EA Nederland's LinkedIn
    once LinkedIn approves the API access.
 
@@ -458,6 +464,7 @@ and in use before the main repo arrives.
    | `classify` | 06:30 daily | After ingest, so the queue is fresh. |
    | `promote` | 07:00 daily | Shortlist into Sanity as drafts. Nothing is auto-published (spec §8.3). |
    | `review-digest` | 07:30 daily | Mails `REVIEW_DIGEST_TO` what is waiting, with a signed link to `/review`. Silent when the queue is empty. |
+   | `social` | 10:30 Monday | Drafts Tuesday's social post (roles + captions) into Sanity and mails `SOCIAL_DIGEST_TO` (or `REVIEW_DIGEST_TO`) a signed link to `/review/social`. Never touches a week already approved or skipped. |
    | `expire` | 08:00 daily | Auto-unpublishes past-expiry listings, so the board can't fill with dead links. |
    | `linkcheck` | 09:00 Mondays | Weekly HEAD check on crawl sources, which can't use set-difference closure detection (spec §7.8). |
    | `ingest --discover` | 10:00 Mondays | Employer/ATS discovery from 80k and Probably Good. Poll them at most daily; weekly is plenty (spec §7.6). |

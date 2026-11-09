@@ -20,6 +20,7 @@ import { runSuggestionDigest } from '@jobboard/sanity/notify'
 import { runTranslation } from '@jobboard/sanity/translate'
 import { runReviewDigest } from '@jobboard/review/digest'
 import { runSiteSync } from '@jobboard/lib/site-sync'
+import { runWeeklySocial } from '@jobboard/social/weekly'
 
 export const dynamic = 'force-dynamic'
 /** Vercel's cron maximum on Pro. Adapters budget against this, minus a margin. */
@@ -35,6 +36,7 @@ const JOBS = [
   'notify',
   'review-digest',
   'site-sync',
+  'social',
 ] as const
 type Job = (typeof JOBS)[number]
 
@@ -173,6 +175,20 @@ export async function GET(request: Request, { params }: { params: Promise<{ job:
       case 'site-sync': {
         const report = await runSiteSync({
           dryRun: url.searchParams.get('dryRun') === '1',
+          onLog,
+        })
+        return NextResponse.json({ job, report, logs })
+      }
+      /*
+        Monday: drafts Tuesday's social post (jobs, captions) and mails James a
+        link to approve it at /review/social. Posts nothing. `force=1` redrafts
+        a draft he hasn't decided on yet; an approved or skipped week is never
+        touched.
+      */
+      case 'social': {
+        const report = await runWeeklySocial({
+          dryRun: url.searchParams.get('dryRun') === '1',
+          force: url.searchParams.get('force') === '1',
           onLog,
         })
         return NextResponse.json({ job, report, logs })

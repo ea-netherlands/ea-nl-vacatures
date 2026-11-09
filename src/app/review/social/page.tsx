@@ -1,10 +1,12 @@
 /**
- * Preview of this week's social post — the jobs, in order, as the slides that
- * will be posted, plus why each was picked and what nearly made it.
+ * Next Tuesday's social post: the slides, the captions, and James's decision.
  *
- * Phase 1 of the weekly post (jobboard/social): it previews only. Nothing is
- * stored or posted yet; captions, approval and publishing come next. Behind
- * the same session as the review queue, and English, like the posts.
+ * Once the Monday cron (or the button here) has drafted the week, this shows
+ * that stored post (jobboard/social/store.ts) with the editor: captions, removing
+ * a role, approve or skip. Before that, it previews what the selection would
+ * pick right now, with what nearly made it. Nothing is posted from here yet;
+ * that is phase 3. Behind the same session as the review queue, and English,
+ * like the posts.
  */
 
 import type { Metadata } from 'next'
@@ -15,9 +17,11 @@ import x from '@jobboard/components/social.module.css'
 import u from '@jobboard/components/ui.module.css'
 import { routes, t } from '@jobboard/content/i18n'
 import { isReviewConfigured, issueToken, LINK_TTL_MS, SESSION_COOKIE, verifyToken } from '@jobboard/review/auth'
-import { getLiveListings } from '@jobboard/sanity/queries'
+import { SocialEditor, type EditorPost } from '@jobboard/components/SocialEditor'
+import { getListingsByIds, getLiveListings } from '@jobboard/sanity/queries'
 import { postSlides, slidePath } from '@jobboard/social/content'
 import { nextPostTime, SELECTION, selectWeeklyJobs, type Pick } from '@jobboard/social/select'
+import { amsterdamDate, getPost, recentlyFeatured, type SocialPost } from '@jobboard/social/store'
 
 export const dynamic = 'force-dynamic'
 
@@ -64,6 +68,27 @@ function PickRow({ pick, number }: { pick: Pick; number?: number }) {
   )
 }
 
+function Slides({ slides }: { slides: ReturnType<typeof postSlides> }) {
+  return (
+    <section className={x.section}>
+      <h2 className={x.heading}>Slides</h2>
+      <ol className={x.strip}>
+        {slides.map((spec, i) => (
+          <li key={i} className={x.slide}>
+            <a href={slidePath(spec)} target="_blank" rel="noreferrer">
+              {/* eslint-disable-next-line @next/next/no-img-element -- generated PNGs, shown as they will be posted */}
+              <img src={slidePath(spec)} alt={`Slide ${i + 1}`} loading="lazy" width={1080} height={1350} />
+            </a>
+            <span>
+              {i + 1}. {spec.kind === 'cover' ? 'Cover' : spec.kind === 'cta' ? 'Sign-up' : `Job ${spec.index}`}
+            </span>
+          </li>
+        ))}
+      </ol>
+    </section>
+  )
+}
+
 export default async function SocialPreviewPage() {
   const jar = await cookies()
   if (!verifyToken('session', jar.get(SESSION_COOKIE)?.value)) {
@@ -89,25 +114,67 @@ export default async function SocialPreviewPage() {
   }
 
   const postAt = nextPostTime()
-  const listings = await getLiveListings({ excludeEarningToGive: true })
-  // Phase 1 keeps no record of past posts, so nothing counts as featured yet.
-  const selection = selectWeeklyJobs(listings, { postAt })
-  const date = postAt.toLocaleDateString('en-CA', { timeZone: 'Europe/Amsterdam' })
+  const date = amsterdamDate(postAt)
   const day = postAt.toLocaleDateString('en-GB', {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
     timeZone: 'Europe/Amsterdam',
   })
+
+  // Without the Sanity write token (local development, say) there is no store;
+  // the page still previews the selection.
+  let stored: SocialPost | null = null
+  let storeError: string | null = null
+  let recent = new Set<string>()
+  try {
+    ;[stored, recent] = await Promise.all([getPost(date), recentlyFeatured(postAt)])
+  } catch (err) {
+    storeError = (err as Error).message
+  }
+
+  if (stored) {
+    const roles = await getListingsByIds(stored.listingIds)
+    const slides = roles.length ? postSlides(roles.map((r) => r.id), date) : []
+    const editorPost: EditorPost = {
+      status: stored.status,
+      captions: stored.captions,
+      error: stored.error,
+      roles: roles.map((r) => ({ id: r.id, title: r.title, employer: r.employer?.name ?? '' })),
+    }
+    return (
+      <Frame>
+        <h1 className={s.title}>The post for {day}</h1>
+        <p className={s.lead}>
+          {roles.length} roles. Check the slides and the captions, then approve it or skip the week. Nothing is
+          posted yet: once posting is built, approved posts go out on Tuesday at 09:00.
+        </p>
+        <SocialEditor key={stored._rev ?? stored.generatedAt} post={editorPost} minRoles={SELECTION.min} />
+        {slides.length ? <Slides slides={slides} /> : null}
+      </Frame>
+    )
+  }
+
+  const listings = await getLiveListings({ excludeEarningToGive: true })
+  const selection = selectWeeklyJobs(listings, { postAt, recentlyFeatured: recent })
   const slides = selection.enough ? postSlides(selection.picks.map((p) => p.listing.id), date) : []
 
   return (
     <Frame>
       <h1 className={s.title}>The post for {day}</h1>
       <p className={s.lead}>
-        {selection.picks.length} of {listings.length} live roles picked, following the rules in{' '}
-        <code>jobboard/social/select.ts</code>. This is a preview: nothing is posted yet.
+        {selection.picks.length} of {listings.length} live roles would be picked right now, following the rules in{' '}
+        <code>jobboard/social/select.ts</code>
+        {recent.size ? `, leaving out ${recent.size} featured in the last ${SELECTION.repeatWeeks} weeks` : ''}.
       </p>
+
+      {storeError ? (
+        <div className={x.warning} role="status">
+          Can’t read or save posts: {storeError}
+        </div>
+      ) : (
+        <SocialEditor post={null} minRoles={SELECTION.min} />
+      )}
 
       {!selection.enough ? (
         <div className={x.warning} role="status">
@@ -116,24 +183,7 @@ export default async function SocialPreviewPage() {
         </div>
       ) : null}
 
-      {slides.length ? (
-        <section className={x.section}>
-          <h2 className={x.heading}>Slides</h2>
-          <ol className={x.strip}>
-            {slides.map((spec, i) => (
-              <li key={i} className={x.slide}>
-                <a href={slidePath(spec)} target="_blank" rel="noreferrer">
-                  {/* eslint-disable-next-line @next/next/no-img-element -- generated PNGs, shown as they will be posted */}
-                  <img src={slidePath(spec)} alt={`Slide ${i + 1}`} loading="lazy" width={1080} height={1350} />
-                </a>
-                <span>
-                  {i + 1}. {spec.kind === 'cover' ? 'Cover' : spec.kind === 'cta' ? 'Sign-up' : `Job ${spec.index}`}
-                </span>
-              </li>
-            ))}
-          </ol>
-        </section>
-      ) : null}
+      {slides.length ? <Slides slides={slides} /> : null}
 
       <section className={x.section}>
         <h2 className={x.heading}>Picked</h2>
