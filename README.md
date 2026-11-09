@@ -286,6 +286,18 @@ the first two exist:
    UTM-tagged link come from code. James edits, removes roles, approves or
    skips at `/review/social`. Approved weeks count as featured, so their roles
    stay off the next four weeks' posts.
+   **Themes and a local role (9 Nov 2026).** Each week has a theme on a
+   four-week rotation from 17 November (`social/themes.ts`): AI safety and
+   catastrophic risks, ways in, in the Netherlands, then global health and
+   farmed animals alternating. A theme that can't fill five roles falls back to
+   a mixed post, and James can switch a week's theme on the page. Every post
+   keeps a place for a role done in the Netherlands (on site or hybrid) when
+   one is eligible, and warns when none is. Each post also takes one funding call
+   (grant or funding round) when one fits the week, labelled as funding on its
+   slide; the cover then says "opportunities" rather than "jobs". Salaries in
+   dollars or pounds show in euros ("About €143,000–€223,000 per year") at the
+   ECB's daily reference rate (`social/currency.ts`), or unconverted if the ECB
+   can't be reached.
 3. Posting to Instagram, then James's LinkedIn, then EA Nederland's LinkedIn
    once LinkedIn approves the API access.
 

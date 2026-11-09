@@ -10,6 +10,7 @@ import { NextResponse } from 'next/server'
 import { SESSION_COOKIE, verifyToken } from '@jobboard/review/auth'
 import { nextPostTime, SELECTION } from '@jobboard/social/select'
 import { amsterdamDate, CHANNEL_LIMIT, CHANNELS, getPost, patchPost, type Channel } from '@jobboard/social/store'
+import { isThemeKey } from '@jobboard/social/themes'
 import { draftPost, recompose } from '@jobboard/social/weekly'
 
 export const dynamic = 'force-dynamic'
@@ -40,7 +41,8 @@ export async function POST(request: Request) {
   const postDate = amsterdamDate(nextPostTime())
   try {
     if (body.action === 'draft') {
-      const { post } = await draftPost({ force: true })
+      // Redraft keeps the week's theme; the theme switch sends a new one.
+      const { post } = await draftPost({ force: true, theme: isThemeKey(body.theme) ? body.theme : undefined })
       return NextResponse.json({ ok: true, post })
     }
 

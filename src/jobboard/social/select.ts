@@ -15,16 +15,28 @@
  *   a newcomer can actually win. The first week's preview had none: fresh
  *   vetted roles outscored every way in, so the best one now has a reserved
  *   place.
- * - **Jobs only.** The board also carries funding calls ("Funding for
- *   Increasing Vaccine Impact"), filed as jobs because the taxonomy has no
- *   other kind. A slide with a salary row and an "Apply by" date misdescribes
- *   them, so they are left out by title (`isFundingCall`).
+ * - **One funding call.** The board also carries funding calls ("Seed
+ *   Grants", "Funding for Increasing Vaccine Impact"), filed as jobs because
+ *   the taxonomy has no other kind. James wants them in (9 Nov 2026). They
+ *   score below fresh jobs, so a cap alone let them in only in the thinner
+ *   themes; the best one that fits the week now has a reserved place, and one
+ *   is the most a post takes, so a week with several new calls doesn't turn
+ *   into a grants roundup. They're recognised by title (`isFundingCall`) and labelled as
+ *   funding on their slide, in the captions and on the cover ("opportunities",
+ *   not "jobs").
  * - **No job closing before the post has had a chance to work.** Each slide
  *   shows the deadline, which is what makes people act. A role that closes the
  *   day after it is posted is a promise we can't keep, so the deadline has to
  *   be at least two days after posting.
  * - **Variety.** One role per organisation and at most three per problem area,
  *   or a week heavy with one funder's openings reads as an advert for them.
+ * - **Something local, every week.** A role you do in the Netherlands, on site
+ *   or hybrid (`on-site-nl`, `nl-flexible`), gets a reserved place whenever one
+ *   is eligible (James, 9 November 2026). The first real week was seven remote
+ *   roles at international organisations, which reads as "EA jobs, posted from
+ *   the Netherlands" rather than jobs here. A local way in fills both
+ *   reservations at once. With no eligible local role the week goes ahead
+ *   without one and the preview says so.
  * - **No repeats within four weeks.** The caller passes the ids featured
  *   recently. A follower who sees the same job twice in a month stops reading.
  * - **No padding.** Below `min` the post says so rather than filling up with
@@ -35,6 +47,7 @@
  */
 
 import { bandOf, type Band } from '../lib/bands'
+import { MIN_THEMED, THEMES, themeForWeek, type ThemeKey } from './themes'
 import type { ListingView } from '../sanity/queries'
 
 export const SELECTION = {
@@ -44,7 +57,12 @@ export const SELECTION = {
   /** A way in gets a place whenever one is eligible, even if vetted roles outscore it. */
   minRoutes: 1,
   maxRoutes: 2,
+  /** A role done in the Netherlands (on site or hybrid) gets a place whenever one is eligible. */
+  minLocal: 1,
   maxPerCause: 3,
+  /** One funding call gets a place whenever one fits the week, and one is the most. */
+  minFunding: 1,
+  maxFunding: 1,
   deadlineMarginDays: 2,
   freshDays: 7,
   closingSoonDays: 14,
@@ -61,12 +79,36 @@ const DAY = 864e5
  * Checked against every live title in November 2026.
  */
 const FUNDING_WORDS =
-  /^(funding|request for (proposals|applications)|rfp|call for (proposals|applications))\b|\bgrants?\b/i
+  /^(funding|request for (proposals|applications)|rfp|call for (proposals|applications))\b|\bgrants?\b|\bfund$/i
 const ROLE_WORDS =
   /\b(associate|lead|manager|officer|writer|director|coordinator|assistant|specialist|analyst|advis[eo]r|grantmaker|head|member|consultants?|researcher)\b/i
 
 export function isFundingCall(title: string): boolean {
   return FUNDING_WORDS.test(title) && !ROLE_WORDS.test(title)
+}
+
+/** Standing "tell us you're interested" listings, which have no role to apply for yet. */
+const NOT_AN_OPENING = /\b(future roles?|general application|open application|talent pool)\b/i
+
+/**
+ * One organisation, however many records it has: the board holds "Safe AI
+ * Netherlands (SAIN)" and "Safe AI Netherlands" as two employers, which let
+ * both into one post. Compared by name without a bracketed abbreviation.
+ */
+export function organisationKey(listing: ListingView): string {
+  const name = listing.employer?.name ?? listing.employer?.id ?? ''
+  return name.replace(/\s*\([^)]*\)\s*/g, ' ').trim().toLowerCase()
+}
+
+/**
+ * Done in the Netherlands, on site or hybrid, as opposed to remote or abroad.
+ * The location text can contradict the mode: Talos Incubator Europe is filed
+ * `nl-flexible` with the location "Remote (Europe)". A location that says
+ * remote wins, because that is what the slide will show.
+ */
+export function isLocal(listing: { locationMode: ListingView['locationMode']; locationCity: ListingView['locationCity'] }): boolean {
+  if (/remote/i.test(listing.locationCity ?? '')) return false
+  return listing.locationMode === 'on-site-nl' || listing.locationMode === 'nl-flexible'
 }
 
 const BAND_WEIGHT: Record<Band, number> = { vetted: 3, routes: 2, dutch: 1 }
@@ -90,6 +132,11 @@ export type Selection = {
   skipped: Skip[]
   /** False when fewer than `min` roles qualify: post nothing rather than pad. */
   enough: boolean
+  /** Whether a role done in the Netherlands made it in; false when none was eligible. */
+  hasLocal: boolean
+  theme: ThemeKey
+  /** Set when the week's theme couldn't fill a post and this is the mixed fallback. */
+  fallbackFrom: ThemeKey | null
 }
 
 function time(value: string | null): number | null {
@@ -102,7 +149,7 @@ function time(value: string | null): number | null {
 function ineligible(listing: ListingView, postAt: number, recentlyFeatured: ReadonlySet<string>): string | null {
   if (!listing.employer) return 'No organisation on the listing'
   if (listing.leverage === 'earning-to-give') return 'Earning to give'
-  if (isFundingCall(listing.title)) return 'Funding call, not a job'
+  if (NOT_AN_OPENING.test(listing.title)) return 'Expression of interest, not an opening'
   if (recentlyFeatured.has(listing.id)) return `Featured in the last ${SELECTION.repeatWeeks} weeks`
   const deadline = time(listing.deadlineAt)
   if (deadline !== null && deadline < postAt + SELECTION.deadlineMarginDays * DAY) {
@@ -119,6 +166,9 @@ function score(listing: ListingView, postAt: number): Pick {
     band === 'vetted' ? 'Vetted organisation' : band === 'routes' ? 'Way in' : 'Dutch institution',
   ]
   let total = BAND_WEIGHT[band]
+
+  if (isLocal(listing)) reasons.push('In the Netherlands')
+  if (isFundingCall(listing.title)) reasons.push('Funding call')
 
   const posted = time(listing.postedAt)
   if (posted !== null && posted >= postAt - SELECTION.freshDays * DAY) {
@@ -141,17 +191,26 @@ function score(listing: ListingView, postAt: number): Pick {
 
 export function selectWeeklyJobs(
   listings: ListingView[],
-  opts: { postAt: Date; recentlyFeatured?: ReadonlySet<string> },
+  opts: { postAt: Date; recentlyFeatured?: ReadonlySet<string>; theme?: ThemeKey },
 ): Selection {
   const postAt = opts.postAt.getTime()
   const recent = opts.recentlyFeatured ?? new Set<string>()
+  const theme = THEMES[opts.theme ?? 'mixed']
+  // Inside a one-cause theme the per-cause cap means nothing; inside "ways in"
+  // neither do the way-in limits.
+  const limits = { ...SELECTION, ...theme.limits }
 
   const skipped: Skip[] = []
   const candidates: Pick[] = []
   for (const listing of listings) {
     const reason = ineligible(listing, postAt, recent)
-    if (reason) skipped.push({ listing, reason })
-    else candidates.push(score(listing, postAt))
+    if (reason) {
+      skipped.push({ listing, reason })
+      continue
+    }
+    const scored = score(listing, postAt)
+    // Outside this week's theme isn't a fault in the listing, so it isn't "ruled out".
+    if (theme.matches(listing, scored.band, isLocal(listing))) candidates.push(scored)
   }
 
   // Best first; among equals the newest, then the title, so a rerun picks the same.
@@ -167,9 +226,25 @@ export function selectWeeklyJobs(
   const employers = new Set<string>()
   const perCause = new Map<string, number>()
   let routes = 0
+  let funding = 0
 
-  // The reserved ways in go first, so the limits below can't crowd them out.
-  const reserved = candidates.filter((c) => c.band === 'routes').slice(0, SELECTION.minRoutes)
+  // The reserved places go first, so the limits below can't crowd them out:
+  // the best local role, then the best way in unless the local role is one,
+  // then the best funding call unless one is already in.
+  const local = candidates.filter((c) => isLocal(c.listing)).slice(0, SELECTION.minLocal)
+  const routesStillNeeded = Math.max(0, limits.minRoutes - local.filter((c) => c.band === 'routes').length)
+  const route = candidates.filter((c) => c.band === 'routes' && !local.includes(c)).slice(0, routesStillNeeded)
+  const fundingStillNeeded = Math.max(
+    0,
+    SELECTION.minFunding - [...local, ...route].filter((c) => isFundingCall(c.listing.title)).length,
+  )
+  const reserved = [
+    ...local,
+    ...route,
+    ...candidates
+      .filter((c) => isFundingCall(c.listing.title) && !local.includes(c) && !route.includes(c))
+      .slice(0, fundingStillNeeded),
+  ]
   const seen = new Set<string>()
 
   for (const candidate of [...reserved, ...candidates]) {
@@ -179,17 +254,19 @@ export function selectWeeklyJobs(
     const cause = listing.primaryCause ?? 'none'
     const fits =
       picks.length < SELECTION.max &&
-      !employers.has(listing.employer!.id) &&
-      (perCause.get(cause) ?? 0) < SELECTION.maxPerCause &&
-      (band !== 'routes' || routes < SELECTION.maxRoutes)
+      !employers.has(organisationKey(listing)) &&
+      (perCause.get(cause) ?? 0) < limits.maxPerCause &&
+      (band !== 'routes' || routes < limits.maxRoutes) &&
+      (!isFundingCall(listing.title) || funding < SELECTION.maxFunding)
     if (!fits) {
       runnersUp.push(candidate)
       continue
     }
     picks.push(candidate)
-    employers.add(listing.employer!.id)
+    employers.add(organisationKey(listing))
     perCause.set(cause, (perCause.get(cause) ?? 0) + 1)
     if (band === 'routes') routes++
+    if (isFundingCall(listing.title)) funding++
   }
 
   // Slide order is best first, reserved or not.
@@ -201,7 +278,24 @@ export function selectWeeklyJobs(
     runnersUp,
     skipped,
     enough: picks.length >= SELECTION.min,
+    hasLocal: picks.some((p) => isLocal(p.listing)),
+    theme: theme.key,
+    fallbackFrom: null,
   }
+}
+
+/**
+ * The week's post: its theme (the rotation's, unless one is given), or the
+ * mixed post when the theme can't fill `MIN_THEMED` roles.
+ */
+export function selectForWeek(
+  listings: ListingView[],
+  opts: { postAt: Date; recentlyFeatured?: ReadonlySet<string>; theme?: ThemeKey },
+): Selection {
+  const theme = opts.theme ?? themeForWeek(opts.postAt)
+  const themed = selectWeeklyJobs(listings, { ...opts, theme })
+  if (theme === 'mixed' || themed.picks.length >= MIN_THEMED) return themed
+  return { ...selectWeeklyJobs(listings, { ...opts, theme: 'mixed' }), fallbackFrom: theme }
 }
 
 /**

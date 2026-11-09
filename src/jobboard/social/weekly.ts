@@ -17,7 +17,8 @@ import { issueToken, LINK_TTL_MS } from '../review/auth'
 import { digestRecipients } from '../review/digest'
 import { getListingsByIds, getLiveListings } from '../sanity/queries'
 import { compose, draftCaptionParts } from './captions'
-import { nextPostTime, SELECTION, selectWeeklyJobs } from './select'
+import { isLocal, nextPostTime, SELECTION, selectForWeek } from './select'
+import { THEMES, type ThemeKey } from './themes'
 import {
   amsterdamDate,
   CHANNELS,
@@ -58,9 +59,14 @@ const longDay = (at: Date) =>
   at.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Europe/Amsterdam' })
 
 /** Captions from parts, for whichever listings the post now holds. */
-export async function composeAll(post: Pick<SocialPost, 'listingIds' | 'postDate'>, parts: Record<Channel, CaptionParts>) {
+export async function composeAll(
+  post: Pick<SocialPost, 'listingIds' | 'postDate' | 'theme'>,
+  parts: Record<Channel, CaptionParts>,
+) {
   const listings = await getListingsByIds(post.listingIds)
-  return Object.fromEntries(CHANNELS.map((c) => [c, compose(c, parts[c], listings, post.postDate)])) as Record<
+  return Object.fromEntries(
+    CHANNELS.map((c) => [c, compose(c, parts[c], listings, post.postDate, post.theme ?? 'mixed')]),
+  ) as Record<
     Channel,
     string
   >
@@ -73,6 +79,8 @@ export async function composeAll(post: Pick<SocialPost, 'listingIds' | 'postDate
 export async function draftPost(options: {
   force?: boolean
   now?: Date
+  /** Overrides the rotation for this week (the page's theme switch). */
+  theme?: ThemeKey
   onLog?: (line: string) => void
 }): Promise<{ post: SocialPost; changed: boolean }> {
   const log = (line: string) => options.onLog?.(line)
@@ -86,8 +94,12 @@ export async function draftPost(options: {
   }
 
   const [listings, recent] = await Promise.all([getLiveListings({ excludeEarningToGive: true }), recentlyFeatured(postAt)])
-  const selection = selectWeeklyJobs(listings, { postAt, recentlyFeatured: recent })
-  log(`picked ${selection.picks.length} of ${listings.length} live roles (${recent.size} featured recently)`)
+  const selection = selectForWeek(listings, { postAt, recentlyFeatured: recent, theme: options.theme })
+  log(
+    `picked ${selection.picks.length} of ${listings.length} live roles for "${THEMES[selection.theme].label}"` +
+      (selection.fallbackFrom ? ` (${THEMES[selection.fallbackFrom].label} had too few)` : '') +
+      ` (${recent.size} featured recently)`,
+  )
 
   const base = {
     _id: `socialPost-${postDate}`,
@@ -95,6 +107,8 @@ export async function draftPost(options: {
     postAt: postAt.toISOString(),
     status: 'draft' as const,
     listingIds: selection.picks.map((p) => p.listing.id),
+    theme: selection.theme,
+    fallbackFrom: selection.fallbackFrom,
     approvedAt: null,
     generatedAt: new Date().toISOString(),
   }
@@ -109,9 +123,10 @@ export async function draftPost(options: {
     const parts = await draftCaptionParts(
       selection.picks.map((p) => ({ listing: p.listing, band: p.band })),
       longDay(postAt),
+      selection.theme,
     )
     const captions = Object.fromEntries(
-      CHANNELS.map((c) => [c, compose(c, parts[c], selection.picks.map((p) => p.listing), postDate)]),
+      CHANNELS.map((c) => [c, compose(c, parts[c], selection.picks.map((p) => p.listing), postDate, selection.theme)]),
     ) as Record<Channel, string>
     const post = await savePost({ ...base, parts, captions, error: null })
     log(`drafted captions for ${postDate}`)
@@ -132,9 +147,13 @@ export async function recompose(post: SocialPost): Promise<Record<Channel, strin
   return composeAll(post, post.parts)
 }
 
-function mailText(post: SocialPost, titles: string[], link: string): string {
+function mailText(post: SocialPost, titles: string[], link: string, hasLocal: boolean): string {
   const day = longDay(new Date(post.postAt))
+  const theme = THEMES[post.theme ?? 'mixed']
   const lines = [
+    `This week's theme: ${theme.label}.` +
+      (post.fallbackFrom ? ` (The rotation had ${THEMES[post.fallbackFrom].label}, but too few roles qualified, so it fell back to a mixed post.)` : ''),
+    '',
     post.listingIds.length >= SELECTION.min
       ? `The jobs post for ${day} is ready for you: ${titles.length} roles, with captions for Instagram, EA Netherlands' LinkedIn and yours.`
       : `Only ${post.listingIds.length} roles qualify for ${day}, fewer than the ${SELECTION.min} a post needs. Have a look and skip the week if it stays that way.`,
@@ -144,6 +163,9 @@ function mailText(post: SocialPost, titles: string[], link: string): string {
     ...titles.map((t, i) => `${i + 1}. ${t}`),
     '',
   ]
+  if (!hasLocal && post.listingIds.length) {
+    lines.push('None of these roles is done in the Netherlands; they are all remote or abroad. Worth swapping one for a local role before you approve.', '')
+  }
   if (post.error) lines.push(post.error, '')
   lines.push('Nothing is posted until you approve it. The link signs you in for a week, so please do not forward this mail.')
   return lines.join('\n')
@@ -162,9 +184,9 @@ export async function runWeeklySocial(
       getLiveListings({ excludeEarningToGive: true }),
       recentlyFeatured(postAt).catch(() => new Set<string>()),
     ])
-    const selection = selectWeeklyJobs(listings, { postAt, recentlyFeatured: recent })
+    const selection = selectForWeek(listings, { postAt, recentlyFeatured: recent })
     const jobs = selection.picks.map((p) => `${p.listing.title} (${p.listing.employer?.name}, ${bandOf(p.listing)})`)
-    log(`dry run: would draft ${postDate} with ${jobs.length} roles`)
+    log(`dry run: would draft ${postDate} as "${THEMES[selection.theme].label}" with ${jobs.length} roles`)
     return { postDate, status: 'dry run', jobs, mailed: [], skippedReason: 'dry run' }
   }
 
@@ -182,7 +204,7 @@ export async function runWeeklySocial(
     post.listingIds.length >= SELECTION.min
       ? `Tuesday's jobs post is ready to approve`
       : `Not enough roles for Tuesday's jobs post`
-  await sendMail({ to, subject, text: mailText(post, titles, socialLink()) })
+  await sendMail({ to, subject, text: mailText(post, titles, socialLink(), listings.some(isLocal)) })
   log(`mailed ${to.join(', ')}`)
   return { ...report, mailed: to }
 }

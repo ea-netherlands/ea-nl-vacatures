@@ -15,6 +15,7 @@ import x from './social.module.css'
 type Channel = 'instagram' | 'linkedinOrg' | 'linkedinPersonal'
 
 export type EditorPost = {
+  theme: string
   status: 'draft' | 'approved' | 'skipped' | 'posted'
   captions: Record<Channel, string> | null
   error: string | null
@@ -37,11 +38,21 @@ async function send(payload: Record<string, unknown>) {
   if (!res.ok) throw new Error(data.error ?? 'Something went wrong saving that. Try again.')
 }
 
-export function SocialEditor({ post, minRoles }: { post: EditorPost | null; minRoles: number }) {
+export function SocialEditor({
+  post,
+  minRoles,
+  themes,
+}: {
+  post: EditorPost | null
+  minRoles: number
+  /** The themes a week can switch to. */
+  themes: { key: string; label: string }[]
+}) {
   const router = useRouter()
   const [captions, setCaptions] = useState<Record<Channel, string> | null>(post?.captions ?? null)
   const [busy, setBusy] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [theme, setTheme] = useState(post?.theme ?? 'mixed')
   const editable = post?.status === 'draft'
   const dirty = Boolean(post?.captions && captions && CHANNELS.some((c) => captions[c.key] !== post.captions![c.key]))
 
@@ -115,7 +126,11 @@ export function SocialEditor({ post, minRoles }: { post: EditorPost | null; minR
                 className={`${u.btn} ${u.btnGhost}`}
                 disabled={busy !== null}
                 onClick={() =>
-                  act('draft', {}, 'Pick the roles again and rewrite all three captions? Your edits will be lost.')
+                  act(
+                    'draft',
+                    { theme: post.theme },
+                    'Pick the roles again and rewrite all three captions? Your edits will be lost.',
+                  )
                 }
               >
                 {busy === 'draft' ? 'Redrafting…' : 'Redraft'}
@@ -127,6 +142,37 @@ export function SocialEditor({ post, minRoles }: { post: EditorPost | null; minR
             </button>
           ) : null}
         </div>
+        {editable && themes.length ? (
+          <div className={x.themeSwitch}>
+            <label className={s.noteLabel} htmlFor="social-theme">
+              Theme this week
+            </label>
+            <div className={s.actions}>
+              <select
+                id="social-theme"
+                className={u.select}
+                value={theme}
+                disabled={busy !== null}
+                onChange={(e) => setTheme(e.target.value)}
+              >
+                {themes.map((t) => (
+                  <option key={t.key} value={t.key}>
+                    {t.label}
+                  </option>
+                ))}
+              </select>
+              <button
+                className={`${u.btn} ${u.btnSubtle}`}
+                disabled={busy !== null || theme === post.theme}
+                onClick={() =>
+                  act('draft', { theme }, 'Switch the theme? This picks new roles and rewrites the captions.')
+                }
+              >
+                {busy === 'draft' ? 'Switching…' : 'Switch theme'}
+              </button>
+            </div>
+          </div>
+        ) : null}
         {error ? <p className={s.error}>{error}</p> : null}
       </div>
 

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import type { ListingView } from '../sanity/queries'
-import { isFundingCall, nextPostTime, SELECTION, selectWeeklyJobs } from './select'
+import { isFundingCall, nextPostTime, SELECTION, selectForWeek, selectWeeklyJobs } from './select'
 
 const POST = new Date('2026-11-10T08:00:00Z') // Tuesday 09:00 in Amsterdam
 const days = (n: number) => new Date(POST.getTime() + n * 864e5).toISOString()
@@ -99,12 +99,91 @@ test('a way in gets a place even when vetted roles outscore it', () => {
   assert.equal(s.picks.at(-1)!.listing.id, route.id)
 })
 
-test('funding calls are not jobs', () => {
-  const s = selectWeeklyJobs([listing({ title: 'Funding for Increasing Vaccine Impact' }), listing()], {
+test('a role done in the Netherlands gets a place even when remote roles outscore it', () => {
+  const remote = spread(9, { deadlineAt: days(10) })
+  const local = listing({ locationMode: 'on-site-nl', postedAt: days(-30), leverage: 'policy-regulation' })
+  const s = selectWeeklyJobs([...remote, local], { postAt: POST })
+  assert.equal(s.picks.length, SELECTION.max)
+  assert.ok(s.picks.some((p) => p.listing.id === local.id))
+  assert.equal(s.hasLocal, true)
+})
+
+test('a local way in fills both reserved places', () => {
+  const remote = spread(9, { deadlineAt: days(10) })
+  const localRoute = listing({ locationMode: 'nl-flexible', listingKind: 'programme', postedAt: days(-30) })
+  const remoteRoute = listing({ listingKind: 'programme', postedAt: days(-30) })
+  const s = selectWeeklyJobs([...remote, localRoute, remoteRoute], { postAt: POST })
+  const ids = s.picks.map((p) => p.listing.id)
+  assert.ok(ids.includes(localRoute.id))
+  // The remote way in isn't forced in as well: one reserved place covered both
+  assert.ok(!ids.includes(remoteRoute.id))
+})
+
+test('a location that says remote is not local, whatever the mode says', () => {
+  const s = selectWeeklyJobs(spread(4, { locationMode: 'nl-flexible', locationCity: 'Remote (Europe)' }), { postAt: POST })
+  assert.equal(s.hasLocal, false)
+})
+
+test('a week with no eligible local role still goes ahead, flagged', () => {
+  const s = selectWeeklyJobs(spread(5), { postAt: POST })
+  assert.equal(s.enough, true)
+  assert.equal(s.hasLocal, false)
+})
+
+test('a themed week picks only roles in the theme, without the per-cause cap', () => {
+  const ai = spread(8, { primaryCause: 'global-catastrophic-risks' })
+  const other = spread(4, { primaryCause: 'farmed-animal-welfare' })
+  const s = selectForWeek([...ai, ...other], { postAt: POST, theme: 'ai-safety' })
+  assert.equal(s.theme, 'ai-safety')
+  assert.equal(s.fallbackFrom, null)
+  assert.equal(s.picks.length, SELECTION.max)
+  assert.ok(s.picks.every((p) => p.listing.primaryCause === 'global-catastrophic-risks'))
+})
+
+test('the ways-in week is all ways in', () => {
+  const routes = spread(6, { listingKind: 'programme' })
+  const s = selectForWeek([...routes, ...spread(6)], { postAt: POST, theme: 'ways-in' })
+  assert.equal(s.picks.length, 6)
+  assert.ok(s.picks.every((p) => p.band === 'routes'))
+})
+
+test('a theme that cannot fill five roles falls back to the mixed post', () => {
+  const animals = spread(2, { primaryCause: 'farmed-animal-welfare' })
+  const s = selectForWeek([...animals, ...spread(6, { primaryCause: 'global-health-wellbeing' })], {
     postAt: POST,
+    theme: 'animals',
   })
+  assert.equal(s.theme, 'mixed')
+  assert.equal(s.fallbackFrom, 'animals')
+  assert.ok(s.picks.length >= 5)
+})
+
+test('two records of one organisation count as one', () => {
+  const a = listing({ employer: { ...listing().employer!, name: 'Safe AI Netherlands (SAIN)' } })
+  const b = listing({ employer: { ...listing().employer!, name: 'Safe AI Netherlands' } })
+  const s = selectWeeklyJobs([a, b], { postAt: POST })
   assert.equal(s.picks.length, 1)
-  assert.equal(s.skipped[0].reason, 'Funding call, not a job')
+})
+
+test('an expression of interest in a future role is not an opening', () => {
+  const s = selectWeeklyJobs([listing({ title: 'Expression of Interest in a Future Role' }), listing()], { postAt: POST })
+  assert.equal(s.picks.length, 1)
+  assert.equal(s.skipped[0].reason, 'Expression of interest, not an opening')
+})
+
+test('a funding call gets a place even when jobs outscore it', () => {
+  const jobs = spread(9, { deadlineAt: days(10) })
+  const call = listing({ title: 'Research Grants', postedAt: days(-30) })
+  const s = selectWeeklyJobs([...jobs, call], { postAt: POST })
+  assert.equal(s.picks.length, SELECTION.max)
+  assert.ok(s.picks.some((p) => p.listing.id === call.id))
+})
+
+test('a post takes at most one funding call', () => {
+  const calls = [listing({ title: 'Seed Grants' }), listing({ title: 'Rapid Grants', primaryCause: 'farmed-animal-welfare' })]
+  const s = selectWeeklyJobs([...calls, ...spread(3)], { postAt: POST })
+  assert.equal(s.picks.filter((p) => p.reasons.includes('Funding call')).length, 1)
+  assert.equal(s.picks.length, 4)
 })
 
 test('tells funding calls from jobs about funding (live titles, November 2026)', () => {
@@ -118,6 +197,7 @@ test('tells funding calls from jobs about funding (live titles, November 2026)',
     'Career Transition Grants, AI Safety and Biosecurity',
     'Reporting Grants & Fellowships',
     'Request for Proposals: Project Tailwind',
+    'Animal Welfare Fund',
   ]
   const jobs = [
     'Grants Associate',
@@ -128,6 +208,7 @@ test('tells funding calls from jobs about funding (live titles, November 2026)',
     'Grantmaker-In-Residence',
     'Call for expressions of interest: GPPAC Board Member',
     'Open Call for Consultants, Health Policy Advocacy and Communications',
+    'Fund Manager',
   ]
   for (const title of calls) assert.equal(isFundingCall(title), true, title)
   for (const title of jobs) assert.equal(isFundingCall(title), false, title)
