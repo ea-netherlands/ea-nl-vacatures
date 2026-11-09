@@ -48,8 +48,9 @@ export type SlideSpec =
   | { kind: 'job'; id: string; index: number; count: number }
   | { kind: 'cta' }
 
-export function slidePath(spec: SlideSpec): string {
+export function slidePath(spec: SlideSpec, format: 'png' | 'jpg' = 'png'): string {
   const q = new URLSearchParams({ kind: spec.kind })
+  if (format === 'jpg') q.set('format', 'jpg')
   if (spec.kind === 'cover') {
     q.set('n', String(spec.count))
     q.set('date', spec.date)

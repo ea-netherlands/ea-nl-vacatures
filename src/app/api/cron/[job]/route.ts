@@ -21,6 +21,7 @@ import { runTranslation } from '@jobboard/sanity/translate'
 import { runReviewDigest } from '@jobboard/review/digest'
 import { runSiteSync } from '@jobboard/lib/site-sync'
 import { runWeeklySocial } from '@jobboard/social/weekly'
+import { runSocialPublish } from '@jobboard/social/publish'
 
 export const dynamic = 'force-dynamic'
 /** Vercel's cron maximum on Pro. Adapters budget against this, minus a margin. */
@@ -37,6 +38,7 @@ const JOBS = [
   'review-digest',
   'site-sync',
   'social',
+  'social-publish',
 ] as const
 type Job = (typeof JOBS)[number]
 
@@ -191,6 +193,15 @@ export async function GET(request: Request, { params }: { params: Promise<{ job:
           force: url.searchParams.get('force') === '1',
           onLog,
         })
+        return NextResponse.json({ job, report, logs })
+      }
+      /*
+        Tuesdays, hourly: posts the approved week to each account once its
+        time has passed (social/publish.ts). Does nothing unless
+        SOCIAL_POSTING=on.
+      */
+      case 'social-publish': {
+        const report = await runSocialPublish({ dryRun: url.searchParams.get('dryRun') === '1', onLog })
         return NextResponse.json({ job, report, logs })
       }
       case 'translate': {

@@ -127,3 +127,14 @@
   padding-top: var(--space-3);
   border-top: var(--rule-dashed);
 }
+
+/* --- Phase 3: accounts and posting day --- */
+
+.account {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding-bottom: var(--space-4);
+  border-bottom: var(--rule-dashed);
+}

@@ -96,7 +96,7 @@ export function SocialEditor({
           {post.status === 'draft'
             ? 'Draft: waiting for you'
             : post.status === 'approved'
-              ? 'Approved: this will go out on Tuesday'
+              ? 'Approved: it goes out on Tuesday'
               : post.status === 'skipped'
                 ? 'Skipped this week'
                 : 'Posted'}

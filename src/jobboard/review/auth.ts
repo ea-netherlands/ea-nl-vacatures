@@ -26,7 +26,8 @@ export const LINK_TTL_MS = 7 * 864e5
 /** The cookie the link is exchanged for. */
 export const SESSION_TTL_MS = 30 * 864e5
 
-type Purpose = 'link' | 'session'
+/** `oauth` is the state on the LinkedIn connect round trip; it can't sign anyone in. */
+type Purpose = 'link' | 'session' | 'oauth'
 
 /**
  * REVIEW_SECRET, falling back to CRON_SECRET so an existing deployment works
