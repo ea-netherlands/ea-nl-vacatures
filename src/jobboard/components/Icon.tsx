@@ -207,6 +207,11 @@ const PATHS: Record<IconName, string> = {
 };
 
 /** True for a name this file can draw. The site's menus arrive as plain strings. */
+/** The path data, for renderers that can't use the component (next/og). */
+export function iconPath(name: IconName): string {
+  return PATHS[name];
+}
+
 export function isIconName(name: string): name is IconName {
   return Object.prototype.hasOwnProperty.call(PATHS, name);
 }

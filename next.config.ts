@@ -43,6 +43,7 @@ const config: NextConfig = {
   // which file tracing cannot see through a runtime path.
   outputFileTracingIncludes: {
     '/vacatures/og': ['./src/jobboard/og/fonts/*', './src/jobboard/og/*.png'],
+    '/vacatures/social/slide': ['./src/jobboard/og/fonts/*', './src/jobboard/og/*.png'],
   },
   experimental: {
     // Sanity Studio ships its own client bundle; keep it out of the RSC graph.

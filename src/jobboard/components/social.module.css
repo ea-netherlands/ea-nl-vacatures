@@ -1,0 +1,89 @@
+/* The weekly social post preview (/review/social). Every value from theme.css;
+   buttons, cards and badges come from ui.module.css. */
+
+.section {
+  padding-block: var(--space-8);
+  border-top: var(--rule-dashed);
+}
+
+.heading {
+  font-size: var(--text-2xl);
+  line-height: var(--lh-snug);
+  margin-bottom: var(--space-4);
+}
+
+/* The carousel, in posting order. Scrolls sideways on a phone, like the post. */
+.strip {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(12rem, 16rem);
+  gap: var(--space-4);
+  overflow-x: auto;
+  padding-bottom: var(--space-3);
+  list-style: none;
+  margin: 0;
+  padding-inline: 0;
+}
+
+.slide {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--fg-muted);
+}
+
+.slide img {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1080 / 1350;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--primary-subtle);
+}
+
+.picks {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.pick {
+  display: grid;
+  grid-template-columns: var(--space-8) 1fr;
+  gap: var(--space-3);
+  padding-bottom: var(--space-4);
+  border-bottom: var(--rule-dashed);
+}
+
+.pickNumber {
+  font-weight: var(--fw-semibold);
+  color: var(--primary-fg);
+}
+
+.pickTitle {
+  font-weight: var(--fw-semibold);
+}
+
+.pickMeta {
+  color: var(--fg-muted);
+  font-size: var(--text-sm);
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.warning {
+  padding: var(--space-5);
+  border: 1px solid var(--border-emphasized);
+  border-radius: var(--radius-card);
+  background: var(--bg-subtle);
+  margin-bottom: var(--space-8);
+}
