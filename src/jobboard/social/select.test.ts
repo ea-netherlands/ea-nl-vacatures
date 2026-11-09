@@ -171,12 +171,14 @@ test('an expression of interest in a future role is not an opening', () => {
   assert.equal(s.skipped[0].reason, 'Expression of interest, not an opening')
 })
 
-test('a funding call gets a place even when jobs outscore it', () => {
+test('a funding call competes on merit: in when it scores, not reserved', () => {
   const jobs = spread(9, { deadlineAt: days(10) })
-  const call = listing({ title: 'Research Grants', postedAt: days(-30) })
-  const s = selectWeeklyJobs([...jobs, call], { postAt: POST })
-  assert.equal(s.picks.length, SELECTION.max)
-  assert.ok(s.picks.some((p) => p.listing.id === call.id))
+  const weak = listing({ title: 'Research Grants', postedAt: days(-30) })
+  const left = selectWeeklyJobs([...jobs, weak], { postAt: POST })
+  assert.ok(!left.picks.some((p) => p.listing.id === weak.id))
+  const strong = listing({ title: 'Request for Proposals: Project Tailwind', deadlineAt: days(10) })
+  const taken = selectWeeklyJobs([...spread(3), strong], { postAt: POST })
+  assert.ok(taken.picks.some((p) => p.listing.id === strong.id))
 })
 
 test('a post takes at most one funding call', () => {
