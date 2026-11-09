@@ -38,3 +38,20 @@ test('a title that already names the organisation does not repeat it', () => {
   const text = compose('instagram', parts, [listing('Director of Partnerships at Taimaka', 'Taimaka', 't')], '2026-11-10')
   assert.match(text, /• Director of Partnerships at Taimaka\n/)
 })
+
+test('a themed LinkedIn caption links to the theme on the board, keeping "AI" in capitals', () => {
+  const text = compose('linkedinOrg', { ...parts, hashtags: [] }, jobs, '2026-11-17', 'ai-safety')
+  assert.match(text, /More roles in AI safety and catastrophic risks: https:\/\/effectiefaltruisme\.nl\/en\/jobs\?cause=global-catastrophic-risks&utm_source=linkedin/)
+  assert.doesNotMatch(compose('instagram', parts, jobs, '2026-11-17', 'ai-safety'), /More roles/)
+})
+
+test('a programme abroad says how long, so it does not read as a move', async () => {
+  const { jobFacts, stint } = await import('./content')
+  assert.equal(stint(4), '4 weeks')
+  assert.equal(stint(13), '3 months')
+  assert.equal(stint(26), '6 months')
+  const where = (over: Partial<ListingView>) =>
+    jobFacts({ ...jobs[0], locationMode: 'temporary-abroad', salaryText: null, deadlineAt: null, subArea: null, primaryCause: null, languageRequirement: null, ...over } as ListingView).find((f) => f.icon === 'map-pin')?.text
+  assert.equal(where({ locationCity: 'London', programmeWeeks: 13 }), 'London, for 3 months')
+  assert.equal(where({ locationCity: 'Washington', programmeWeeks: null }), 'Washington, temporarily')
+})

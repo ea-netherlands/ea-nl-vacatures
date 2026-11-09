@@ -20,6 +20,7 @@
 
 import { writeClient } from '../sanity/client'
 import { SELECTION } from './select'
+import type { ThemeKey } from './themes'
 
 export type Channel = 'instagram' | 'linkedinOrg' | 'linkedinPersonal'
 export const CHANNELS: Channel[] = ['instagram', 'linkedinOrg', 'linkedinPersonal']
@@ -53,6 +54,10 @@ export type SocialPost = {
   status: PostStatus
   /** Listing ids, in slide order. */
   listingIds: string[]
+  /** The week's theme as posted; null on posts from before themes. */
+  theme: ThemeKey | null
+  /** The rotation's theme when it couldn't fill a post and this fell back to mixed. */
+  fallbackFrom: ThemeKey | null
   parts: Record<Channel, CaptionParts> | null
   captions: Record<Channel, string> | null
   generatedAt: string | null

@@ -20,7 +20,8 @@ import { isReviewConfigured, issueToken, LINK_TTL_MS, SESSION_COOKIE, verifyToke
 import { SocialEditor, type EditorPost } from '@jobboard/components/SocialEditor'
 import { getListingsByIds, getLiveListings } from '@jobboard/sanity/queries'
 import { postSlides, slidePath } from '@jobboard/social/content'
-import { nextPostTime, SELECTION, selectWeeklyJobs, type Pick } from '@jobboard/social/select'
+import { isLocal, nextPostTime, SELECTION, selectForWeek, type Pick } from '@jobboard/social/select'
+import { THEME_KEYS, THEMES, themeForWeek } from '@jobboard/social/themes'
 import { amsterdamDate, getPost, recentlyFeatured, type SocialPost } from '@jobboard/social/store'
 
 export const dynamic = 'force-dynamic'
@@ -135,8 +136,10 @@ export default async function SocialPreviewPage() {
 
   if (stored) {
     const roles = await getListingsByIds(stored.listingIds)
-    const slides = roles.length ? postSlides(roles.map((r) => r.id), date) : []
+    const theme = stored.theme ?? 'mixed'
+    const slides = roles.length ? postSlides(roles, date, theme) : []
     const editorPost: EditorPost = {
+      theme,
       status: stored.status,
       captions: stored.captions,
       error: stored.error,
@@ -146,23 +149,46 @@ export default async function SocialPreviewPage() {
       <Frame>
         <h1 className={s.title}>The post for {day}</h1>
         <p className={s.lead}>
-          {roles.length} roles. Check the slides and the captions, then approve it or skip the week. Nothing is
-          posted yet: once posting is built, approved posts go out on Tuesday at 09:00.
+          <strong>{THEMES[theme].label}</strong>, {roles.length} roles. Check the slides and the captions, then approve
+          it or skip the week. Nothing is posted yet: once posting is built, approved posts go out on Tuesday at 09:00.
         </p>
-        <SocialEditor key={stored._rev ?? stored.generatedAt} post={editorPost} minRoles={SELECTION.min} />
+        {stored.fallbackFrom ? (
+          <div className={x.warning} role="status">
+            The rotation had {THEMES[stored.fallbackFrom].label} this week, but fewer than five roles qualified, so this
+            is a mixed post.
+          </div>
+        ) : null}
+        {roles.length && !roles.some(isLocal) ? (
+          <div className={x.warning} role="status">
+            No role this week is done in the Netherlands: they are all remote or abroad. Remove one and redraft, or add a local role to the board first.
+          </div>
+        ) : null}
+        <SocialEditor
+          key={stored._rev ?? stored.generatedAt}
+          post={editorPost}
+          minRoles={SELECTION.min}
+          themes={THEME_KEYS.map((k) => ({ key: k, label: THEMES[k].label }))}
+        />
         {slides.length ? <Slides slides={slides} /> : null}
       </Frame>
     )
   }
 
   const listings = await getLiveListings({ excludeEarningToGive: true })
-  const selection = selectWeeklyJobs(listings, { postAt, recentlyFeatured: recent })
-  const slides = selection.enough ? postSlides(selection.picks.map((p) => p.listing.id), date) : []
+  const selection = selectForWeek(listings, { postAt, recentlyFeatured: recent })
+  const slides = selection.enough ? postSlides(
+        selection.picks.map((p) => p.listing),
+        date,
+        selection.theme,
+      ) : []
+  const rotation = themeForWeek(postAt)
 
   return (
     <Frame>
       <h1 className={s.title}>The post for {day}</h1>
       <p className={s.lead}>
+        This week’s theme: <strong>{THEMES[selection.theme].label}</strong>
+        {selection.fallbackFrom ? ` (the rotation has ${THEMES[rotation].label}, but too few roles qualify)` : ''}.{' '}
         {selection.picks.length} of {listings.length} live roles would be picked right now, following the rules in{' '}
         <code>jobboard/social/select.ts</code>
         {recent.size ? `, leaving out ${recent.size} featured in the last ${SELECTION.repeatWeeks} weeks` : ''}.
@@ -173,8 +199,14 @@ export default async function SocialPreviewPage() {
           Can’t read or save posts: {storeError}
         </div>
       ) : (
-        <SocialEditor post={null} minRoles={SELECTION.min} />
+        <SocialEditor post={null} minRoles={SELECTION.min} themes={[]} />
       )}
+
+      {selection.enough && !selection.hasLocal ? (
+        <div className={x.warning} role="status">
+          No role this week is done in the Netherlands: they are all remote or abroad. Remove one and redraft, or add a local role to the board first.
+        </div>
+      ) : null}
 
       {!selection.enough ? (
         <div className={x.warning} role="status">

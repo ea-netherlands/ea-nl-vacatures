@@ -66,6 +66,11 @@ const BAND = {
   },
 } as const satisfies Record<Band, { label: string; note: string }>
 
+const FUNDING = {
+  label: 'Funding to apply for',
+  note: 'A grant or funding round for work on this problem, not a job.',
+}
+
 function Glyph({ name, size, color }: { name: Fact['icon'] | 'arrow-right' | 'mail'; size: number; color: string }) {
   return (
     <svg
@@ -206,15 +211,23 @@ function Marked({ plain, marked, size }: { plain: string; marked: string; size: 
   )
 }
 
+/** Themed headlines run longer ("7 jobs in AI safety and catastrophic risks, …"). */
+function coverSize(text: string): number {
+  if (text.length <= 42) return 112
+  if (text.length <= 62) return 96
+  return 84
+}
+
 export function Slide({ content, logo }: { content: SlideContent; logo: string }) {
   if (content.kind === 'cover') {
-    const jobs = content.count === 1 ? 'job' : 'jobs'
     return (
-      <Frame logo={logo} pill="Jobs this week" footer={{ left: SITE, right: <Swipe /> }}>
-        <Marked plain={`${content.count} ${jobs} you can do`} marked="from the Netherlands" size={112} />
-        <div style={{ display: 'flex', marginTop: 48, fontSize: 44, lineHeight: 1.35 }}>
-          On the world’s most pressing problems, for people based here: remote, hybrid or on site.
-        </div>
+      <Frame
+        logo={logo}
+        pill={content.funding ? 'Opportunities this week' : 'Jobs this week'}
+        footer={{ left: SITE, right: <Swipe /> }}
+      >
+        <Marked plain={content.plain} marked={content.marked} size={coverSize(content.plain + content.marked)} />
+        <div style={{ display: 'flex', marginTop: 48, fontSize: 44, lineHeight: 1.35 }}>{content.sub}</div>
         <div style={{ display: 'flex', marginTop: 32, fontSize: 36, color: TOKENS.fgMuted }}>
           {`Picked from our job board · ${content.date}`}
         </div>
@@ -224,7 +237,7 @@ export function Slide({ content, logo }: { content: SlideContent; logo: string }
 
   if (content.kind === 'job') {
     const title = clip(content.title, 110)
-    const band = BAND[content.band]
+    const band = content.funding ? FUNDING : BAND[content.band]
     return (
       <Frame
         logo={logo}

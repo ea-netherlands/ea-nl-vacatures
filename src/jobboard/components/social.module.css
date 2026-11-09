@@ -119,3 +119,11 @@
   white-space: pre-wrap;
   line-height: var(--lh-normal);
 }
+
+.themeSwitch {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-top: var(--space-3);
+  border-top: var(--rule-dashed);
+}
