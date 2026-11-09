@@ -304,10 +304,13 @@ the first two exist:
    (post links, or errors with up to three attempts) go on the week's Sanity
    document and show on `/review/social`; a first failure mails James.
    Nothing posts unless `SOCIAL_POSTING=on`.
-   - **Instagram** (`social/instagram.ts`): Instagram API with Instagram Login.
+   - **Instagram** (`social/instagram.ts`): a system-user token (EAA…, never
+     expires) on graph.facebook.com, posting to the account id in
+     `INSTAGRAM_ACCOUNT_ID` (ea_netherlands, 17841455139503724, the default).
      Slides as JPEG (`/vacatures/social/slide?…&format=jpg`), a carousel
-     container, then publish. The 60-day token is pasted on the page once and
-     refreshed by the Monday cron.
+     container, then publish. An Instagram-login token (IG…) also works and is
+     refreshed by the Monday cron, but Meta no longer offers that setup to new
+     apps (Nov 2026).
    - **James's LinkedIn** (`social/linkedin.ts`): "Share on LinkedIn" via
      ugcPosts with every slide as an image. "Connect LinkedIn" on the page runs
      the OAuth round trip; LinkedIn tokens last 60 days with no refresh, so the
@@ -319,10 +322,13 @@ the first two exist:
      Sanity, whose dataset is publicly readable.
 
    **Setup, once:**
-   1. Meta: at developers.facebook.com create an app, add the Instagram product
-      ("API setup with Instagram login"), add the ea_netherlands account (a
-      professional account), generate a token, paste it under Accounts on
-      `/review/social`.
+   1. Meta: the app "EA Netherlands job posts" (developers.facebook.com, use
+      case "Manage messaging & content on Instagram", business portfolio
+      Effectief Altruïsme Nederland; ea_netherlands is an Instagram Tester).
+      In Business Settings → System users, the "Job posts" system user has the
+      app and the ea_netherlands Instagram account assigned. Generate token:
+      that app, expiry Never, `instagram_basic` + `instagram_content_publish`.
+      Paste it under Accounts on `/review/social`.
    2. LinkedIn: at linkedin.com/developers create an app linked to the EA
       Netherlands page, add "Share on LinkedIn" and "Sign In with LinkedIn using
       OpenID Connect", add the redirect URL from `.env.example`, set

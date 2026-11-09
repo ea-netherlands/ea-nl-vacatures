@@ -12,7 +12,7 @@ import { nextPostTime, SELECTION } from '@jobboard/social/select'
 import { amsterdamDate, CHANNEL_LIMIT, CHANNELS, getPost, patchPost, type Channel } from '@jobboard/social/store'
 import { isThemeKey } from '@jobboard/social/themes'
 import { draftPost, recompose } from '@jobboard/social/weekly'
-import { instagramAccount } from '@jobboard/social/instagram'
+import { instagramAccount, tokenKind } from '@jobboard/social/instagram'
 import { deleteToken, saveToken } from '@jobboard/social/tokens'
 
 export const dynamic = 'force-dynamic'
@@ -55,8 +55,9 @@ export async function POST(request: Request) {
       await saveToken({
         channel: 'instagram',
         accessToken: token,
-        // Long-lived Instagram tokens last 60 days; the Monday cron refreshes it.
-        expiresAt: new Date(Date.now() + 60 * 864e5),
+        // A system-user token (EAA…) never expires. An Instagram token lasts
+        // 60 days; the Monday cron refreshes it.
+        expiresAt: tokenKind(token) === 'instagram' ? new Date(Date.now() + 60 * 864e5) : null,
         accountId: account.userId,
         accountName: account.username,
       })

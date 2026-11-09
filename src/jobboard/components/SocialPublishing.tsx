@@ -85,10 +85,10 @@ export function SocialConnections({
             <div className={x.pickTitle}>EA Netherlands on Instagram · Tuesdays {times.instagram}</div>
             <div className={x.pickMeta}>
               {instagram.connected
-                ? `Connected as @${instagram.accountName ?? 'unknown'}. The token renews itself on Mondays.`
+                ? `Connected as @${instagram.accountName ?? 'unknown'}.`
                 : instagram.error
                   ? `Can’t read connections: ${instagram.error}`
-                  : 'Not connected. Paste a long-lived access token from the Meta app (Instagram API with Instagram Login).'}
+                  : 'Not connected. Paste the system-user token from Business Settings → System users → Job posts (it starts with EAA).'}
             </div>
           </div>
           {instagram.connected ? (

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { InstagramError, publishInstagramCarousel } from './instagram'
+import { graphBase, instagramAccount, InstagramError, publishInstagramCarousel } from './instagram'
 import { publishLinkedInImages } from './linkedin'
 import { channelPostAt } from './publish'
 import { seal, unseal } from './tokens'
@@ -116,4 +116,17 @@ test('LinkedIn: register and upload each slide, then one post with every image',
     ['urn:li:digitalmediaAsset:A1', 'urn:li:digitalmediaAsset:A2'],
   )
   assert.equal(calls.filter((c) => c.method === 'PUT').length, 2)
+})
+
+test('a system-user token posts through graph.facebook.com, an Instagram token through graph.instagram.com', () => {
+  assert.match(graphBase('EAAB-system-user'), /^https:\/\/graph\.facebook\.com\//)
+  assert.match(graphBase('IGAA-instagram-user'), /^https:\/\/graph\.instagram\.com\//)
+})
+
+test('a system-user token is checked against the Instagram account id, not /me', async () => {
+  const { http, calls } = fakeHttp([
+    [/GET https:\/\/graph\.facebook\.com\/v[\d.]+\/17841455139503724\?fields=id%2Cusername/, () => json({ id: '17841455139503724', username: 'ea_netherlands' })],
+  ])
+  assert.deepEqual(await instagramAccount('EAAB-system-user', http), { userId: '17841455139503724', username: 'ea_netherlands' })
+  assert.equal(calls.length, 1)
 })

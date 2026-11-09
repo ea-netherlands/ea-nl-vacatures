@@ -139,7 +139,8 @@ export async function maintainConnections(
 
   const ig = await getToken('instagram')
   if (!ig) notes.push("Instagram isn't connected, so Tuesday's post won't go out there. Connect it on the page.")
-  else if (ig.expiresAt && days(ig.expiresAt) < 30 && now.getTime() - ig.updatedAt.getTime() > 864e5) {
+  // Only Instagram-login tokens (IG…) expire and refresh; system-user tokens don't.
+  else if (ig.accessToken.startsWith('IG') && ig.expiresAt && days(ig.expiresAt) < 30 && now.getTime() - ig.updatedAt.getTime() > 864e5) {
     try {
       const fresh = await refreshInstagram(ig.accessToken)
       await saveToken({ ...ig, accessToken: fresh.token, expiresAt: fresh.expiresAt })
