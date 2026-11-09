@@ -41,6 +41,21 @@ export const CHANNEL_LIMIT: Record<Channel, number> = {
 /** What the model writes; the code puts the job list and the links between them. */
 export type CaptionParts = { hook: string; closing: string; hashtags: string[] }
 
+/**
+ * One account's outcome. `id`/`url` once it is up; `error` and `attempts` while
+ * it keeps failing; `manual` for EA Nederland's LinkedIn page, which is posted
+ * by hand: `reminded` once the reminder mail went, `id: 'manual'` once marked done.
+ */
+export type ChannelResult = {
+  at: string
+  id?: string
+  url?: string | null
+  error?: string
+  attempts?: number
+  manual?: boolean
+  reminded?: boolean
+}
+
 export type PostStatus = 'draft' | 'approved' | 'skipped' | 'posted'
 
 export type SocialPost = {
@@ -62,6 +77,8 @@ export type SocialPost = {
   captions: Record<Channel, string> | null
   generatedAt: string | null
   approvedAt: string | null
+  /** What happened on each account on posting day (publish.ts). */
+  results?: Partial<Record<Channel, ChannelResult>> | null
   /** The last thing that went wrong drafting it, shown on the page. */
   error: string | null
 }

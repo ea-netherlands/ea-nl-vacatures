@@ -12,6 +12,8 @@ import { nextPostTime, SELECTION } from '@jobboard/social/select'
 import { amsterdamDate, CHANNEL_LIMIT, CHANNELS, getPost, patchPost, type Channel } from '@jobboard/social/store'
 import { isThemeKey } from '@jobboard/social/themes'
 import { draftPost, recompose } from '@jobboard/social/weekly'
+import { instagramAccount } from '@jobboard/social/instagram'
+import { deleteToken, saveToken } from '@jobboard/social/tokens'
 
 export const dynamic = 'force-dynamic'
 // Drafting calls the model once for all three captions.
@@ -40,10 +42,49 @@ export async function POST(request: Request) {
 
   const postDate = amsterdamDate(nextPostTime())
   try {
+    // Connections: not tied to a week.
+    if (body.action === 'instagram-token') {
+      const token = typeof body.token === 'string' ? body.token.trim() : ''
+      if (token.length < 20) return fail('That doesn’t look like an access token.')
+      let account: { userId: string; username: string | null }
+      try {
+        account = await instagramAccount(token)
+      } catch (err) {
+        return fail(`Instagram didn’t accept that token: ${(err as Error).message.replace(/^Instagram: /, '')}`)
+      }
+      await saveToken({
+        channel: 'instagram',
+        accessToken: token,
+        // Long-lived Instagram tokens last 60 days; the Monday cron refreshes it.
+        expiresAt: new Date(Date.now() + 60 * 864e5),
+        accountId: account.userId,
+        accountName: account.username,
+      })
+      return NextResponse.json({ ok: true })
+    }
+    if (body.action === 'disconnect') {
+      if (body.channel !== 'instagram' && body.channel !== 'linkedinPersonal') return fail('Unknown account.')
+      await deleteToken(body.channel)
+      return NextResponse.json({ ok: true })
+    }
+
     if (body.action === 'draft') {
       // Redraft keeps the week's theme; the theme switch sends a new one.
       const { post } = await draftPost({ force: true, theme: isThemeKey(body.theme) ? body.theme : undefined })
       return NextResponse.json({ ok: true, post })
+    }
+
+    // Marking EA Nederland's LinkedIn as posted by hand happens on posting day,
+    // when "next Tuesday" has already moved on a week, so it names its date.
+    if (body.action === 'mark-posted') {
+      const date = typeof body.postDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(body.postDate) ? body.postDate : postDate
+      const target = await getPost(date)
+      if (!target || (target.status !== 'approved' && target.status !== 'posted')) {
+        return fail('Only an approved post can be marked as posted.')
+      }
+      const url = typeof body.url === 'string' && /^https:\/\/(www\.)?linkedin\.com\//.test(body.url) ? body.url : null
+      const results = { ...(target.results ?? {}), linkedinOrg: { at: new Date().toISOString(), id: 'manual', url, manual: true } }
+      return NextResponse.json({ ok: true, post: await patchPost(date, { results }) })
     }
 
     const post = await getPost(postDate)

@@ -192,3 +192,16 @@ alter table classification add column if not exists listing_kind text not null d
 alter table classification add column if not exists programme_weeks int;
 alter table classification add column if not exists programme_paid boolean;
 alter table classification add column if not exists programme_travel_covered boolean;
+
+-- Added November 2026 for the weekly social post (social/tokens.ts): the access
+-- token for each account it posts from, sealed with AES-256-GCM. Never in
+-- Sanity, whose dataset is publicly readable. social/tokens.ts also creates
+-- this table on first use, so posting doesn't wait on a hand-run migration.
+create table if not exists social_token (
+  channel      text primary key,                -- 'instagram' | 'linkedinPersonal'
+  token_sealed text not null,
+  expires_at   timestamptz,
+  account_id   text not null,                   -- Instagram user id / LinkedIn person URN
+  account_name text,
+  updated_at   timestamptz not null default now()
+);

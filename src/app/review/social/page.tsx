@@ -18,6 +18,11 @@ import u from '@jobboard/components/ui.module.css'
 import { routes, t } from '@jobboard/content/i18n'
 import { isReviewConfigured, issueToken, LINK_TTL_MS, SESSION_COOKIE, verifyToken } from '@jobboard/review/auth'
 import { SocialEditor, type EditorPost } from '@jobboard/components/SocialEditor'
+import { SocialConnections, SocialPostingDay } from '@jobboard/components/SocialPublishing'
+import { linkedinConfigured } from '@jobboard/social/linkedin'
+import { AUTO_CHANNELS, CHANNEL_TIME, channelPostAt, postingEnabled } from '@jobboard/social/publish'
+import { CHANNEL_LABEL } from '@jobboard/social/store'
+import { connectionInfo } from '@jobboard/social/tokens'
 import { getListingsByIds, getLiveListings } from '@jobboard/sanity/queries'
 import { postSlides, slidePath } from '@jobboard/social/content'
 import { isLocal, nextPostTime, SELECTION, selectForWeek, type Pick } from '@jobboard/social/select'
@@ -90,7 +95,79 @@ function Slides({ slides }: { slides: ReturnType<typeof postSlides> }) {
   )
 }
 
-export default async function SocialPreviewPage() {
+const LINKEDIN_NOTICE: Record<string, string> = {
+  connected: 'LinkedIn is connected.',
+  cancelled: 'LinkedIn wasn’t connected: you cancelled on LinkedIn’s screen.',
+  refused: 'LinkedIn refused the connection. Check the app’s products and redirect URL.',
+  expired: 'That took too long. Connect LinkedIn again.',
+  failed: 'Connecting LinkedIn failed. Try again; if it keeps failing, check the app settings.',
+  'not-configured': 'LinkedIn isn’t set up yet: add LINKEDIN_CLIENT_ID and LINKEDIN_CLIENT_SECRET on Vercel.',
+  'signed-out': 'Your session had expired. Sign in again, then connect LinkedIn.',
+}
+
+const hhmm = (t: { hour: number; minute: number }) => `${String(t.hour).padStart(2, '0')}:${String(t.minute).padStart(2, '0')}`
+
+/** The accounts, and the day's (or the approved week's) posting status with the by-hand bundle. */
+async function Publishing({ upcoming, notice }: { upcoming: SocialPost | null; notice: string | null }) {
+  const [instagram, linkedin] = await Promise.all([connectionInfo('instagram'), connectionInfo('linkedinPersonal')])
+  const today = amsterdamDate(new Date())
+  const todays = await getPost(today).catch(() => null)
+  const target =
+    todays && (todays.status === 'approved' || todays.status === 'posted')
+      ? todays
+      : upcoming?.status === 'approved' || upcoming?.status === 'posted'
+        ? upcoming
+        : null
+
+  let posting: React.ReactNode = null
+  if (target) {
+    const roles = await getListingsByIds(target.listingIds)
+    const at = (c: 'instagram' | 'linkedinPersonal' | 'linkedinOrg') =>
+      channelPostAt(target.postDate, c).toLocaleString('en-GB', {
+        weekday: 'short',
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZone: 'Europe/Amsterdam',
+      })
+    posting = (
+      <SocialPostingDay
+        postDate={target.postDate}
+        heading={target.postDate === today ? 'Today’s post' : `Approved for ${target.postDate}`}
+        rows={[
+          ...AUTO_CHANNELS.map((c) => ({ label: CHANNEL_LABEL[c], time: at(c), result: target.results?.[c] ?? null })),
+          { label: CHANNEL_LABEL.linkedinOrg, time: at('linkedinOrg'), result: target.results?.linkedinOrg ?? null, manual: true },
+        ]}
+        bundle={{
+          slides: postSlides(roles, target.postDate, target.theme ?? 'mixed').map((spec) => slidePath(spec)),
+          caption: target.captions?.linkedinOrg ?? '',
+          done: Boolean(target.results?.linkedinOrg?.id),
+        }}
+      />
+    )
+  }
+
+  return (
+    <>
+      {posting}
+      <SocialConnections
+        instagram={instagram}
+        linkedin={linkedin}
+        linkedinConfigured={linkedinConfigured()}
+        postingEnabled={postingEnabled()}
+        times={{ instagram: hhmm(CHANNEL_TIME.instagram), linkedin: hhmm(CHANNEL_TIME.linkedinPersonal) }}
+        notice={notice}
+      />
+    </>
+  )
+}
+
+export default async function SocialPreviewPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ linkedin?: string }>
+}) {
+  const { linkedin: linkedinResult } = await searchParams
+  const notice = linkedinResult ? (LINKEDIN_NOTICE[linkedinResult] ?? null) : null
   const jar = await cookies()
   if (!verifyToken('session', jar.get(SESSION_COOKIE)?.value)) {
     const localLink =
@@ -150,7 +227,8 @@ export default async function SocialPreviewPage() {
         <h1 className={s.title}>The post for {day}</h1>
         <p className={s.lead}>
           <strong>{THEMES[theme].label}</strong>, {roles.length} roles. Check the slides and the captions, then approve
-          it or skip the week. Nothing is posted yet: once posting is built, approved posts go out on Tuesday at 09:00.
+          it or skip the week. Approved posts go out on Tuesday: LinkedIn at {hhmm(CHANNEL_TIME.linkedinPersonal)},
+          Instagram at {hhmm(CHANNEL_TIME.instagram)}.
         </p>
         {stored.fallbackFrom ? (
           <div className={x.warning} role="status">
@@ -170,6 +248,7 @@ export default async function SocialPreviewPage() {
           themes={THEME_KEYS.map((k) => ({ key: k, label: THEMES[k].label }))}
         />
         {slides.length ? <Slides slides={slides} /> : null}
+        <Publishing upcoming={stored} notice={notice} />
       </Frame>
     )
   }
@@ -199,7 +278,10 @@ export default async function SocialPreviewPage() {
           Can’t read or save posts: {storeError}
         </div>
       ) : (
-        <SocialEditor post={null} minRoles={SELECTION.min} themes={[]} />
+        <>
+          <SocialEditor post={null} minRoles={SELECTION.min} themes={[]} />
+          <Publishing upcoming={null} notice={notice} />
+        </>
       )}
 
       {selection.enough && !selection.hasLocal ? (

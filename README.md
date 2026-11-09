@@ -298,8 +298,39 @@ the first two exist:
    dollars or pounds show in euros ("About €143,000–€223,000 per year") at the
    ECB's daily reference rate (`social/currency.ts`), or unconverted if the ECB
    can't be reached.
-3. Posting to Instagram, then James's LinkedIn, then EA Nederland's LinkedIn
-   once LinkedIn approves the API access.
+3. **Done: posting.** The hourly Tuesday `social-publish` cron
+   (`social/publish.ts`) posts an approved week to each account at its own
+   Amsterdam time: LinkedIn 09:00, Instagram 19:00 (`CHANNEL_TIME`). Results
+   (post links, or errors with up to three attempts) go on the week's Sanity
+   document and show on `/review/social`; a first failure mails James.
+   Nothing posts unless `SOCIAL_POSTING=on`.
+   - **Instagram** (`social/instagram.ts`): Instagram API with Instagram Login.
+     Slides as JPEG (`/vacatures/social/slide?…&format=jpg`), a carousel
+     container, then publish. The 60-day token is pasted on the page once and
+     refreshed by the Monday cron.
+   - **James's LinkedIn** (`social/linkedin.ts`): "Share on LinkedIn" via
+     ugcPosts with every slide as an image. "Connect LinkedIn" on the page runs
+     the OAuth round trip; LinkedIn tokens last 60 days with no refresh, so the
+     page and the Monday mail warn two weeks ahead.
+   - **EA Nederland's LinkedIn page**: by hand until LinkedIn grants the
+     Community Management API. At 09:00 James gets a reminder; the page has the
+     slides, a copy-caption button and "Mark as posted".
+   - Tokens live in Postgres (`social_token`), sealed with AES-256-GCM, never in
+     Sanity, whose dataset is publicly readable.
+
+   **Setup, once:**
+   1. Meta: at developers.facebook.com create an app, add the Instagram product
+      ("API setup with Instagram login"), add the ea_netherlands account (a
+      professional account), generate a token, paste it under Accounts on
+      `/review/social`.
+   2. LinkedIn: at linkedin.com/developers create an app linked to the EA
+      Netherlands page, add "Share on LinkedIn" and "Sign In with LinkedIn using
+      OpenID Connect", add the redirect URL from `.env.example`, set
+      `LINKEDIN_CLIENT_ID` and `LINKEDIN_CLIENT_SECRET` on Vercel, then click
+      "Connect LinkedIn".
+   3. Set `SOCIAL_POSTING=on` on Vercel.
+   4. For the page: apply for the Community Management API on a separate
+      LinkedIn app (it must be that app's only product).
 
 ### Commands
 

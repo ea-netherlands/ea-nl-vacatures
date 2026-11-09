@@ -30,6 +30,8 @@ import {
   type SocialPost,
 } from './store'
 import { bandOf } from '../lib/bands'
+import { refreshInstagramToken } from './instagram'
+import { maintainConnections } from './tokens'
 
 export type WeeklyReport = {
   postDate: string
@@ -147,7 +149,7 @@ export async function recompose(post: SocialPost): Promise<Record<Channel, strin
   return composeAll(post, post.parts)
 }
 
-function mailText(post: SocialPost, titles: string[], link: string, hasLocal: boolean): string {
+function mailText(post: SocialPost, titles: string[], link: string, hasLocal: boolean, notes: string[]): string {
   const day = longDay(new Date(post.postAt))
   const theme = THEMES[post.theme ?? 'mixed']
   const lines = [
@@ -167,6 +169,7 @@ function mailText(post: SocialPost, titles: string[], link: string, hasLocal: bo
     lines.push('None of these roles is done in the Netherlands; they are all remote or abroad. Worth swapping one for a local role before you approve.', '')
   }
   if (post.error) lines.push(post.error, '')
+  if (notes.length) lines.push(...notes, '')
   lines.push('Nothing is posted until you approve it. The link signs you in for a week, so please do not forward this mail.')
   return lines.join('\n')
 }
@@ -191,6 +194,10 @@ export async function runWeeklySocial(
   }
 
   const { post, changed } = await draftPost({ force: options.force, onLog: options.onLog })
+  // Keep the accounts connected; anything that needs James goes in the mail.
+  const notes = await maintainConnections((t) => refreshInstagramToken(t)).catch((err) => [
+    `Couldn't check the social connections: ${(err as Error).message}`,
+  ])
   const listings = await getListingsByIds(post.listingIds)
   const titles = listings.map((l) => `${l.title}, ${l.employer?.name ?? ''}`)
   const report: WeeklyReport = { postDate, status: changed ? post.status : 'unchanged', jobs: titles, mailed: [], skippedReason: null }
@@ -204,7 +211,7 @@ export async function runWeeklySocial(
     post.listingIds.length >= SELECTION.min
       ? `Tuesday's jobs post is ready to approve`
       : `Not enough roles for Tuesday's jobs post`
-  await sendMail({ to, subject, text: mailText(post, titles, socialLink(), listings.some(isLocal)) })
+  await sendMail({ to, subject, text: mailText(post, titles, socialLink(), listings.some(isLocal), notes) })
   log(`mailed ${to.join(', ')}`)
   return { ...report, mailed: to }
 }
