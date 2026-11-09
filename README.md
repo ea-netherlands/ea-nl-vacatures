@@ -265,6 +265,24 @@ The Studio still works exactly as before for anything the dashboard does not
 cover: editing fields other than the note, drafts of already-published
 listings, expired drafts.
 
+### The weekly social post
+
+Every Tuesday at 09:00 a carousel of jobs goes to EA Nederland's Instagram and
+LinkedIn and to James's LinkedIn, modelled on Christians for Impact's weekly
+jobs posts. Everything about it is in English. It is being built in phases; so
+far only the first exists:
+
+1. **Done: pick, draw, preview.** `src/jobboard/social/select.ts` chooses up to
+   seven live roles (rules and reasons at the top of the file), `slides.tsx`
+   draws a cover, one slide per job and a closing slide pointing to
+   `effectiefaltruisme.nl/en/newsletter`, served as 1080×1350 PNGs by
+   `/vacatures/social/slide`. `/review/social` shows next Tuesday's post behind
+   the review sign-in. Nothing is stored or posted.
+2. Captions, a record of past posts (no repeats within four weeks) and a
+   Monday approval email.
+3. Posting to Instagram, then James's LinkedIn, then EA Nederland's LinkedIn
+   once LinkedIn approves the API access.
+
 ### Commands
 
 | Command | What it does |

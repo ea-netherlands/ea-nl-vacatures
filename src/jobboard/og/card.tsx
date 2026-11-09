@@ -15,16 +15,18 @@
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
-/** Mirrors theme/theme.css. Satori has no var(). */
-const TOKENS = {
+/** Mirrors theme/theme.css. Satori has no var(). Also used by ../social/slides. */
+export const TOKENS = {
   bg: '#f6fdfe', // --primary-subtle (ea-teal-50)
   fg: '#09090b', // --fg (black)
-  fgMuted: '#475569', // --fg-muted (slate-600)
+  fgMuted: '#57534e', // --fg-muted (stone-600)
   primaryFg: '#106574', // --primary-fg (ea-teal-700)
   primaryMuted: '#dbf5fa', // --primary-muted (ea-teal-100)
   primaryEmphasized: '#aae8f3', // --primary-emphasized (ea-teal-200)
   white: '#ffffff', // --white
-  border: '#cbd5e1', // --border-emphasized (slate-300)
+  border: '#d6d3d1', // --border-emphasized (stone-300)
+  stone100: '#f5f5f4', // --stone-100, the graph paper's minor lines
+  marker: '#fde68a', // --marker
 } as const
 
 const ASSET_DIR = join(process.cwd(), 'src/jobboard/og')
