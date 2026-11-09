@@ -292,8 +292,8 @@ the first two exist:
    farmed animals alternating. A theme that can't fill five roles falls back to
    a mixed post, and James can switch a week's theme on the page. Every post
    keeps a place for a role done in the Netherlands (on site or hybrid) when
-   one is eligible, and warns when none is. Each post also takes one funding call
-   (grant or funding round) when one fits the week, labelled as funding on its
+   one is eligible, and warns when none is. Funding calls (grants, funding rounds) compete
+   on the same score as jobs, at most one per post, labelled as funding on its
    slide; the cover then says "opportunities" rather than "jobs". Salaries in
    dollars or pounds show in euros ("About €143,000–€223,000 per year") at the
    ECB's daily reference rate (`social/currency.ts`), or unconverted if the ECB

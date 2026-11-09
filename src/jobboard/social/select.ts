@@ -15,13 +15,13 @@
  *   a newcomer can actually win. The first week's preview had none: fresh
  *   vetted roles outscored every way in, so the best one now has a reserved
  *   place.
- * - **One funding call.** The board also carries funding calls ("Seed
- *   Grants", "Funding for Increasing Vaccine Impact"), filed as jobs because
- *   the taxonomy has no other kind. James wants them in (9 Nov 2026). They
- *   score below fresh jobs, so a cap alone let them in only in the thinner
- *   themes; the best one that fits the week now has a reserved place, and one
- *   is the most a post takes, so a week with several new calls doesn't turn
- *   into a grants roundup. They're recognised by title (`isFundingCall`) and labelled as
+ * - **Funding calls on merit, at most one.** The board also carries funding
+ *   calls ("Request for Proposals: Project Tailwind", "Seed Grants"), filed as
+ *   jobs because the taxonomy has no other kind. They compete on the same
+ *   score as jobs and get in when they earn it; one is the most a post takes,
+ *   so a week with several new calls doesn't turn into a grants roundup.
+ *   (A reserved place, tried on 9 Nov 2026, put one in every week; James
+ *   wanted them welcome, not guaranteed, so it was dropped the same day.) They're recognised by title (`isFundingCall`) and labelled as
  *   funding on their slide, in the captions and on the cover ("opportunities",
  *   not "jobs").
  * - **No job closing before the post has had a chance to work.** Each slide
@@ -60,8 +60,7 @@ export const SELECTION = {
   /** A role done in the Netherlands (on site or hybrid) gets a place whenever one is eligible. */
   minLocal: 1,
   maxPerCause: 3,
-  /** One funding call gets a place whenever one fits the week, and one is the most. */
-  minFunding: 1,
+  /** Funding calls compete on merit; one is the most a post takes. */
   maxFunding: 1,
   deadlineMarginDays: 2,
   freshDays: 7,
@@ -229,22 +228,11 @@ export function selectWeeklyJobs(
   let funding = 0
 
   // The reserved places go first, so the limits below can't crowd them out:
-  // the best local role, then the best way in unless the local role is one,
-  // then the best funding call unless one is already in.
+  // the best local role, then the best way in unless the local role is one.
   const local = candidates.filter((c) => isLocal(c.listing)).slice(0, SELECTION.minLocal)
   const routesStillNeeded = Math.max(0, limits.minRoutes - local.filter((c) => c.band === 'routes').length)
   const route = candidates.filter((c) => c.band === 'routes' && !local.includes(c)).slice(0, routesStillNeeded)
-  const fundingStillNeeded = Math.max(
-    0,
-    SELECTION.minFunding - [...local, ...route].filter((c) => isFundingCall(c.listing.title)).length,
-  )
-  const reserved = [
-    ...local,
-    ...route,
-    ...candidates
-      .filter((c) => isFundingCall(c.listing.title) && !local.includes(c) && !route.includes(c))
-      .slice(0, fundingStillNeeded),
-  ]
+  const reserved = [...local, ...route]
   const seen = new Set<string>()
 
   for (const candidate of [...reserved, ...candidates]) {
