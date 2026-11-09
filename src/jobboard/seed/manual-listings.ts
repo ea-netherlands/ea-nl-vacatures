@@ -26,4 +26,23 @@ export const MANUAL_LISTINGS: ManualListing[] = [
     location: 'Remote',
     addedOn: '2026-10-18',
   },
+  {
+    // Not on the board from any source as of 9 November 2026. Europe's first
+    // AI governance incubator: co-founder matching, a two-week sprint in
+    // Brussels, a remote build phase, a London showcase, then a funding
+    // runway (March to August 2027). Paid, at €4,000 a month, and well under
+    // six months of programme, so NL-eligible wherever it is held. Needs the
+    // right to work in Europe; Talos does not sponsor visas.
+    url: 'https://www.talosnetwork.org/talos-incubator-europe',
+    title: 'Talos Incubator Europe: found an AI governance organisation',
+    employerName: 'Talos Network',
+    kind: 'programme',
+    applyUrl: 'https://www.guidedtrack.com/programs/dfepjzo/run',
+    location: 'Remote (Europe), with sprints in Brussels and London',
+    deadline: '2026-12-06',
+    pay: '€4,000 per month',
+    summary:
+      'Incubator for founders of new AI governance organisations in Europe: co-founder matching, ~3 months building full-time on a stipend, then pitching for seed funding.',
+    addedOn: '2026-11-09',
+  },
 ]
