@@ -23,6 +23,7 @@ import { linkedinConfigured } from '@jobboard/social/linkedin'
 import { AUTO_CHANNELS, CHANNEL_TIME, channelPostAt, postingEnabled } from '@jobboard/social/publish'
 import { CHANNEL_LABEL } from '@jobboard/social/store'
 import { connectionInfo } from '@jobboard/social/tokens'
+import { TRACKS, trackLabel } from '@jobboard/social/music'
 import { getListingsByIds, getLiveListings } from '@jobboard/sanity/queries'
 import { postSlides, slidePath } from '@jobboard/social/content'
 import { isLocal, nextPostTime, SELECTION, selectForWeek, type Pick } from '@jobboard/social/select'
@@ -236,7 +237,8 @@ export default async function SocialPreviewPage({
         <p className={s.lead}>
           <strong>{THEMES[theme].label}</strong>, {roles.length} roles. Check the slides and the captions, then approve
           it or skip the week. Approved posts go out on Tuesday: LinkedIn at {hhmm(CHANNEL_TIME.linkedinPersonal)},
-          Instagram at {hhmm(CHANNEL_TIME.instagram)}.
+          Instagram at {hhmm(CHANNEL_TIME.instagram)}. Once it’s on Instagram, add {trackLabel(TRACKS.jobs)} in the app;
+          you’ll get an email with the link.
         </p>
         {stored.fallbackFrom ? (
           <div className={x.warning} role="status">

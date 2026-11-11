@@ -20,6 +20,7 @@ import { publishLinkedInImages } from '../linkedin'
 import { channelPostAt, postingEnabled } from '../publish'
 import { amsterdamDate, CHANNEL_LABEL, type ChannelResult } from '../store'
 import { getToken } from '../tokens'
+import { sendMusicReminder, trackFor } from '../music'
 import { approvers } from '../weekly'
 import { draftFrom, gatherCandidates, rankCandidates, ref, shortlist, type Gathered } from './draft'
 import { explainerSlidePaths } from './slides'
@@ -353,6 +354,9 @@ export async function runExplainerPublish(
             })
       result = { at: now.toISOString(), id: posted.id, url: posted.url }
       act(`posted the explainer to ${label}: ${posted.url ?? posted.id}`)
+      if (channel === 'instagram' && (await sendMusicReminder(approvers(), "Today's explainer", posted.url, trackFor('content')))) {
+        act('mailed the music reminder')
+      }
     } catch (err) {
       const message = (err as Error).message
       result = { at: now.toISOString(), error: message, attempts }

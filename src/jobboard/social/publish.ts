@@ -25,6 +25,7 @@ import { publishInstagramCarousel } from './instagram'
 import { publishLinkedInImages } from './linkedin'
 import { amsterdamDate, CHANNEL_LABEL, getPost, patchPost, type Channel, type ChannelResult } from './store'
 import { getToken, type TokenChannel } from './tokens'
+import { sendMusicReminder, TRACKS } from './music'
 import { approvers } from './weekly'
 
 /** Amsterdam wall-clock time each account posts at, on the post's Tuesday. */
@@ -126,6 +127,9 @@ export async function runSocialPublish(
             })
       results[channel] = { at: now.toISOString(), id: result.id, url: result.url }
       act(`posted to ${label}: ${result.url ?? result.id}`)
+      if (channel === 'instagram') {
+        if (await sendMusicReminder(approvers(), "Today's jobs post", result.url, TRACKS.jobs)) act('mailed the music reminder')
+      }
     } catch (err) {
       const message = (err as Error).message
       results[channel] = { at: now.toISOString(), error: message, attempts }
