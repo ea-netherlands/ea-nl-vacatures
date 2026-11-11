@@ -264,7 +264,7 @@ Voice: plain, warm, honest, sentence case, no emoji, no exclamation marks, no hy
 const CHANNEL_BRIEF: Record<ExplainerChannel, string> = {
   linkedinPersonal: `This one is for James Herbert's own LinkedIn, in British English. James is co-director of EA Netherlands; his network is professionals in the Netherlands.
 
-"caption": in James's first person, warm and direct, as someone sharing an idea he thinks is worth a few minutes. 60 to 150 words. Open with the idea, not with "I came across". Don't invent anything about James: no anecdotes, no opinions he hasn't stated, nothing about people he knows. End by inviting people to swipe through. No hashtags.
+"caption": in James's first person, warm and direct, as someone sharing an idea he thinks is worth a few minutes. 60 to 150 words. Open with the idea, not with "I came across". Don't invent anything about James: no anecdotes, nothing about people he knows, and never what he thinks or felt about the piece ("I found it…", "I thought it was a clarifying way to…", "this changed how I…"). Sharing it is the endorsement; let the idea carry the caption. End by inviting people to swipe through. No hashtags.
 "hashtags": an empty list.`,
   instagram: `This one is for EA Netherlands' Instagram, in Dutch: slides and caption both in Dutch. The followers are people in the Netherlands aged 25 to 44, mostly new to effective altruism.
 
