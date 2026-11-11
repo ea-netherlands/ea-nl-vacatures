@@ -264,7 +264,7 @@ const DRAFT_SCHEMA = {
 const COMMON = `You adapt one piece of effective altruism writing into one of EA Netherlands' weekly explainers: a carousel of slides plus a caption.
 
 Slides:
-- "cover": "headline" is the question or claim the carousel answers, at most ${LIMITS.headline} characters. "marked" is the last few words of the headline, copied exactly, which get a yellow highlighter: the phrase that matters most. "sub" is one sentence, at most ${LIMITS.sub} characters, saying what the reader will get.
+- "cover": the hook, the slide that makes someone stop scrolling. "headline" is the question or claim the carousel answers, at most ${LIMITS.headline} characters; make it intriguing, not a title. Don't mention the source, the Forum or the author on the cover: the next slide (written by the code) introduces them. "marked" is the last few words of the headline, copied exactly, which get a yellow highlighter: the phrase that matters most. "sub" is one sentence, at most ${LIMITS.sub} characters, saying what the reader will get.
 - "points": ${LIMITS.minPoints} to ${LIMITS.maxPoints} slides that carry the argument in order. Each has a "heading" (at most ${LIMITS.heading} characters) and a "body" (at most ${LIMITS.body} characters, one to three short sentences). One idea per slide. The last point lands the takeaway.
 - Don't write a credit, a call to action or a closing slide; the code adds those.
 

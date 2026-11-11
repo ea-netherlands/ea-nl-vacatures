@@ -1,7 +1,11 @@
 /**
  * The weekly explainer's slides: the jobs post's frame (graph paper, logo,
- * pill, dashed footer rule; ../slides.tsx) with a cover, one slide per point
- * and a closing slide that credits the source and offers the monthly email.
+ * pill, dashed footer rule; ../slides.tsx). The cover is the hook. For an
+ * essay from the Forum, the second slide says what the carousel is: an
+ * interesting essay shared on the EA Forum, which essay and by whom (James,
+ * 11 Nov 2026); a reworked CEA post goes straight on. Then one slide per
+ * point, and a closing slide that credits the source and offers the monthly
+ * email.
  *
  * The image URL carries only the date, the account and the slide number,
  * plus a hash of the slide text so an edit shows straight away instead of
@@ -22,12 +26,14 @@ const SITE = 'effectiefaltruisme.nl'
 const COPY = {
   pill: 'Explainer',
   of: 'of',
-  from: (s: SourceRef) =>
-    s.kind === 'instagram'
-      ? 'From the Centre for Effective Altruism'
-      : s.via === 'handbook'
-        ? `From the EA Handbook, by ${s.author}`
-        : `Curated on the EA Forum, by ${s.author}`,
+  cea: 'From the Centre for Effective Altruism',
+  aboutHeading: (s: SourceRef) =>
+    s.via === 'handbook' ? 'An essay from the EA Forum’s handbook' : 'An essay from the EA Forum',
+  thisWeek: (s: SourceRef) => `This week: “${s.title}” by ${s.author}.`,
+  written: (s: SourceRef, now = new Date()) => {
+    const year = Number(s.publishedAt.slice(0, 4))
+    return year && year < now.getFullYear() - 1 ? `Written in ${year}.` : ''
+  },
   deeper: 'Want to go deeper?',
   read: (s: SourceRef) =>
     s.kind === 'forum'
@@ -41,6 +47,7 @@ const COPY = {
 
 export type ExplainerSlideContent =
   | { kind: 'cover'; text: SlideText['cover']; source: SourceRef; count: number }
+  | { kind: 'about'; source: SourceRef; index: number; count: number }
   | { kind: 'point'; point: SlideText['points'][number]; index: number; count: number }
   | { kind: 'close'; channel: ExplainerChannel; source: SourceRef }
 
@@ -52,10 +59,13 @@ export function explainerSlides(post: Slidable, channel: ExplainerChannel): Expl
   const text = item?.slides
   const source = item?.source
   if (!text || !source) return []
-  const count = text.points.length + 2
+  const about = source.kind === 'forum'
+  const first = about ? 3 : 2
+  const count = text.points.length + first
   return [
     { kind: 'cover', text: text.cover, source, count },
-    ...text.points.map((point, i) => ({ kind: 'point' as const, point, index: i + 2, count })),
+    ...(about ? [{ kind: 'about' as const, source, index: 2, count }] : []),
+    ...text.points.map((point, i) => ({ kind: 'point' as const, point, index: i + first, count })),
     { kind: 'close', channel, source },
   ]
 }
@@ -108,8 +118,57 @@ export function ExplainerSlide({ content, logo }: { content: ExplainerSlideConte
       <Frame logo={logo} pill={copy.pill} footer={{ left: SITE, right: <Swipe /> }}>
         <Marked plain={plain} marked={headline.endsWith(marked) ? marked : ''} size={coverSize(headline)} />
         <div style={{ display: 'flex', marginTop: 48, fontSize: 44, lineHeight: 1.35 }}>{sub}</div>
-        <div style={{ display: 'flex', marginTop: 32, fontSize: 34, color: TOKENS.fgMuted }}>
-          {copy.from(content.source)}
+        {content.source.kind === 'instagram' ? (
+          <div style={{ display: 'flex', marginTop: 32, fontSize: 34, color: TOKENS.fgMuted }}>{copy.cea}</div>
+        ) : null}
+      </Frame>
+    )
+  }
+
+  if (content.kind === 'about') {
+    const written = copy.written(content.source)
+    return (
+      <Frame
+        logo={logo}
+        pill={copy.pill}
+        footer={{
+          left: SITE,
+          right: (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 40 }}>
+              <div style={{ display: 'flex', color: TOKENS.fgMuted }}>{`${content.index} ${copy.of} ${content.count}`}</div>
+              <Swipe />
+            </div>
+          ),
+        }}
+      >
+        <div style={{ display: 'flex', fontFamily: 'Sentient', fontWeight: 500, fontSize: 84, lineHeight: 1.1 }}>
+          {copy.aboutHeading(content.source)}
+        </div>
+        <div style={{ display: 'flex', marginTop: 48, fontSize: 44, lineHeight: 1.4, backgroundColor: TOKENS.white }}>
+          {FORUM_ABOUT}
+        </div>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: 24,
+            marginTop: 56,
+            paddingTop: 40,
+            borderTop: `2px dashed ${TOKENS.border}`,
+            fontSize: 42,
+            lineHeight: 1.4,
+            backgroundColor: TOKENS.white,
+          }}
+        >
+          <div style={{ display: 'flex', flexShrink: 0, marginTop: 6 }}>
+            <Glyph name="book" size={48} color={TOKENS.primaryFg} />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
+            <div style={{ display: 'flex' }}>{copy.thisWeek(content.source)}</div>
+            {written ? (
+              <div style={{ display: 'flex', marginTop: 12, fontSize: 34, color: TOKENS.fgMuted }}>{written}</div>
+            ) : null}
+          </div>
         </div>
       </Frame>
     )
@@ -172,20 +231,6 @@ export function ExplainerSlide({ content, logo }: { content: ExplainerSlideConte
       <div style={{ display: 'flex', fontFamily: 'Sentient', fontWeight: 500, fontSize: 96, lineHeight: 1.1 }}>
         {copy.deeper}
       </div>
-      {content.source.kind === 'forum' ? (
-        <div
-          style={{
-            display: 'flex',
-            marginTop: 40,
-            fontSize: 38,
-            lineHeight: 1.4,
-            color: TOKENS.fgMuted,
-            backgroundColor: TOKENS.white,
-          }}
-        >
-          {FORUM_ABOUT}
-        </div>
-      ) : null}
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 24, marginTop: 48, fontSize: 42, lineHeight: 1.4 }}>
         <div style={{ display: 'flex', flexShrink: 0, marginTop: 6 }}>
           <Glyph name="book" size={48} color={TOKENS.primaryFg} />

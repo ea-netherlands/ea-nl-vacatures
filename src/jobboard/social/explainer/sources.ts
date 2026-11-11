@@ -60,7 +60,7 @@ export const sourceKey = (s: Pick<SourceRef, 'kind' | 'id'>) => `${s.kind}:${s.i
  * adapt; the Forum's older classics are all rights reserved.
  */
 export const FORUM_ABOUT =
-  'The EA Forum is the best place online to discuss how best to help others. Each week we adapt one of its curated posts or a chapter of its handbook for newcomers.'
+  'The EA Forum is the best place online to discuss how best to help others. Each week we share an interesting essay from it, summarised in a few slides.'
 
 export const CEA_INSTAGRAM = 'effectivealtruismofficial'
 export const FORUM_LICENCE_FROM = '2022-12-01T00:00:00.000Z'

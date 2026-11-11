@@ -269,9 +269,12 @@ export function ExplainerEditor({
       {slides ? (
         <details className={x.more} open={editable}>
           <summary>Slide text</summary>
-          <p className={s.hint}>The last slide, with the credit and the monthly email, is added for you.</p>
+          <p className={s.hint}>
+            For an essay from the Forum, the slide after the hook (what the Forum is, which essay, by whom) and the last
+            slide (credit and the monthly email) are added for you.
+          </p>
           <div className={x.lang}>
-            <span className={x.pairHead}>Cover</span>
+            <span className={x.pairHead}>Hook (first slide)</span>
             <Field label="Headline" value={slides.cover.headline} limit={LIMIT.headline} readOnly={!editable} onChange={(v) => setCover('headline', v)} />
             <Field
               label="Highlighted end of the headline"
@@ -285,7 +288,7 @@ export function ExplainerEditor({
           {slides.points.map((point, i) => (
             <div key={i} className={x.lang}>
               <span className={x.pairHead}>
-                Slide {i + 2}
+                Slide {i + (item.source?.kind === 'forum' ? 3 : 2)}
                 {editable && slides.points.length > 3 ? (
                   <button
                     className={`${u.btn} ${u.btnGhost} ${u.btnSmall}`}

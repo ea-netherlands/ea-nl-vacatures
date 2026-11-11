@@ -178,12 +178,24 @@ test('slides: cover, one per point, closing; each account from its own explainer
     error: null,
   })
   const post = { postDate: '2026-11-19', linkedinPersonal: item('English', 3), instagram: item('Nederlands', 1) }
+  // A Forum essay: hook, then what this is, then the points.
   assert.deepEqual(
     explainerSlides(post, 'linkedinPersonal').map((s) => s.kind),
+    ['cover', 'about', 'point', 'point', 'point', 'close'],
+  )
+  const points = explainerSlides(post, 'linkedinPersonal').filter((s) => s.kind === 'point')
+  assert.deepEqual(
+    points.map((s) => s.kind === 'point' && `${s.index} of ${s.count}`),
+    ['3 of 6', '4 of 6', '5 of 6'],
+  )
+  // A reworked CEA post goes straight on.
+  const cea = { ...post, linkedinPersonal: { ...post.linkedinPersonal, source: { ...post.linkedinPersonal.source, kind: 'instagram' as const } } }
+  assert.deepEqual(
+    explainerSlides(cea, 'linkedinPersonal').map((s) => s.kind),
     ['cover', 'point', 'point', 'point', 'close'],
   )
   const nl = explainerSlides(post, 'instagram')
-  assert.equal(nl.length, 3)
+  assert.equal(nl.length, 4)
   assert.equal(nl[0].kind === 'cover' && nl[0].source.title, 'Nederlands')
   const paths = explainerSlidePaths(post, 'instagram', 'jpg')
   assert.match(paths[0], /^\/vacatures\/social\/explainer\?d=2026-11-19&c=ig&i=0&v=[0-9a-f]{10}&format=jpg$/)
