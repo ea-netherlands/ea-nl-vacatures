@@ -77,6 +77,7 @@ test('captions get the credit and links from the code, in each language', () => 
   const li = composeCaption('linkedinPersonal', source, { caption: 'An idea.', hashtags: ['ignored'] }, '2026-11-19')
   assert.match(li, /Adapted from “40 hot takes” by Lewis Bollard on the EA Forum \(CC BY 4\.0\)/)
   assert.match(li, /forum\.effectivealtruism\.org\/posts\/a\/t/)
+  assert.match(li, /^An idea\.\n\nThe EA Forum is the best place online to discuss how best to help others\./)
   assert.match(li, /utm_campaign=explainer-2026-11-19/)
   assert.ok(!li.includes('#'))
   const ig = composeCaption(
@@ -85,7 +86,7 @@ test('captions get the credit and links from the code, in each language', () => 
     { caption: 'Een idee.', hashtags: ['#Effectief Altruisme', 'dierenwelzijn'] },
     '2026-11-19',
   )
-  assert.match(ig, /^Een idee\.\n\nGebaseerd op “40 hot takes” van Lewis Bollard/)
+  assert.match(ig, /^Een idee\.\n\nHet EA Forum is de beste plek online[^\n]+\n\nGebaseerd op “40 hot takes” van Lewis Bollard/)
   assert.match(ig, /#effectiefaltruisme #dierenwelzijn$/)
   assert.ok(!ig.includes('http'))
   assert.match(credit({ ...source, kind: 'instagram' }, 'nl'), /@effectivealtruismofficial/)

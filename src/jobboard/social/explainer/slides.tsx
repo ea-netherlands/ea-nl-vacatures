@@ -13,7 +13,7 @@ import { createHash } from 'node:crypto'
 import { TOKENS } from '../../og/card'
 import { NEWSLETTER } from '../content'
 import { Frame, Glyph, Marked, Swipe } from '../slides'
-import type { SourceRef } from './sources'
+import { FORUM_ABOUT, type SourceRef } from './sources'
 import { CHANNEL_FOR_LANG, type ExplainerPost, type Lang, type SlideText } from './store'
 
 export const EXPLAINER_ROUTE = '/vacatures/social/explainer'
@@ -25,7 +25,7 @@ const COPY = {
     swipe: 'Swipe',
     of: 'of',
     from: (s: SourceRef) =>
-      s.kind === 'forum' ? `From the EA Forum, by ${s.author}` : 'From the Centre for Effective Altruism',
+      s.kind === 'forum' ? `Curated on the EA Forum, by ${s.author}` : 'From the Centre for Effective Altruism',
     deeper: 'Want to go deeper?',
     read: (s: SourceRef) =>
       s.kind === 'forum'
@@ -40,7 +40,7 @@ const COPY = {
     swipe: 'Swipe',
     of: 'van',
     from: (s: SourceRef) =>
-      s.kind === 'forum' ? `Van het EA Forum, door ${s.author}` : 'Van het Centre for Effective Altruism',
+      s.kind === 'forum' ? `Uitgelicht op het EA Forum, door ${s.author}` : 'Van het Centre for Effective Altruism',
     deeper: 'Meer weten?',
     read: (s: SourceRef) =>
       s.kind === 'forum'
@@ -185,6 +185,20 @@ export function ExplainerSlide({ content, logo }: { content: ExplainerSlideConte
       <div style={{ display: 'flex', fontFamily: 'Sentient', fontWeight: 500, fontSize: 96, lineHeight: 1.1 }}>
         {copy.deeper}
       </div>
+      {content.source.kind === 'forum' ? (
+        <div
+          style={{
+            display: 'flex',
+            marginTop: 40,
+            fontSize: 38,
+            lineHeight: 1.4,
+            color: TOKENS.fgMuted,
+            backgroundColor: TOKENS.white,
+          }}
+        >
+          {FORUM_ABOUT[content.lang]}
+        </div>
+      ) : null}
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 24, marginTop: 48, fontSize: 42, lineHeight: 1.4 }}>
         <div style={{ display: 'flex', flexShrink: 0, marginTop: 6 }}>
           <Glyph name="book" size={48} color={TOKENS.primaryFg} />

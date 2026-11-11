@@ -44,6 +44,17 @@ export type Candidate = SourceRef & {
 
 export const sourceKey = (s: Pick<SourceRef, 'kind' | 'id'>) => `${s.kind}:${s.id}`
 
+/**
+ * How every Forum explainer introduces the Forum, on the closing slide and in
+ * the caption (James, 11 Nov 2026). "Curated", not "classic": the explainers
+ * draw on the editors' curated posts since December 2022, the ones we may
+ * adapt; the Forum's older classics are all rights reserved.
+ */
+export const FORUM_ABOUT = {
+  en: 'The EA Forum is the best place online to discuss how best to help others. Each week we adapt one of the posts its editors have curated.',
+  nl: 'Het EA Forum is de beste plek online om te bespreken hoe je anderen het best kunt helpen. Elke week bewerken we een van de posts die de redactie heeft uitgelicht.',
+} as const
+
 export const CEA_INSTAGRAM = 'effectivealtruismofficial'
 export const FORUM_LICENCE_FROM = '2022-12-01T00:00:00.000Z'
 
