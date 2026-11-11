@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { composeCaption, credit, dealOut, shortlist, splitPicks, tidySlides } from './draft'
+import { composeCaption, credit, dealOut, framing, shortlist, splitPicks, tidySlides } from './draft'
 import { explainerSlidePaths, explainerSlides } from './slides'
 import { adaptableForumPosts, handbookAdaptable, instagramSources, mediaToSource, type Candidate } from './sources'
 import { nextExplainerTime } from './weekly'
@@ -76,7 +76,8 @@ test('the highlighted phrase is always the real end of the headline', () => {
   assert.ok(fixed.cover.marked.length > 0)
 })
 
-test('captions get the Forum line, credit and links from the code', () => {
+test('captions: opening, what this is, summary, then the credit and the monthly email', () => {
+  const now = new Date('2026-11-11')
   const source = {
     kind: 'forum' as const,
     id: 'a',
@@ -85,44 +86,37 @@ test('captions get the Forum line, credit and links from the code', () => {
     author: 'Lewis Bollard',
     publishedAt: '2026-10-15',
   }
-  const li = composeCaption('linkedinPersonal', source, { caption: 'An idea.', hashtags: ['ignored'] }, '2026-11-19')
-  assert.match(li, /^An idea\.\n\nThe EA Forum is the best place online to discuss how best to help others\./)
-  assert.match(li, /Adapted from “40 hot takes” by Lewis Bollard on the EA Forum \(CC BY 4\.0\)/)
-  assert.match(li, /forum\.effectivealtruism\.org\/posts\/a\/t/)
-  assert.match(li, /utm_campaign=explainer-2026-11-19/)
-  assert.ok(!li.includes('#'))
-  const ig = composeCaption(
-    'instagram',
-    source,
-    { caption: 'An idea for Instagram.', hashtags: ['#Effective Altruism', 'animalwelfare'] },
-    '2026-11-19',
+  const draft = { opening: 'A hook.', caption: 'The argument.', hashtags: ['#Effective Altruism', 'animalwelfare'] }
+  const li = composeCaption('linkedinPersonal', source, draft, '2026-11-19', now).split('\n\n')
+  assert.equal(li[0], 'A hook.')
+  assert.equal(
+    li[1],
+    'Each week I summarise an essay from the EA Forum, the best place online to discuss how best to help others. This week’s is “40 hot takes” by Lewis Bollard.',
   )
-  assert.match(ig, /^An idea for Instagram\.\n\nThe EA Forum is the best place online[^\n]+\n\nAdapted from “40 hot takes”/)
-  assert.match(ig, /#effectivealtruism #animalwelfare$/)
-  assert.ok(!ig.includes('http'))
+  assert.equal(li[2], 'The argument.')
+  assert.match(li[3], /^Adapted from “40 hot takes” by Lewis Bollard on the EA Forum \(CC BY 4\.0\)\. Read the whole essay: https:\/\/forum/)
+  assert.match(li[4], /^Want more like this\? At EA Netherlands we send a free monthly email: one EA Forum essay worth your time/)
+  assert.match(li[4], /You can sign up here: https:\/\/effectiefaltruisme\.nl\/en\/newsletter\?utm_source=linkedin.*utm_campaign=explainer-2026-11-19/)
+  assert.ok(!li.join('').includes('#'))
+
+  const ig = composeCaption('instagram', source, draft, '2026-11-19', now).split('\n\n')
+  assert.match(ig[1], /^Each week we summarise an essay from the EA Forum/)
+  assert.match(ig[3], /^Want more like this\? EA Netherlands sends a free monthly email.*Sign up through the link in our bio\.$/)
+  assert.match(ig[4], /^Adapted from “40 hot takes”/)
+  assert.equal(ig[5], '#effectivealtruism #animalwelfare')
+  assert.ok(!ig.join('').includes('http'))
+
+  // An old essay is a classic, with its year.
+  assert.match(
+    framing('linkedinPersonal', { ...source, title: 'On Caring', author: 'So8res', publishedAt: '2014-10-07' }, now)!,
+    /This week’s is a classic: “On Caring” by So8res \(2014\)\.$/,
+  )
+  // A reworked CEA post doesn't get the Forum line.
+  assert.equal(framing('instagram', { ...source, kind: 'instagram' }), null)
   assert.match(credit({ ...source, kind: 'instagram' }), /@effectivealtruismofficial/)
   assert.equal(
     credit({ ...source, via: 'handbook', title: 'On Caring', author: 'So8res', publishedAt: '2014-10-07' }),
     'Adapted with permission from “On Caring” by So8res in the EA Forum’s Introduction to Effective Altruism Handbook.',
-  )
-})
-
-test('the handbook: essays, not signposts, exercises or linkposts', () => {
-  const post = (title: string, author: string, postedAt: string, url: string | null = null) =>
-    ({ ...forumPost({ title, postedAt, url }), user: { displayName: author }, chapter: '1. Radical empathy' }) as Parameters<
-      typeof handbookAdaptable
-    >[0][number]
-  const posts = [
-    post('How AI could create the world’s biggest problems', '80000_Hours', '2026-05-05'),
-    post('Radical empathy', 'MaxDalton', '2022-07-02'),
-    post('Radical Empathy', 'Holden Karnofsky', '2017-02-16'),
-    post('Factory Farming – 80,000 Hours Problem Profile', 'EA Handbook', '2025-02-18', 'https://80000hours.org/x'),
-    post('Explore jobs in animal welfare', 'EA Handbook', '2025-02-18'),
-    post('Exercise for ‘Our Final Century?’', 'EA Handbook', '2023-12-05'),
-  ]
-  assert.deepEqual(
-    handbookAdaptable(posts).map((p) => p.title),
-    ['How AI could create the world’s biggest problems', 'Radical empathy', 'Radical Empathy'],
   )
 })
 

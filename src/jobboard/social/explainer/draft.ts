@@ -25,10 +25,11 @@ import {
   fetchImages,
   forumCandidates,
   ceaSourcesEnabled,
-  FORUM_ABOUT,
   forumPostText,
   handbookCandidates,
   isCcBy,
+  isClassic,
+  NEWSLETTER_PITCH,
   instagramSources,
   sourceKey,
   type Candidate,
@@ -252,9 +253,10 @@ const SLIDES_SCHEMA = {
 const DRAFT_SCHEMA = {
   type: 'object',
   additionalProperties: false,
-  required: ['slides', 'caption', 'hashtags', 'flags'],
+  required: ['slides', 'opening', 'caption', 'hashtags', 'flags'],
   properties: {
     slides: SLIDES_SCHEMA,
+    opening: { type: 'string' },
     caption: { type: 'string' },
     hashtags: { type: 'array', items: { type: 'string' } },
     flags: { type: 'array', items: { type: 'string' } },
@@ -278,24 +280,26 @@ Faithfulness:
 
 "flags": short notes for James, in English, about anything to check before approving: figures you couldn't verify from the slides, US-specific numbers, claims that may have changed since publication, anything you simplified a lot. Empty if there is nothing.
 
-The caption is body text only: the code appends a line introducing the EA Forum, the credit, the links and any hashtags, so don't describe the Forum or credit the author yourself. Never write a URL.
+The caption comes in two parts, \"opening\" and \"caption\"; the code adds the line saying what the post is, the credit, the links, the newsletter and any hashtags, so don't describe the Forum, credit the author or mention the newsletter yourself. Never write a URL.
 
 Voice: plain, warm, honest, sentence case, no emoji, no exclamation marks, no hype.`
 
 const CHANNEL_BRIEF: Record<ExplainerChannel, string> = {
   linkedinPersonal: `This one is for James Herbert's own LinkedIn, in British English. James is co-director of EA Netherlands; his network is professionals in the Netherlands.
 
-"caption": in James's first person, warm and direct, as someone sharing an idea he thinks is worth a few minutes. 60 to 150 words. Open with the idea, not with "I came across". Don't invent anything about James: no anecdotes, nothing about people he knows, and never what he thinks or felt about the piece ("I found it…", "I thought it was a clarifying way to…", "this changed how I…"). Sharing it is the endorsement; let the idea carry the caption. End by inviting people to swipe through. No hashtags.
+"opening": one or two short sentences that open the post and show before LinkedIn's "see more": the idea itself, stated so it makes people want to read on. Not "I came across", and don't mention the Forum, the author or that this is a summary.
+"caption": the rest, in James's first person, warm and direct. 50 to 120 words: what the essay argues, in plain words. Don't introduce the series, the Forum or the author (the code puts a line between "opening" and "caption" saying that each week James summarises an essay from the EA Forum, and which one this is), and don't mention the newsletter (the code adds it). Don't invent anything about James: no anecdotes, nothing about people he knows, and never what he thinks or felt about the piece ("I found it…", "I thought it was a clarifying way to…", "this changed how I…"). Sharing it is the endorsement; let the idea carry the caption. End by inviting people to swipe through the slides. No hashtags.
 "hashtags": an empty list.`,
   instagram: `This one is for EA Netherlands' Instagram, in British English: plain English that Dutch readers with good but not native English follow easily (short sentences, everyday words, no idioms). The followers are people in the Netherlands aged 25 to 44, mostly new to effective altruism.
 
-"caption": in EA Netherlands' voice (we/you, plain and warm). 40 to 120 words. End by pointing to the slides.
+"opening": one or two short sentences that open the post: the idea itself, stated so it makes people want to read on. Don't mention the Forum, the author or that this is a summary.
+"caption": the rest, in EA Netherlands' voice (we/you, plain and warm). 30 to 100 words: what the essay argues, in plain words. Don't introduce the series, the Forum or the author (the code adds a line saying that each week we summarise an essay from the EA Forum, and which one), and don't mention the newsletter (the code adds it). End by pointing to the slides.
 "hashtags": three to five lowercase hashtags without "#", as people in the Netherlands would use them (e.g. "effectivealtruism", "effectiefaltruisme", "animalwelfare").`,
 }
 
 export type Draft = { slides: SlideText; caption: string; flags: string[] }
 
-type ModelDraft = { slides: SlideText; caption: string; hashtags: string[]; flags: string[] }
+type ModelDraft = { slides: SlideText; opening: string; caption: string; hashtags: string[]; flags: string[] }
 
 /** Keeps the marked phrase a real ending of the headline, so the slide never highlights text that isn't there. */
 export function tidySlides(s: SlideText): SlideText {
@@ -327,35 +331,57 @@ export function credit(source: SourceRef): string {
     : `Adapted with permission from “${source.title}” by ${source.author} ${where}.`
 }
 
-/** The finished caption: the model's text, then the credit (and on LinkedIn the links). */
+/** Says what the post is: one of the weekly Forum summaries, and which essay. Null for CEA's posts. */
+export function framing(channel: ExplainerChannel, source: SourceRef, now = new Date()): string | null {
+  if (source.kind !== 'forum') return null
+  const who = channel === 'linkedinPersonal' ? 'I summarise' : 'we summarise'
+  const where = source.via === 'handbook' ? 'from the EA Forum’s handbook for newcomers' : 'from the EA Forum'
+  const classic = isClassic(source, now)
+  const essay = `“${source.title}” by ${source.author}${classic ? ` (${source.publishedAt.slice(0, 4)})` : ''}`
+  return (
+    `Each week ${who} an essay ${where}, the best place online to discuss how best to help others. ` +
+    `This week’s is ${classic ? 'a classic: ' : ''}${essay}.`
+  )
+}
+
+/** The monthly email, explained: who sends it, what's in it, how to get it. */
+export function newsletterCall(channel: ExplainerChannel, postDate: string): string {
+  if (channel === 'instagram') return `Want more like this? ${NEWSLETTER_PITCH} Sign up through the link in our bio.`
+  const url = new URL(NEWSLETTER_URL)
+  url.searchParams.set('utm_source', 'linkedin')
+  url.searchParams.set('utm_medium', 'social')
+  url.searchParams.set('utm_campaign', `explainer-${postDate}`)
+  url.searchParams.set('utm_content', 'james')
+  return `Want more like this? ${NEWSLETTER_PITCH.replace('EA Netherlands sends', 'At EA Netherlands we send')} You can sign up here: ${url}`
+}
+
+/**
+ * The finished caption. The model writes the opening and the summary; the
+ * code puts in what the post is, the credit, the link and the newsletter.
+ */
 export function composeCaption(
   channel: ExplainerChannel,
   source: SourceRef,
-  draft: Pick<ModelDraft, 'caption' | 'hashtags'>,
+  draft: Pick<ModelDraft, 'opening' | 'caption' | 'hashtags'>,
   postDate: string,
+  now = new Date(),
 ): string {
+  const parts = [draft.opening.trim(), framing(channel, source, now), draft.caption.trim()]
   if (channel === 'linkedinPersonal') {
-    const newsletter = new URL(NEWSLETTER_URL)
-    newsletter.searchParams.set('utm_source', 'linkedin')
-    newsletter.searchParams.set('utm_medium', 'social')
-    newsletter.searchParams.set('utm_campaign', `explainer-${postDate}`)
-    newsletter.searchParams.set('utm_content', 'james')
-    return [
-      draft.caption.trim(),
-      ...(source.kind === 'forum' ? [FORUM_ABOUT] : []),
-      `${credit(source)} ${source.kind === 'forum' ? 'Read the whole post' : 'The original'}: ${source.url}`,
-      `One EA Forum post worth your time, plus jobs and events in the Netherlands, once a month: ${newsletter}`,
-    ].join('\n\n')
+    parts.push(
+      `${credit(source)} ${source.kind === 'forum' ? 'Read the whole essay' : 'The original'}: ${source.url}`,
+      newsletterCall(channel, postDate),
+    )
+  } else {
+    const tags = draft.hashtags
+      .map((h) => h.replace(/^#/, '').replace(/\s+/g, '').toLowerCase())
+      .filter(Boolean)
+      .slice(0, 5)
+      .map((h) => `#${h}`)
+      .join(' ')
+    parts.push(newsletterCall(channel, postDate), credit(source), tags)
   }
-  const tags = draft.hashtags
-    .map((h) => h.replace(/^#/, '').replace(/\s+/g, '').toLowerCase())
-    .filter(Boolean)
-    .slice(0, 5)
-    .map((h) => `#${h}`)
-    .join(' ')
-  return [draft.caption.trim(), source.kind === 'forum' ? FORUM_ABOUT : '', credit(source), tags]
-    .filter(Boolean)
-    .join('\n\n')
+  return parts.filter(Boolean).join('\n\n')
 }
 
 /** Writes one account's slides and caption from one source. */

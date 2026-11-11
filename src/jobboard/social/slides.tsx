@@ -328,11 +328,22 @@ export function Slide({ content, logo }: { content: SlideContent; logo: string }
       >
         Get jobs like these in your inbox, once a month
       </div>
-      <div style={{ display: 'flex', marginTop: 48, fontSize: 44, lineHeight: 1.4, color: TOKENS.fgMuted }}>
-        New jobs and programmes, events across the Netherlands and one EA Forum post worth your time.
+      <div style={{ display: 'flex', marginTop: 48, fontSize: 44, lineHeight: 1.4, backgroundColor: TOKENS.white }}>
+        EA Netherlands sends a free monthly email: new jobs and programmes, events across the Netherlands, and one EA
+        Forum essay worth your time.
       </div>
-      <div style={{ display: 'flex', marginTop: 56, fontSize: 44, fontWeight: 600 }}>
-        It’s free, and you can unsubscribe any time.
+      <div
+        style={{
+          display: 'flex',
+          marginTop: 40,
+          fontSize: 42,
+          lineHeight: 1.35,
+          fontWeight: 600,
+          color: TOKENS.primaryFg,
+          backgroundColor: TOKENS.white,
+        }}
+      >
+        Sign up at the address below. It’s free, and you can unsubscribe any time.
       </div>
     </Frame>
   )
