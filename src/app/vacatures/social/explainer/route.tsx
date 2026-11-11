@@ -3,7 +3,7 @@
  * a PNG, or a JPEG with `format=jpg` for Instagram. Public for the same reason
  * as the jobs post's slides: Instagram and LinkedIn fetch them by URL.
  *
- * `d` (Thursday's date), `l` (en or nl) and `i` (slide number) pick the slide;
+ * `d` (Thursday's date), `c` (li or ig, the account) and `i` (slide number) pick the slide;
  * the text comes from the stored post. `v` is the slide text's hash, only there
  * so an edit gets a fresh URL past the CDN cache.
  */
@@ -13,7 +13,7 @@ import sharp from 'sharp'
 import { loadAssets } from '@jobboard/og/card'
 import { SLIDE_SIZE } from '@jobboard/social/content'
 import { ExplainerSlide, explainerSlides } from '@jobboard/social/explainer/slides'
-import { getExplainer } from '@jobboard/social/explainer/store'
+import { CHANNEL_CODE, EXPLAINER_CHANNELS, getExplainer } from '@jobboard/social/explainer/store'
 
 export const runtime = 'nodejs'
 
@@ -22,13 +22,13 @@ const CACHE = 'public, max-age=300, s-maxage=3600, stale-while-revalidate=86400'
 export async function GET(request: Request) {
   const params = new URL(request.url).searchParams
   const date = params.get('d') ?? ''
-  const lang = params.get('l')
+  const channel = EXPLAINER_CHANNELS.find((c) => CHANNEL_CODE[c] === params.get('c'))
   const index = Number(params.get('i'))
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || (lang !== 'en' && lang !== 'nl') || !Number.isInteger(index)) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !channel || !Number.isInteger(index)) {
     return new Response('Not found', { status: 404 })
   }
   const [post, { fonts, logo }] = await Promise.all([getExplainer(date).catch(() => null), loadAssets()])
-  const content = post ? explainerSlides(post, lang)[index] : undefined
+  const content = post ? explainerSlides(post, channel)[index] : undefined
   if (!content) return new Response('Not found', { status: 404 })
 
   const png = new ImageResponse(<ExplainerSlide content={content} logo={logo} />, { ...SLIDE_SIZE, fonts })

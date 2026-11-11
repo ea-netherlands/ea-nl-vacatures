@@ -4,7 +4,7 @@
  * Wednesday 11:30: pick a source for each account and draft Thursday's two
  * explainers, then mail James a link to /review/social/explainer. Thursday,
  * hourly: post what he approved, in English on his LinkedIn at 09:00 and in
- * Dutch on EA Nederland's Instagram at 19:00 (the same times as the jobs post,
+ * English on EA Nederland's Instagram at 19:00 (the same times as the jobs post,
  * so each account keeps one rhythm). The two never share a source.
  *
  * The same switch as the jobs post (SOCIAL_POSTING) holds everything back,
@@ -26,7 +26,6 @@ import { explainerSlidePaths } from './slides'
 import { sourceKey } from './sources'
 import {
   EXPLAINER_CHANNELS,
-  EXPLAINER_LANG,
   getExplainer,
   patchItem,
   saveExplainer,
@@ -206,7 +205,14 @@ export type ExplainerReport = { postDate: string; status: string; source: string
 
 /** The Wednesday cron. */
 export async function runWeeklyExplainer(
-  options: { dryRun?: boolean; force?: boolean; onLog?: (line: string) => void } = {},
+  options: {
+    dryRun?: boolean
+    force?: boolean
+    /** Redraft just this account (with `force`), from `source` if given. */
+    channel?: ExplainerChannel
+    source?: string
+    onLog?: (line: string) => void
+  } = {},
 ): Promise<ExplainerReport> {
   const log = (line: string) => options.onLog?.(line)
   const postAt = nextExplainerTime()
@@ -231,7 +237,12 @@ export async function runWeeklyExplainer(
     }
   }
 
-  const { post, changed } = await draftExplainer({ force: options.force, onLog: options.onLog })
+  const { post, changed } = await draftExplainer({
+    force: options.force,
+    channel: options.channel,
+    source: options.source,
+    onLog: options.onLog,
+  })
   const report: ExplainerReport = {
     postDate,
     status: changed ? 'drafted' : 'unchanged',
@@ -248,7 +259,7 @@ export async function runWeeklyExplainer(
   const day = longDay(postAt)
   const describe = (c: ExplainerChannel) => {
     const item = post[c]
-    const where = c === 'linkedinPersonal' ? 'For your LinkedIn, in English' : "For EA Netherlands' Instagram, in Dutch"
+    const where = c === 'linkedinPersonal' ? 'For your LinkedIn' : "For EA Netherlands' Instagram"
     if (!item?.slides || !item.source) return [`${where}: couldn't be drafted. ${item?.error ?? ''}`.trim(), '']
     const from =
       item.source.kind === 'forum' ? `by ${item.source.author} on the EA Forum` : 'from the Centre for Effective Altruism'
@@ -264,7 +275,7 @@ export async function runWeeklyExplainer(
     '',
     ...describe('linkedinPersonal'),
     ...describe('instagram'),
-    `Check them (especially the Dutch), swap either for another suggestion, and approve each one: ${reviewLink()}`,
+    `Check them, swap either for another suggestion, and approve each one: ${reviewLink()}`,
     '',
     'Nothing is posted until you approve it. The link signs you in for a week, so please do not forward this mail.',
   ]
@@ -318,12 +329,11 @@ export async function runExplainerPublish(
       continue
     }
     const attempts = (done?.attempts ?? 0) + 1
-    const lang = EXPLAINER_LANG[channel]
     let result: ChannelResult
     try {
       const token = await getToken(channel)
       if (!token) throw new Error(`${label} is not connected`)
-      const urls = explainerSlidePaths(post, lang, channel === 'instagram' ? 'jpg' : 'png').map((p) => `${PUBLIC_ORIGIN}${p}`)
+      const urls = explainerSlidePaths(post, channel, channel === 'instagram' ? 'jpg' : 'png').map((p) => `${PUBLIC_ORIGIN}${p}`)
       const posted =
         channel === 'instagram'
           ? await publishInstagramCarousel({

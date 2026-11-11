@@ -6,7 +6,8 @@
  *
  * Each account gets its own explainer from its own source (James, 11 Nov
  * 2026), so someone who follows both doesn't see the same carousel twice: one
- * in English for James's LinkedIn, one in Dutch for EA Nederland's Instagram.
+ * for James's LinkedIn, one for EA Nederland's Instagram. Both in English
+ * (James, 11 Nov 2026: he can't review Dutch with confidence).
  * Each has its own status (draft → approved → posted, or skipped), so one can
  * go out while the other is skipped.
  */
@@ -15,13 +16,11 @@ import { writeClient } from '../../sanity/client'
 import type { ChannelResult, PostStatus } from '../store'
 import { sourceKey, type SourceRef } from './sources'
 
-export type Lang = 'en' | 'nl'
-
-/** The accounts an explainer goes to, and in which language. */
+/** The accounts an explainer goes to. */
 export type ExplainerChannel = 'linkedinPersonal' | 'instagram'
 export const EXPLAINER_CHANNELS: ExplainerChannel[] = ['linkedinPersonal', 'instagram']
-export const EXPLAINER_LANG: Record<ExplainerChannel, Lang> = { linkedinPersonal: 'en', instagram: 'nl' }
-export const CHANNEL_FOR_LANG: Record<Lang, ExplainerChannel> = { en: 'linkedinPersonal', nl: 'instagram' }
+/** Short forms for slide URLs. */
+export const CHANNEL_CODE: Record<ExplainerChannel, string> = { linkedinPersonal: 'li', instagram: 'ig' }
 export const EXPLAINER_LIMIT: Record<ExplainerChannel, number> = { linkedinPersonal: 3000, instagram: 2200 }
 
 export const isExplainerChannel = (v: unknown): v is ExplainerChannel => v === 'linkedinPersonal' || v === 'instagram'

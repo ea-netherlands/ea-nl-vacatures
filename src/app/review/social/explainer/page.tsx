@@ -1,6 +1,6 @@
 /**
  * The coming Thursday's two explainers, one per account, each from its own
- * source: English for James's LinkedIn, Dutch for EA Nederland's Instagram.
+ * source, both in English: one for James's LinkedIn, one for EA Nederland's Instagram.
  * Each has its source, slides, caption and decision. The accounts are
  * connected on /review/social; this page uses the same ones.
  */
@@ -14,9 +14,8 @@ import u from '@jobboard/components/ui.module.css'
 import { ExplainerEditor, ExplainerFirstDraft, type ExplainerItemView } from '@jobboard/components/ExplainerEditor'
 import { isReviewConfigured, issueToken, LINK_TTL_MS, SESSION_COOKIE, verifyToken } from '@jobboard/review/auth'
 import { explainerSlidePaths } from '@jobboard/social/explainer/slides'
-import { instagramSourceEnabled, sourceKey, type SourceRef } from '@jobboard/social/explainer/sources'
+import { ceaSourcesEnabled, sourceKey, type SourceRef } from '@jobboard/social/explainer/sources'
 import {
-  EXPLAINER_LANG,
   getExplainer,
   type ExplainerChannel,
   type ExplainerItem,
@@ -53,12 +52,12 @@ function Frame({ children }: { children: React.ReactNode }) {
 }
 
 const HEADING: Record<ExplainerChannel, string> = {
-  linkedinPersonal: 'For your LinkedIn, in English',
-  instagram: 'For EA Netherlands’ Instagram, in Dutch',
+  linkedinPersonal: 'For your LinkedIn',
+  instagram: 'For EA Netherlands’ Instagram',
 }
 
 function Strip({ post, channel }: { post: ExplainerPost; channel: ExplainerChannel }) {
-  const paths = explainerSlidePaths(post, EXPLAINER_LANG[channel])
+  const paths = explainerSlidePaths(post, channel)
   if (!paths.length) return null
   return (
     <ol className={x.strip}>
@@ -205,10 +204,10 @@ export default async function ExplainerPage() {
       ) : null}
       <h1 className={s.title}>The explainers for {day}</h1>
       <p className={s.lead}>
-        Two explainers, each from its own source so nobody who follows both accounts sees the same one twice: one in
-        English for your LinkedIn, one in Dutch for EA Netherlands’ Instagram. Sources are curated EA Forum posts
-        {instagramSourceEnabled() ? ' and the Centre for Effective Altruism’s Instagram' : ''}. Approve or skip each
-        one on its own.
+        Two explainers in English, each from its own source so nobody who follows both accounts sees the same one twice:
+        one for your LinkedIn, one for EA Netherlands’ Instagram. Sources are curated EA Forum posts and the EA Handbook
+        {ceaSourcesEnabled() ? ', plus the Centre for Effective Altruism’s Instagram' : ''}. Approve or skip each one
+        on its own.
       </p>
       {!postingEnabled() ? (
         <div className={x.warning} role="status">

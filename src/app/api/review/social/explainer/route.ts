@@ -10,19 +10,17 @@ import { NextResponse } from 'next/server'
 import { SESSION_COOKIE, verifyToken } from '@jobboard/review/auth'
 import { LIMITS, tidySlides } from '@jobboard/social/explainer/draft'
 import {
-  EXPLAINER_LANG,
   EXPLAINER_LIMIT,
   getExplainer,
   isExplainerChannel,
   patchItem,
-  type Lang,
   type SlideText,
 } from '@jobboard/social/explainer/store'
 import { draftExplainer, nextExplainerTime } from '@jobboard/social/explainer/weekly'
 import { amsterdamDate } from '@jobboard/social/store'
 
 export const dynamic = 'force-dynamic'
-// Drafting reads a whole Forum post and writes both languages in one call.
+// Drafting reads a whole Forum post and writes the explainer in one call.
 export const maxDuration = 300
 
 const fail = (error: string, status = 400) => NextResponse.json({ error }, { status })
@@ -30,7 +28,7 @@ const fail = (error: string, status = 400) => NextResponse.json({ error }, { sta
 const str = (v: unknown) => (typeof v === 'string' ? v : '')
 
 /** Checks and cleans the slide text the editor sends. */
-function readSlides(input: unknown, lang: Lang): SlideText | string {
+function readSlides(input: unknown): SlideText | string {
   const raw = input as { cover?: Record<string, unknown>; points?: unknown[] } | null
   if (!raw?.cover || !Array.isArray(raw.points)) return 'The slides are missing.'
   const text: SlideText = {
@@ -40,13 +38,12 @@ function readSlides(input: unknown, lang: Lang): SlideText | string {
       return { heading: str(point.heading), body: str(point.body) }
     }),
   }
-  const name = lang === 'en' ? 'English' : 'Dutch'
-  if (!text.cover.headline.trim()) return `The ${name} cover needs a headline.`
-  if (text.cover.headline.length > LIMITS.headline + 20) return `The ${name} headline is too long for the slide.`
-  if (text.points.length < LIMITS.minPoints) return `The ${name} explainer needs at least ${LIMITS.minPoints} points.`
+  if (!text.cover.headline.trim()) return 'The cover needs a headline.'
+  if (text.cover.headline.length > LIMITS.headline + 20) return 'The headline is too long for the slide.'
+  if (text.points.length < LIMITS.minPoints) return `The explainer needs at least ${LIMITS.minPoints} points.`
   for (const p of text.points) {
     if (p.heading.length > LIMITS.heading + 20 || p.body.length > LIMITS.body + 60) {
-      return `A ${name} slide has more text than fits. Shorten it.`
+      return 'A slide has more text than fits. Shorten it.'
     }
   }
   return tidySlides(text)
@@ -89,7 +86,7 @@ export async function POST(request: Request) {
     switch (body.action) {
       case 'save': {
         if (item.status !== 'draft') return fail('Reopen the explainer to edit it.', 409)
-        const slides = readSlides(body.slides, EXPLAINER_LANG[channel])
+        const slides = readSlides(body.slides)
         if (typeof slides === 'string') return fail(slides)
         const caption = str(body.caption)
         if (!caption.trim()) return fail('The caption needs some text.')

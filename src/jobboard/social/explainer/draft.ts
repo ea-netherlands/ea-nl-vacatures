@@ -12,10 +12,9 @@
  * shortlist separately for James's LinkedIn network and for EA Nederland's
  * Instagram followers, and the two never share a source.
  *
- * Drafting: one call per account writes its slides and caption in its own
- * language, English for LinkedIn and Dutch for Instagram. A Forum essay is
- * summarised; a CEA post is read off its slide images and kept close to CEA's
- * own words. Facts come only from the source,
+ * Drafting: one call per account writes its slides and caption, in English for
+ * both (James, 11 Nov 2026). A Forum essay is summarised; a CEA post is read
+ * off its slide images and kept close to CEA's own words. Facts come only from the source,
  * and anything a reader in the Netherlands could trip on (a US-only figure, a
  * date that will age) comes back as a flag for James instead of being changed
  * silently. The credit and the link are added by the code, never the model.
@@ -25,16 +24,18 @@ import { DRAFTING_MODEL, structuredCall } from '../../lib/anthropic'
 import {
   fetchImages,
   forumCandidates,
+  ceaSourcesEnabled,
   FORUM_ABOUT,
   forumPostText,
-  instagramSourceEnabled,
+  handbookCandidates,
+  isCcBy,
   instagramSources,
   sourceKey,
   type Candidate,
   type InstagramSource,
   type SourceRef,
 } from './sources'
-import type { ExplainerChannel, Lang, SlideText, Suggestion } from './store'
+import type { ExplainerChannel, SlideText, Suggestion } from './store'
 
 /** Slide text budgets; the renderer shrinks type to fit these, not more. */
 export const LIMITS = {
@@ -48,19 +49,28 @@ export const LIMITS = {
 
 const SHORTLIST = 14
 
-/** Highest score first, newest first among equals; Forum and Instagram interleaved. */
-export function shortlist(candidates: Candidate[], used: Set<string>, size = SHORTLIST): Candidate[] {
+type Pool = 'recent' | 'instagram' | 'handbook' | 'classic'
+const POOLS: Pool[] = ['recent', 'instagram', 'handbook', 'classic']
+const RECENT_DAYS = 2 * 365
+
+/** Which pool a candidate competes in, so old high-karma classics can't crowd out this year's posts. */
+export function poolOf(c: Candidate, now = new Date()): Pool {
+  if (c.kind === 'instagram') return 'instagram'
+  if (c.via === 'handbook') return 'handbook'
+  return now.getTime() - new Date(c.publishedAt).getTime() < RECENT_DAYS * 864e5 ? 'recent' : 'classic'
+}
+
+/** Highest score first within each pool (newest first among equals), the pools taken in turn. */
+export function shortlist(candidates: Candidate[], used: Set<string>, size = SHORTLIST, now = new Date()): Candidate[] {
   const fresh = candidates.filter((c) => !used.has(sourceKey(c)))
-  const byKind = (kind: Candidate['kind']) =>
+  const queues = POOLS.map((pool) =>
     fresh
-      .filter((c) => c.kind === kind)
-      .sort((a, b) => b.score - a.score || b.publishedAt.localeCompare(a.publishedAt))
-  const forum = byKind('forum')
-  const insta = byKind('instagram')
+      .filter((c) => poolOf(c, now) === pool)
+      .sort((a, b) => b.score - a.score || b.publishedAt.localeCompare(a.publishedAt)),
+  )
   const out: Candidate[] = []
-  while (out.length < size && (forum.length || insta.length)) {
-    if (forum.length) out.push(forum.shift()!)
-    if (insta.length && out.length < size) out.push(insta.shift()!)
+  while (out.length < size && queues.some((q) => q.length)) {
+    for (const q of queues) if (q.length && out.length < size) out.push(q.shift()!)
   }
   return out
 }
@@ -70,12 +80,21 @@ export type Gathered = { candidates: Candidate[]; instagram: InstagramSource[]; 
 /** Everything that could be used this week, and what went wrong getting it. */
 export async function gatherCandidates(options: { instagramToken?: string | null } = {}): Promise<Gathered> {
   const problems: string[] = []
-  const forum = await forumCandidates().catch((err) => {
-    problems.push((err as Error).message)
-    return [] as Candidate[]
-  })
+  const [curated, handbook] = await Promise.all([
+    forumCandidates().catch((err) => {
+      problems.push((err as Error).message)
+      return [] as Candidate[]
+    }),
+    handbookCandidates().catch((err) => {
+      problems.push(`Handbook: ${(err as Error).message}`)
+      return [] as Candidate[]
+    }),
+  ])
+  // A curated post that is also in the handbook counts once, as the handbook's.
+  const inHandbook = new Set(handbook.map((c) => c.id))
+  const forum = [...handbook, ...curated.filter((c) => !inHandbook.has(c.id))]
   let instagram: InstagramSource[] = []
-  if (instagramSourceEnabled()) {
+  if (ceaSourcesEnabled()) {
     if (!options.instagramToken) problems.push('CEA’s Instagram is switched on, but Instagram isn’t connected.')
     else
       instagram = await instagramSources(options.instagramToken).catch((err) => {
@@ -88,16 +107,16 @@ export async function gatherCandidates(options: { instagramToken?: string | null
 
 const PICK_SYSTEM = `You choose the sources for EA Netherlands' weekly explainers: short carousels that each explain one idea from effective altruism. There are two each week, from two different sources:
 - "linkedinPersonal": in English on James Herbert's own LinkedIn (he is co-director of EA Netherlands). His network: professionals in the Netherlands, many thinking about their career, their giving or their organisation's work.
-- "instagram": in Dutch on EA Netherlands' Instagram. Its followers: people in the Netherlands aged 25 to 44, curious about doing good effectively, mostly new to effective altruism.
+- "instagram": on EA Netherlands' Instagram, also in English. Its followers: people in the Netherlands aged 25 to 44, curious about doing good effectively, mostly new to effective altruism.
 
-You get a shortlist of candidates: curated EA Forum posts and posts from the Centre for Effective Altruism's Instagram. For each account, rank its best four. A good pick:
+You get a shortlist of candidates: curated EA Forum posts, posts from the EA Forum's Introduction to Effective Altruism Handbook (written for newcomers, so often the most accessible), and posts from the Centre for Effective Altruism's Instagram. For each account, rank its best four. A good pick:
 - explains an idea, a finding or an argument that someone new to effective altruism can follow in about six slides, without the Forum's jargon;
-- still reads well months from now: not an announcement, a deadline, an event, a job ad, a fundraiser or a reply to another post;
+- still holds up today: not an announcement, a deadline, an event, a job ad, a fundraiser or a reply to another post;
 - suits that account's audience;
 - isn't on the same topic as the recent explainers listed, so the weeks rotate between causes and ideas;
 - for Forum posts: a post whose core can be stated fairly in a few slides. Avoid heavy technical or internal debates (grant-sizing formulas, model critiques that need the original to make sense).
 
-The two accounts' first picks must be different sources, and preferably on different topics. Engagement (score) is a hint about what resonates, not the deciding factor.
+The two accounts' first picks must be different sources, and preferably on different topics. Older posts are welcome, and the Forum's classics often make the best explainers, but skip any whose facts or framing have clearly dated. Engagement (score) is a hint about what resonates, not the deciding factor.
 
 For each pick give its id exactly as given, a one-sentence reason addressed to James ("A clear case for ..."), and a short topic label in English sentence case ("Farmed animal welfare", "AI safety", "Global health", "How to choose a career").`
 
@@ -170,7 +189,7 @@ export async function rankCandidates(list: Candidate[], recentTopics: string[]):
       JSON.stringify(
         list.map((c) => ({
           id: sourceKey(c),
-          source: c.kind === 'forum' ? 'EA Forum (curated)' : 'CEA on Instagram',
+          source: c.via === 'handbook' ? 'EA Handbook' : c.kind === 'forum' ? 'EA Forum (curated)' : 'CEA on Instagram',
           title: c.title,
           author: c.author,
           published: c.publishedAt.slice(0, 10),
@@ -253,10 +272,11 @@ Faithfulness:
 - Use only what the source says. No new facts, figures or examples. Keep numbers exactly as the source gives them, with their unit and place ("in the US").
 - State the author's view as theirs when it's an argument rather than a finding ("Lewis Bollard argues ..."). Don't make it sound more certain than the source.
 - If something would mislead or confuse a reader in the Netherlands (a US-only figure presented as general, a reference to a date or event that has passed, an unexplained acronym you couldn't avoid), keep it accurate and add a flag.
+- For a post more than a couple of years old, say when it was written where a figure depends on it ("in 2014, ..."), and flag any figure or claim that has probably changed since.
 - For a Centre for Effective Altruism post, the source is its slide images and caption: keep close to their wording and order, tightened to fit.
 - For a Forum post: pick the core of the argument a newcomer can follow, not a summary of every section.
 
-"flags": short notes for James, in English, about anything to check before approving: figures you couldn't verify from the slides, US-specific numbers, claims that may have changed since publication, wording you were unsure how to translate. Empty if there is nothing.
+"flags": short notes for James, in English, about anything to check before approving: figures you couldn't verify from the slides, US-specific numbers, claims that may have changed since publication, anything you simplified a lot. Empty if there is nothing.
 
 The caption is body text only: the code appends a line introducing the EA Forum, the credit, the links and any hashtags, so don't describe the Forum or credit the author yourself. Never write a URL.
 
@@ -267,12 +287,10 @@ const CHANNEL_BRIEF: Record<ExplainerChannel, string> = {
 
 "caption": in James's first person, warm and direct, as someone sharing an idea he thinks is worth a few minutes. 60 to 150 words. Open with the idea, not with "I came across". Don't invent anything about James: no anecdotes, nothing about people he knows, and never what he thinks or felt about the piece ("I found it…", "I thought it was a clarifying way to…", "this changed how I…"). Sharing it is the endorsement; let the idea carry the caption. End by inviting people to swipe through. No hashtags.
 "hashtags": an empty list.`,
-  instagram: `This one is for EA Netherlands' Instagram, in Dutch: slides and caption both in Dutch. The followers are people in the Netherlands aged 25 to 44, mostly new to effective altruism.
+  instagram: `This one is for EA Netherlands' Instagram, in British English: plain English that Dutch readers with good but not native English follow easily (short sentences, everyday words, no idioms). The followers are people in the Netherlands aged 25 to 44, mostly new to effective altruism.
 
-Write Dutch that reads as written in Dutch, not translated: natural word order, "je" not "u", common words over anglicisms where a Dutch word is normal, but keep established terms ("effectief altruïsme", "AI"). If the source is in English, translate the meaning, not the sentences.
-
-"caption": in EA Netherlands' voice (je/jij, plain and warm). 40 to 120 words. End by pointing to the slides.
-"hashtags": three to five lowercase hashtags without "#", Dutch or English as people in the Netherlands would use them (e.g. "effectiefaltruisme", "effectivealtruism", "dierenwelzijn").`,
+"caption": in EA Netherlands' voice (we/you, plain and warm). 40 to 120 words. End by pointing to the slides.
+"hashtags": three to five lowercase hashtags without "#", as people in the Netherlands would use them (e.g. "effectivealtruism", "effectiefaltruisme", "animalwelfare").`,
 }
 
 export type Draft = { slides: SlideText; caption: string; flags: string[] }
@@ -299,15 +317,14 @@ export function tidySlides(s: SlideText): SlideText {
 const NEWSLETTER_URL = 'https://effectiefaltruisme.nl/en/newsletter'
 
 /** The credit line, which the code writes so it is always right. */
-export function credit(source: SourceRef, lang: Lang): string {
-  if (source.kind === 'forum') {
-    return lang === 'en'
-      ? `Adapted from “${source.title}” by ${source.author} on the EA Forum (CC BY 4.0).`
-      : `Gebaseerd op “${source.title}” van ${source.author} op het EA Forum (CC BY 4.0).`
+export function credit(source: SourceRef): string {
+  if (source.kind === 'instagram') {
+    return 'Adapted from a post by the Centre for Effective Altruism (@effectivealtruismofficial).'
   }
-  return lang === 'en'
-    ? 'Adapted from a post by the Centre for Effective Altruism (@effectivealtruismofficial).'
-    : 'Gebaseerd op een post van het Centre for Effective Altruism (@effectivealtruismofficial).'
+  const where = source.via === 'handbook' ? 'the EA Forum’s Introduction to Effective Altruism Handbook' : 'the EA Forum'
+  return isCcBy(source)
+    ? `Adapted from “${source.title}” by ${source.author} in ${where} (CC BY 4.0).`
+    : `Adapted with permission from “${source.title}” by ${source.author} in ${where}.`
 }
 
 /** The finished caption: the model's text, then the credit (and on LinkedIn the links). */
@@ -325,8 +342,8 @@ export function composeCaption(
     newsletter.searchParams.set('utm_content', 'james')
     return [
       draft.caption.trim(),
-      ...(source.kind === 'forum' ? [FORUM_ABOUT.en] : []),
-      `${credit(source, 'en')} ${source.kind === 'forum' ? 'Read the whole post' : 'The original'}: ${source.url}`,
+      ...(source.kind === 'forum' ? [FORUM_ABOUT] : []),
+      `${credit(source)} ${source.kind === 'forum' ? 'Read the whole post' : 'The original'}: ${source.url}`,
       `One EA Forum post worth your time, plus jobs and events in the Netherlands, once a month: ${newsletter}`,
     ].join('\n\n')
   }
@@ -336,7 +353,7 @@ export function composeCaption(
     .slice(0, 5)
     .map((h) => `#${h}`)
     .join(' ')
-  return [draft.caption.trim(), source.kind === 'forum' ? FORUM_ABOUT.nl : '', credit(source, 'nl'), tags]
+  return [draft.caption.trim(), source.kind === 'forum' ? FORUM_ABOUT : '', credit(source), tags]
     .filter(Boolean)
     .join('\n\n')
 }
@@ -351,7 +368,7 @@ export async function draftFrom(
   if (source.kind === 'forum') {
     const text = await forumPostText(source.id)
     user = [
-      `Source: a curated EA Forum post, “${source.title}” by ${source.author}, published ${source.publishedAt.slice(0, 10)}.`,
+      `Source: ${source.via === 'handbook' ? 'a post in the EA Forum’s Introduction to Effective Altruism Handbook' : 'a curated EA Forum post'}, “${source.title}” by ${source.author}, published ${source.publishedAt.slice(0, 10)}.`,
       'The full text:',
       text,
     ].join('\n\n')
