@@ -24,6 +24,7 @@ import {
 import { EXPLAINER_CHANNELS, nextExplainerTime } from '@jobboard/social/explainer/weekly'
 import { channelPostAt, postingEnabled } from '@jobboard/social/publish'
 import { amsterdamDate, CHANNEL_LABEL } from '@jobboard/social/store'
+import { trackFor, trackLabel } from '@jobboard/social/music'
 
 export const dynamic = 'force-dynamic'
 
@@ -117,6 +118,16 @@ function Result({ item }: { item: ExplainerItem | null }) {
   )
 }
 
+function Music({ source }: { source: SourceRef }) {
+  const track = trackFor({ kind: 'explainer', sourceKind: source.kind })
+  if (!track) return null
+  return (
+    <p className={x.pickMeta}>
+      Music: once it’s posted, add {trackLabel(track)} in the Instagram app. You’ll get an email with the link.
+    </p>
+  )
+}
+
 const at = (date: string, c: ExplainerChannel) =>
   channelPostAt(date, c).toLocaleString('en-GB', {
     weekday: 'long',
@@ -133,6 +144,7 @@ function Account({ post, channel }: { post: ExplainerPost; channel: ExplainerCha
         {HEADING[channel]} · {at(post.postDate, channel)}
       </h2>
       <Result item={item} />
+      {channel === 'instagram' && item?.source ? <Music source={item.source} /> : null}
       <ExplainerEditor
         key={`${channel}-${post._rev ?? ''}`}
         channel={channel}
