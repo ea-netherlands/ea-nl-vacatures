@@ -1,5 +1,6 @@
 /**
- * The track each Instagram carousel gets (James, 11 Nov 2026).
+ * The track each Instagram carousel gets (James, 11 Nov 2026): job postings
+ * get Gorillaz, content (every explainer, whatever its source) gets Dylan.
  *
  * Instagram's publishing API can't put music on a carousel, but the app lets
  * you add a track to a carousel after it's posted, and both tracks are in EA
@@ -13,14 +14,12 @@ export type Track = { title: string; artist: string }
 
 export const TRACKS = {
   jobs: { title: 'Feel Good Inc.', artist: 'Gorillaz' },
-  forum: { title: 'The Times They Are A-Changin’', artist: 'Bob Dylan' },
+  content: { title: 'The Times They Are A-Changin’', artist: 'Bob Dylan' },
 } as const satisfies Record<string, Track>
 
-/** The jobs post's track, or the explainer's: only explainers adapted from the Forum have one. */
-export function trackFor(post: { kind: 'jobs' } | { kind: 'explainer'; sourceKind: 'forum' | 'instagram' }): Track | null {
-  if (post.kind === 'jobs') return TRACKS.jobs
-  return post.sourceKind === 'forum' ? TRACKS.forum : null
-}
+export type PostKind = keyof typeof TRACKS
+
+export const trackFor = (kind: PostKind): Track => TRACKS[kind]
 
 export const trackLabel = (t: Track) => `“${t.title}” by ${t.artist}`
 

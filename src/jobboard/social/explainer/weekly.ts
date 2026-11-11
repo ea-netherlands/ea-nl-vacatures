@@ -354,8 +354,7 @@ export async function runExplainerPublish(
             })
       result = { at: now.toISOString(), id: posted.id, url: posted.url }
       act(`posted the explainer to ${label}: ${posted.url ?? posted.id}`)
-      const track = channel === 'instagram' && item.source ? trackFor({ kind: 'explainer', sourceKind: item.source.kind }) : null
-      if (track && (await sendMusicReminder(approvers(), "Today's explainer", posted.url, track))) {
+      if (channel === 'instagram' && (await sendMusicReminder(approvers(), "Today's explainer", posted.url, trackFor('content')))) {
         act('mailed the music reminder')
       }
     } catch (err) {

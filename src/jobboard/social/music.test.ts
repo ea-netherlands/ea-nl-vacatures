@@ -3,10 +3,9 @@ import test from 'node:test'
 
 import { musicReminderText, TRACKS, trackFor } from './music'
 
-test('jobs posts get Gorillaz, Forum explainers get Dylan, CEA explainers nothing yet', () => {
-  assert.equal(trackFor({ kind: 'jobs' }), TRACKS.jobs)
-  assert.equal(trackFor({ kind: 'explainer', sourceKind: 'forum' }), TRACKS.forum)
-  assert.equal(trackFor({ kind: 'explainer', sourceKind: 'instagram' }), null)
+test('job postings get Gorillaz, content gets Dylan', () => {
+  assert.equal(trackFor('jobs').artist, 'Gorillaz')
+  assert.equal(trackFor('content').artist, 'Bob Dylan')
 })
 
 test('the reminder names the post, the link and the track', () => {
