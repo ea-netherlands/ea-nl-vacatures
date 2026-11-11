@@ -13,7 +13,7 @@ import x from '@jobboard/components/social.module.css'
 import u from '@jobboard/components/ui.module.css'
 import { ExplainerEditor, ExplainerFirstDraft, type ExplainerItemView } from '@jobboard/components/ExplainerEditor'
 import { isReviewConfigured, issueToken, LINK_TTL_MS, SESSION_COOKIE, verifyToken } from '@jobboard/review/auth'
-import { explainerSlidePaths } from '@jobboard/social/explainer/slides'
+import { explainerSlidePaths, explainerSlides } from '@jobboard/social/explainer/slides'
 import { ceaSourcesEnabled, sourceKey, type SourceRef } from '@jobboard/social/explainer/sources'
 import {
   getExplainer,
@@ -58,6 +58,8 @@ const HEADING: Record<ExplainerChannel, string> = {
 
 function Strip({ post, channel }: { post: ExplainerPost; channel: ExplainerChannel }) {
   const paths = explainerSlidePaths(post, channel)
+  const kinds = explainerSlides(post, channel).map((s) => s.kind)
+  const LABEL = { cover: 'Hook', about: 'About the essay', point: 'Point', close: 'Credit and sign-up' } as const
   if (!paths.length) return null
   return (
     <ol className={x.strip}>
@@ -68,7 +70,7 @@ function Strip({ post, channel }: { post: ExplainerPost; channel: ExplainerChann
             <img src={src} alt={`Slide ${i + 1}`} loading="lazy" width={1080} height={1350} />
           </a>
           <span>
-            {i + 1}. {i === 0 ? 'Cover' : i === paths.length - 1 ? 'Credit and sign-up' : 'Point'}
+            {i + 1}. {LABEL[kinds[i]]}
           </span>
         </li>
       ))}
