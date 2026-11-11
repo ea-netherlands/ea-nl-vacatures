@@ -321,10 +321,10 @@ export function credit(source: SourceRef): string {
   if (source.kind === 'instagram') {
     return 'Adapted from a post by the Centre for Effective Altruism (@effectivealtruismofficial).'
   }
-  const where = source.via === 'handbook' ? 'the EA Forum’s Introduction to Effective Altruism Handbook' : 'the EA Forum'
+  const where = source.via === 'handbook' ? 'in the EA Forum’s Introduction to Effective Altruism Handbook' : 'on the EA Forum'
   return isCcBy(source)
-    ? `Adapted from “${source.title}” by ${source.author} in ${where} (CC BY 4.0).`
-    : `Adapted with permission from “${source.title}” by ${source.author} in ${where}.`
+    ? `Adapted from “${source.title}” by ${source.author} ${where} (CC BY 4.0).`
+    : `Adapted with permission from “${source.title}” by ${source.author} ${where}.`
 }
 
 /** The finished caption: the model's text, then the credit (and on LinkedIn the links). */
