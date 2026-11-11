@@ -65,6 +65,19 @@ export const FORUM_ABOUT =
 export const CEA_INSTAGRAM = 'effectivealtruismofficial'
 export const FORUM_LICENCE_FROM = '2022-12-01T00:00:00.000Z'
 
+/** An essay from more than two years ago, which the posts call a classic. */
+export function isClassic(s: Pick<SourceRef, 'kind' | 'publishedAt'>, now = new Date()): boolean {
+  return s.kind === 'forum' && now.getTime() - new Date(s.publishedAt).getTime() > 2 * 365 * 864e5
+}
+
+/**
+ * What the monthly email is, said the same way in captions and on the
+ * closing slide (James, 11 Nov 2026: say who sends it, what's in it and how
+ * to get it, not just a list).
+ */
+export const NEWSLETTER_PITCH =
+  'EA Netherlands sends a free monthly email: one EA Forum essay worth your time, new jobs and programmes, and events across the Netherlands.'
+
 /** CC BY 4.0, or (older posts) adapted with the permission James has. */
 export const isCcBy = (s: Pick<SourceRef, 'kind' | 'publishedAt'>) =>
   s.kind === 'forum' && s.publishedAt >= FORUM_LICENCE_FROM

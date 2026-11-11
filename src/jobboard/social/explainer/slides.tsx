@@ -17,7 +17,7 @@ import { createHash } from 'node:crypto'
 import { TOKENS } from '../../og/card'
 import { NEWSLETTER } from '../content'
 import { Frame, Glyph, Marked, Swipe } from '../slides'
-import { FORUM_ABOUT, isCcBy, type SourceRef } from './sources'
+import { FORUM_ABOUT, isCcBy, isClassic, NEWSLETTER_PITCH, type SourceRef } from './sources'
 import { CHANNEL_CODE, type ExplainerChannel, type ExplainerPost, type SlideText } from './store'
 
 export const EXPLAINER_ROUTE = '/vacatures/social/explainer'
@@ -28,21 +28,22 @@ const COPY = {
   of: 'of',
   cea: 'From the Centre for Effective Altruism',
   aboutHeading: (s: SourceRef) =>
-    s.via === 'handbook' ? 'An essay from the EA Forum’s handbook' : 'An essay from the EA Forum',
+    `${isClassic(s) ? 'A classic' : 'An essay'} from the EA Forum${s.via === 'handbook' ? '’s handbook' : ''}`,
   thisWeek: (s: SourceRef) => `This week: “${s.title}” by ${s.author}.`,
   written: (s: SourceRef, now = new Date()) => {
     const year = Number(s.publishedAt.slice(0, 4))
     return year && year < now.getFullYear() - 1 ? `Written in ${year}.` : ''
   },
-  deeper: 'Want to go deeper?',
+  more: 'Want more like this?',
+  signUp: (c: ExplainerChannel) =>
+    c === 'instagram'
+      ? 'Sign up through the link in our bio. It’s free, and you can unsubscribe any time.'
+      : 'Sign up with the link in the post. It’s free, and you can unsubscribe any time.',
   read: (s: SourceRef) =>
     s.kind === 'forum'
-      ? `Read “${s.title}” by ${s.author} on the EA Forum.`
-      : 'This is adapted from a post by the Centre for Effective Altruism. Follow @effectivealtruismofficial for more.',
+      ? `The full essay: “${s.title}” by ${s.author}, on the EA Forum.`
+      : 'Adapted from a post by the Centre for Effective Altruism. Follow @effectivealtruismofficial for more.',
   licence: (s: SourceRef) => (s.kind !== 'forum' ? '' : isCcBy(s) ? 'Adapted under CC BY 4.0.' : 'Adapted with permission.'),
-  monthly: 'One EA Forum post worth your time, plus jobs and events in the Netherlands, once a month.',
-  free: (c: ExplainerChannel) =>
-    c === 'instagram' ? 'It’s free. Sign up at the link in our bio.' : 'It’s free. Sign up at the link below.',
 } as const
 
 export type ExplainerSlideContent =
@@ -75,7 +76,7 @@ export function explainerSlides(post: Slidable, channel: ExplainerChannel): Expl
  * an hour and may serve a stale one while it refreshes; without this, a URL
  * whose text hasn't changed could still hand Instagram the old layout.
  */
-const LAYOUT_VERSION = 2
+const LAYOUT_VERSION = 3
 
 export function slideHash(text: SlideText | undefined, source: SourceRef | null): string {
   return createHash('sha256')
@@ -236,30 +237,44 @@ export function ExplainerSlide({ content, logo }: { content: ExplainerSlideConte
       }}
     >
       <div style={{ display: 'flex', fontFamily: 'Sentient', fontWeight: 500, fontSize: 96, lineHeight: 1.1 }}>
-        {copy.deeper}
+        {copy.more}
       </div>
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 24, marginTop: 48, fontSize: 42, lineHeight: 1.4 }}>
-        <div style={{ display: 'flex', flexShrink: 0, marginTop: 6 }}>
-          <Glyph name="book" size={48} color={TOKENS.primaryFg} />
-        </div>
-        <div style={{ display: 'flex', backgroundColor: TOKENS.white }}>{copy.read(content.source)}</div>
+      <div style={{ display: 'flex', marginTop: 44, fontSize: 44, lineHeight: 1.4, backgroundColor: TOKENS.white }}>
+        {NEWSLETTER_PITCH}
       </div>
-      {licence ? (
-        <div style={{ display: 'flex', marginTop: 20, marginLeft: 72, fontSize: 32, color: TOKENS.fgMuted }}>{licence}</div>
-      ) : null}
       <div
         style={{
           display: 'flex',
-          flexDirection: 'column',
-          marginTop: 64,
-          paddingTop: 40,
-          borderTop: `2px dashed ${TOKENS.border}`,
+          marginTop: 28,
+          fontSize: 40,
+          lineHeight: 1.35,
+          fontWeight: 600,
+          color: TOKENS.primaryFg,
           backgroundColor: TOKENS.white,
         }}
       >
-        <div style={{ display: 'flex', fontSize: 42, lineHeight: 1.4 }}>{copy.monthly}</div>
-        <div style={{ display: 'flex', marginTop: 24, fontSize: 38, fontWeight: 600, color: TOKENS.primaryFg }}>
-          {copy.free(content.channel)}
+        {copy.signUp(content.channel)}
+      </div>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: 20,
+          marginTop: 56,
+          paddingTop: 36,
+          borderTop: `2px dashed ${TOKENS.border}`,
+          fontSize: 34,
+          lineHeight: 1.4,
+          color: TOKENS.fgMuted,
+          backgroundColor: TOKENS.white,
+        }}
+      >
+        <div style={{ display: 'flex', flexShrink: 0, marginTop: 4 }}>
+          <Glyph name="book" size={40} color={TOKENS.primaryFg} />
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex' }}>{copy.read(content.source)}</div>
+          {licence ? <div style={{ display: 'flex', marginTop: 8, fontSize: 30 }}>{licence}</div> : null}
         </div>
       </div>
     </Frame>

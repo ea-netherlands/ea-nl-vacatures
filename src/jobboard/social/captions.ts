@@ -108,7 +108,7 @@ const SYSTEM = `You write the captions for EA Netherlands' weekly jobs post: a c
 
 For each of three channels you write only:
 - "hook": the opening, one to three short sentences. Say what this is (this week's jobs you can do from the Netherlands, on the world's most pressing problems) and name the problem areas that this week's roles actually cover, in plain words.
-- "closing": one or two sentences after the list, inviting people to sign up for the monthly email (new jobs and programmes, events across the Netherlands, and one EA Forum post worth their time). It is free. On LinkedIn the sign-up link is put on its own line straight after the closing, so end the closing by pointing to it ("Sign up below.").
+- "closing": one or two sentences after the list, inviting people to sign up for EA Netherlands' monthly email. Say plainly who sends it and what's in it, so someone who has never heard of it understands: EA Netherlands sends it once a month, with new jobs and programmes, events across the Netherlands, and one EA Forum essay worth their time. It is free. On LinkedIn the sign-up link is put on its own line straight after the closing, so end the closing by pointing to it ("Sign up below.").
 - "hashtags".
 
 A post can include one funding call (a grant or funding round), marked as such in the list you're given. When it does, don't call everything "jobs": say "roles and funding" or "opportunities".
