@@ -14,7 +14,7 @@ import { TOKENS } from '../../og/card'
 import { NEWSLETTER } from '../content'
 import { Frame, Glyph, Marked, Swipe } from '../slides'
 import type { SourceRef } from './sources'
-import type { ExplainerPost, Lang, SlideText } from './store'
+import { CHANNEL_FOR_LANG, type ExplainerPost, type Lang, type SlideText } from './store'
 
 export const EXPLAINER_ROUTE = '/vacatures/social/explainer'
 const SITE = 'effectiefaltruisme.nl'
@@ -57,15 +57,19 @@ export type ExplainerSlideContent =
   | { kind: 'point'; lang: Lang; point: SlideText['points'][number]; index: number; count: number }
   | { kind: 'close'; lang: Lang; source: SourceRef }
 
-/** Every slide of one language, in order. */
-export function explainerSlides(post: Pick<ExplainerPost, 'slides' | 'source'>, lang: Lang): ExplainerSlideContent[] {
-  const text = post.slides?.[lang]
-  if (!text || !post.source) return []
+type Slidable = Pick<ExplainerPost, 'linkedinPersonal' | 'instagram'>
+
+/** Every slide of one language's explainer (English is LinkedIn's, Dutch Instagram's), in order. */
+export function explainerSlides(post: Slidable, lang: Lang): ExplainerSlideContent[] {
+  const item = post[CHANNEL_FOR_LANG[lang]]
+  const text = item?.slides
+  const source = item?.source
+  if (!text || !source) return []
   const count = text.points.length + 2
   return [
-    { kind: 'cover', lang, text: text.cover, source: post.source, count },
+    { kind: 'cover', lang, text: text.cover, source, count },
     ...text.points.map((point, i) => ({ kind: 'point' as const, lang, point, index: i + 2, count })),
-    { kind: 'close', lang, source: post.source },
+    { kind: 'close', lang, source },
   ]
 }
 
@@ -77,11 +81,12 @@ export function slideHash(text: SlideText | undefined, source: SourceRef | null)
 }
 
 export function explainerSlidePaths(
-  post: Pick<ExplainerPost, 'slides' | 'source' | 'postDate'>,
+  post: Slidable & Pick<ExplainerPost, 'postDate'>,
   lang: Lang,
   format: 'png' | 'jpg' = 'png',
 ): string[] {
-  const v = slideHash(post.slides?.[lang], post.source)
+  const item = post[CHANNEL_FOR_LANG[lang]]
+  const v = slideHash(item?.slides ?? undefined, item?.source ?? null)
   return explainerSlides(post, lang).map((_, i) => {
     const q = new URLSearchParams({ d: post.postDate, l: lang, i: String(i), v })
     if (format === 'jpg') q.set('format', 'jpg')

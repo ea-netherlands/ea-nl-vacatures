@@ -321,18 +321,21 @@ the first two exist:
    - Tokens live in Postgres (`social_token`), sealed with AES-256-GCM, never in
      Sanity, whose dataset is publicly readable.
 
-4. **Done: the weekly explainer** (`social/explainer/`). Thursdays, one idea
-   adapted from a curated EA Forum post (CC BY 4.0 since 1 Dec 2022; linkposts
-   and older posts left out) or, with `EXPLAINER_INSTAGRAM=on`, a post by the
-   Centre for Effective Altruism. English slides and caption on James's
-   LinkedIn at 09:00, Dutch on EA Nederland's Instagram at 19:00, from the same
-   draft. The Wednesday `explainer` cron shortlists unused sources, has the
-   model rank them (evergreen, newcomer-friendly, a different topic from recent
-   weeks), drafts both languages in one call and mails James a link to
-   `/review/social/explainer`, where he edits the slide text side by side,
-   swaps to another suggestion or rules a source out. Credits and links are
-   written by the code. Slides render at `/vacatures/social/explainer`; the
-   hourly Thursday `explainer-publish` cron posts approved weeks, under the
+4. **Done: the weekly explainers** (`social/explainer/`). Thursdays, two
+   explainers, each adapted from its own source so nobody who follows both
+   accounts sees the same one twice: one in English on James's LinkedIn at
+   09:00, one in Dutch on EA Nederland's Instagram at 19:00. Sources are
+   curated EA Forum posts (CC BY 4.0 since 1 Dec 2022; linkposts and older
+   posts left out) and, with `EXPLAINER_INSTAGRAM=on`, posts by the Centre for
+   Effective Altruism. The Wednesday `explainer` cron shortlists unused
+   sources, has the model rank them separately for each account (evergreen,
+   newcomer-friendly, a different topic from recent weeks; `splitPicks` keeps
+   the two apart), drafts each in its own language and mails James a link to
+   `/review/social/explainer`. There he edits, swaps to another suggestion,
+   rules a source out, and approves or skips each account on its own. Credits
+   and links are written by the code. Slides render at
+   `/vacatures/social/explainer` (`l=en` is LinkedIn's, `l=nl` Instagram's);
+   the hourly Thursday `explainer-publish` cron posts approved ones under the
    same `SOCIAL_POSTING` switch. Stored as `explainerPost-YYYY-MM-DD` in Sanity.
 
    **Setup, once:**

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { composeCaptions, credit, shortlist, tidySlides } from './draft'
+import { composeCaption, credit, dealOut, shortlist, splitPicks, tidySlides } from './draft'
 import { explainerSlidePaths, explainerSlides } from './slides'
 import { adaptableForumPosts, instagramSources, mediaToSource, type Candidate } from './sources'
 import { nextExplainerTime } from './weekly'
@@ -74,18 +74,47 @@ test('captions get the credit and links from the code, in each language', () => 
     author: 'Lewis Bollard',
     publishedAt: '2026-10-15',
   }
-  const captions = composeCaptions(
+  const li = composeCaption('linkedinPersonal', source, { caption: 'An idea.', hashtags: ['ignored'] }, '2026-11-19')
+  assert.match(li, /Adapted from “40 hot takes” by Lewis Bollard on the EA Forum \(CC BY 4\.0\)/)
+  assert.match(li, /forum\.effectivealtruism\.org\/posts\/a\/t/)
+  assert.match(li, /utm_campaign=explainer-2026-11-19/)
+  assert.ok(!li.includes('#'))
+  const ig = composeCaption(
+    'instagram',
     source,
-    { linkedinPersonal: 'An idea.', instagram: 'Een idee.', hashtags: ['#Effectief Altruisme', 'dierenwelzijn'] },
+    { caption: 'Een idee.', hashtags: ['#Effectief Altruisme', 'dierenwelzijn'] },
     '2026-11-19',
   )
-  assert.match(captions.linkedinPersonal, /Adapted from “40 hot takes” by Lewis Bollard on the EA Forum \(CC BY 4\.0\)/)
-  assert.match(captions.linkedinPersonal, /forum\.effectivealtruism\.org\/posts\/a\/t/)
-  assert.match(captions.linkedinPersonal, /utm_campaign=explainer-2026-11-19/)
-  assert.match(captions.instagram, /^Een idee\.\n\nGebaseerd op “40 hot takes” van Lewis Bollard/)
-  assert.match(captions.instagram, /#effectiefaltruisme #dierenwelzijn$/)
-  assert.ok(!captions.instagram.includes('http'))
+  assert.match(ig, /^Een idee\.\n\nGebaseerd op “40 hot takes” van Lewis Bollard/)
+  assert.match(ig, /#effectiefaltruisme #dierenwelzijn$/)
+  assert.ok(!ig.includes('http'))
   assert.match(credit({ ...source, kind: 'instagram' }, 'nl'), /@effectivealtruismofficial/)
+})
+
+test('the two accounts never get the same source', () => {
+  const list = ['a', 'b', 'c', 'd'].map((id) => cand('forum', id, 10))
+  const pick = (id: string) => ({ id: `forum:${id}`, reason: 'r', topic: 't' })
+  // Both want "a" first; LinkedIn wins the tie. Both list "c"; Instagram ranked it higher.
+  const split = splitPicks(
+    { linkedinPersonal: [pick('a'), pick('b'), pick('c')], instagram: [pick('a'), pick('c'), pick('d'), pick('zzz')] },
+    list,
+  )
+  assert.deepEqual(
+    split.linkedinPersonal.map((s) => s.id),
+    ['a', 'b'],
+  )
+  assert.deepEqual(
+    split.instagram.map((s) => s.id),
+    ['c', 'd'],
+  )
+  const dealt = dealOut(list)
+  assert.deepEqual(
+    [dealt.linkedinPersonal.map((s) => s.id), dealt.instagram.map((s) => s.id)],
+    [
+      ['a', 'c'],
+      ['b', 'd'],
+    ],
+  )
 })
 
 test('the explainer goes out on the coming Thursday at 09:00 Amsterdam', () => {
@@ -97,31 +126,35 @@ test('the explainer goes out on the coming Thursday at 09:00 Amsterdam', () => {
   assert.equal(nextExplainerTime(new Date('2027-06-01T12:00:00Z')).toISOString(), '2027-06-03T07:00:00.000Z')
 })
 
-test('slides: cover, one per point, closing; the URL carries no text', () => {
-  const post = {
-    postDate: '2026-11-19',
-    source: { kind: 'forum' as const, id: 'a', url: 'u', title: 'T', author: 'A', publishedAt: '2026-10-01' },
+test('slides: cover, one per point, closing; each language from its own account', () => {
+  const item = (headline: string, points: number) => ({
+    status: 'draft' as const,
+    source: { kind: 'forum' as const, id: headline, url: 'u', title: headline, author: 'A', publishedAt: '2026-10-01' },
+    topic: null,
+    suggestions: [],
     slides: {
-      en: {
-        cover: { headline: 'H', marked: 'H', sub: 'S' },
-        points: [
-          { heading: 'a', body: 'b' },
-          { heading: 'c', body: 'd' },
-          { heading: 'e', body: 'f' },
-        ],
-      },
-      nl: { cover: { headline: 'H', marked: 'H', sub: 'S' }, points: [{ heading: 'a', body: 'b' }] },
+      cover: { headline, marked: headline, sub: 'S' },
+      points: Array.from({ length: points }, (_, i) => ({ heading: `h${i}`, body: `b${i}` })),
     },
-  }
+    caption: 'c',
+    flags: [],
+    generatedAt: null,
+    approvedAt: null,
+    error: null,
+  })
+  const post = { postDate: '2026-11-19', linkedinPersonal: item('English', 3), instagram: item('Nederlands', 1) }
   assert.deepEqual(
     explainerSlides(post, 'en').map((s) => s.kind),
     ['cover', 'point', 'point', 'point', 'close'],
   )
+  const nl = explainerSlides(post, 'nl')
+  assert.equal(nl.length, 3)
+  assert.equal(nl[0].kind === 'cover' && nl[0].source.title, 'Nederlands')
   const paths = explainerSlidePaths(post, 'nl', 'jpg')
-  assert.equal(paths.length, 3)
   assert.match(paths[0], /^\/vacatures\/social\/explainer\?d=2026-11-19&l=nl&i=0&v=[0-9a-f]{10}&format=jpg$/)
-  const edited = { ...post, slides: { ...post.slides, nl: { ...post.slides.nl, cover: { headline: 'X', marked: 'X', sub: 'S' } } } }
-  assert.notEqual(explainerSlidePaths(edited, 'nl')[0], explainerSlidePaths(post, 'nl')[0])
+  const edited = { ...post, instagram: item('Anders', 1) }
+  assert.notEqual(explainerSlidePaths(edited, 'nl')[0], paths[0].replace('&format=jpg', ''))
+  assert.equal(explainerSlides({ ...post, instagram: null }, 'nl').length, 0)
 })
 
 test('Instagram: carousels and images are sources, videos are not', () => {

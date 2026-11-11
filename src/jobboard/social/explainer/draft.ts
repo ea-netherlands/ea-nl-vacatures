@@ -8,9 +8,14 @@
  * week's topic is judgement, not arithmetic. If the model fails, the shortlist
  * falls back to the code's own order.
  *
- * Drafting: one call writes the English slides, the Dutch slides and both
- * captions. A Forum essay is summarised; a CEA post is read off its slide
- * images and kept close to CEA's own words. Facts come only from the source,
+ * Each account gets its own source (James, 11 Nov 2026): the model ranks the
+ * shortlist separately for James's LinkedIn network and for EA Nederland's
+ * Instagram followers, and the two never share a source.
+ *
+ * Drafting: one call per account writes its slides and caption in its own
+ * language, English for LinkedIn and Dutch for Instagram. A Forum essay is
+ * summarised; a CEA post is read off its slide images and kept close to CEA's
+ * own words. Facts come only from the source,
  * and anything a reader in the Netherlands could trip on (a US-only figure, a
  * date that will age) comes back as a flag for James instead of being changed
  * silently. The credit and the link are added by the code, never the model.
@@ -80,42 +85,83 @@ export async function gatherCandidates(options: { instagramToken?: string | null
   return { candidates: [...forum, ...instagram.map((s) => s.candidate)], instagram, problems }
 }
 
-const PICK_SYSTEM = `You choose the source for EA Netherlands' weekly explainer: a short carousel that explains one idea from effective altruism, posted in Dutch on EA Netherlands' Instagram and in English on its co-director James Herbert's LinkedIn. The audience is people in the Netherlands, aged 25 to 44, curious about doing good effectively, mostly not yet involved in effective altruism.
+const PICK_SYSTEM = `You choose the sources for EA Netherlands' weekly explainers: short carousels that each explain one idea from effective altruism. There are two each week, from two different sources:
+- "linkedinPersonal": in English on James Herbert's own LinkedIn (he is co-director of EA Netherlands). His network: professionals in the Netherlands, many thinking about their career, their giving or their organisation's work.
+- "instagram": in Dutch on EA Netherlands' Instagram. Its followers: people in the Netherlands aged 25 to 44, curious about doing good effectively, mostly new to effective altruism.
 
-You get a shortlist of candidates: curated EA Forum posts and posts from the Centre for Effective Altruism's Instagram. Rank the best four. A good pick:
-- explains an idea, a finding or an argument that someone new to effective altruism can follow in six slides, without the Forum's jargon;
+You get a shortlist of candidates: curated EA Forum posts and posts from the Centre for Effective Altruism's Instagram. For each account, rank its best four. A good pick:
+- explains an idea, a finding or an argument that someone new to effective altruism can follow in about six slides, without the Forum's jargon;
 - still reads well months from now: not an announcement, a deadline, an event, a job ad, a fundraiser or a reply to another post;
-- is about something EA Netherlands' audience can relate to;
-- isn't on the same topic as the recent posts listed, so the weeks rotate between causes and ideas;
+- suits that account's audience;
+- isn't on the same topic as the recent explainers listed, so the weeks rotate between causes and ideas;
 - for Forum posts: a post whose core can be stated fairly in a few slides. Avoid heavy technical or internal debates (grant-sizing formulas, model critiques that need the original to make sense).
 
-Engagement (score) is a hint about what resonates, not the deciding factor.
+The two accounts' first picks must be different sources, and preferably on different topics. Engagement (score) is a hint about what resonates, not the deciding factor.
 
 For each pick give its id exactly as given, a one-sentence reason addressed to James ("A clear case for ..."), and a short topic label in English sentence case ("Farmed animal welfare", "AI safety", "Global health", "How to choose a career").`
+
+const PICKS = {
+  type: 'array',
+  items: {
+    type: 'object',
+    additionalProperties: false,
+    required: ['id', 'reason', 'topic'],
+    properties: { id: { type: 'string' }, reason: { type: 'string' }, topic: { type: 'string' } },
+  },
+} as const
 
 const PICK_SCHEMA = {
   type: 'object',
   additionalProperties: false,
-  required: ['picks'],
-  properties: {
-    picks: {
-      type: 'array',
-      items: {
-        type: 'object',
-        additionalProperties: false,
-        required: ['id', 'reason', 'topic'],
-        properties: { id: { type: 'string' }, reason: { type: 'string' }, topic: { type: 'string' } },
-      },
-    },
-  },
+  required: ['linkedinPersonal', 'instagram'],
+  properties: { linkedinPersonal: PICKS, instagram: PICKS },
 } as const
 
+export type Rankings = Record<ExplainerChannel, Suggestion[]>
 
-/** The model's top four from the shortlist; falls back to the shortlist's order. */
-export async function rankCandidates(list: Candidate[], recentTopics: string[]): Promise<Suggestion[]> {
-  const fallback = () =>
-    list.slice(0, 4).map((c) => ({ ...ref(c), reason: 'Highly rated on its source.', topic: c.topics[0] ?? '' }))
-  if (!list.length) return []
+type RawPick = { id: string; reason: string; topic: string }
+
+/**
+ * Each account's list, best first, with no source on both lists' first place.
+ * A source both lists want goes to the account that ranked it higher (LinkedIn
+ * on a tie), and drops off the other's list.
+ */
+export function splitPicks(raw: Record<ExplainerChannel, RawPick[]>, list: Candidate[]): Rankings {
+  const byKey = new Map(list.map((c) => [sourceKey(c), c]))
+  const resolve = (picks: RawPick[]) => {
+    const seen = new Set<string>()
+    return picks
+      .filter((p) => byKey.has(p.id) && !seen.has(p.id) && seen.add(p.id))
+      .map((p) => ({ ...ref(byKey.get(p.id)!), reason: p.reason, topic: p.topic }))
+  }
+  const li = resolve(raw.linkedinPersonal)
+  const ig = resolve(raw.instagram)
+  const rank = (arr: Suggestion[], key: string) => arr.findIndex((s) => sourceKey(s) === key)
+  const liOut = li.filter((s) => {
+    const r = rank(ig, sourceKey(s))
+    return r === -1 || rank(li, sourceKey(s)) <= r
+  })
+  const kept = new Set(liOut.map(sourceKey))
+  const igOut = ig.filter((s) => !kept.has(sourceKey(s)))
+  return { linkedinPersonal: liOut.slice(0, 4), instagram: igOut.slice(0, 4) }
+}
+
+/** Fallback when the model can't rank: the shortlist's order, dealt out alternately. */
+export function dealOut(list: Candidate[]): Rankings {
+  const out: Rankings = { linkedinPersonal: [], instagram: [] }
+  list.slice(0, 8).forEach((c, i) => {
+    out[i % 2 === 0 ? 'linkedinPersonal' : 'instagram'].push({
+      ...ref(c),
+      reason: 'Highly rated on its source.',
+      topic: c.topics[0] ?? '',
+    })
+  })
+  return out
+}
+
+/** Both accounts' best four from the shortlist. */
+export async function rankCandidates(list: Candidate[], recentTopics: string[]): Promise<Rankings> {
+  if (!list.length) return { linkedinPersonal: [], instagram: [] }
   try {
     const user = [
       recentTopics.length ? `Recent explainers, newest first: ${recentTopics.join('; ')}.` : 'No explainers posted yet.',
@@ -135,23 +181,17 @@ export async function rankCandidates(list: Candidate[], recentTopics: string[]):
         2,
       ),
     ].join('\n\n')
-    const { value } = await structuredCall<{ picks: { id: string; reason: string; topic: string }[] }>({
+    const { value } = await structuredCall<Record<ExplainerChannel, RawPick[]>>({
       model: DRAFTING_MODEL,
       system: PICK_SYSTEM,
       user,
       schema: PICK_SCHEMA,
-      maxTokens: 6000,
+      maxTokens: 8000,
     })
-    const byKey = new Map(list.map((c) => [sourceKey(c), c]))
-    const ranked = value.picks
-      .map((p) => {
-        const c = byKey.get(p.id)
-        return c ? { ...ref(c), reason: p.reason, topic: p.topic } : null
-      })
-      .filter((r): r is Suggestion => r !== null)
-    return ranked.length ? ranked.slice(0, 4) : fallback()
+    const ranked = splitPicks(value, list)
+    return ranked.linkedinPersonal.length && ranked.instagram.length ? ranked : dealOut(list)
   } catch {
-    return fallback()
+    return dealOut(list)
   }
 }
 
@@ -192,20 +232,18 @@ const SLIDES_SCHEMA = {
 const DRAFT_SCHEMA = {
   type: 'object',
   additionalProperties: false,
-  required: ['en', 'nl', 'linkedinPersonal', 'instagram', 'hashtags', 'flags'],
+  required: ['slides', 'caption', 'hashtags', 'flags'],
   properties: {
-    en: SLIDES_SCHEMA,
-    nl: SLIDES_SCHEMA,
-    linkedinPersonal: { type: 'string' },
-    instagram: { type: 'string' },
+    slides: SLIDES_SCHEMA,
+    caption: { type: 'string' },
     hashtags: { type: 'array', items: { type: 'string' } },
     flags: { type: 'array', items: { type: 'string' } },
   },
 } as const
 
-const DRAFT_SYSTEM = `You adapt one piece of effective altruism writing into EA Netherlands' weekly explainer: a carousel of slides plus captions. English goes on James Herbert's own LinkedIn (he is co-director of EA Netherlands); Dutch goes on EA Netherlands' Instagram. The audience is people in the Netherlands, mostly new to effective altruism.
+const COMMON = `You adapt one piece of effective altruism writing into one of EA Netherlands' weekly explainers: a carousel of slides plus a caption.
 
-Slides, written first in English ("en"), then the same slides in Dutch ("nl"):
+Slides:
 - "cover": "headline" is the question or claim the carousel answers, at most ${LIMITS.headline} characters. "marked" is the last few words of the headline, copied exactly, which get a yellow highlighter: the phrase that matters most. "sub" is one sentence, at most ${LIMITS.sub} characters, saying what the reader will get.
 - "points": ${LIMITS.minPoints} to ${LIMITS.maxPoints} slides that carry the argument in order. Each has a "heading" (at most ${LIMITS.heading} characters) and a "body" (at most ${LIMITS.body} characters, one to three short sentences). One idea per slide. The last point lands the takeaway.
 - Don't write a credit, a call to action or a closing slide; the code adds those.
@@ -217,29 +255,28 @@ Faithfulness:
 - For a Centre for Effective Altruism post, the source is its slide images and caption: keep close to their wording and order, tightened to fit.
 - For a Forum post: pick the core of the argument a newcomer can follow, not a summary of every section.
 
-Captions (body text only; the code appends the credit and link, and Instagram hashtags):
-- "linkedinPersonal": English, in James's first person, warm and direct, as someone sharing an idea he thinks is worth a few minutes. 60 to 150 words. Open with the idea, not with "I came across". Don't invent anything about James: no anecdotes, no opinions he hasn't stated, nothing about people he knows. End by inviting people to swipe through. No hashtags, no URLs.
-- "instagram": Dutch, in EA Netherlands' voice (je/jij, plain and warm). 40 to 120 words. End by pointing to the slides. No hashtags, no URLs.
-- "hashtags": three to five lowercase Instagram hashtags without "#", Dutch or English as people in the Netherlands would use them (e.g. "effectiefaltruisme", "effectivealtruism", "dierenwelzijn").
+"flags": short notes for James, in English, about anything to check before approving: figures you couldn't verify from the slides, US-specific numbers, claims that may have changed since publication, wording you were unsure how to translate. Empty if there is nothing.
 
-"flags": short notes for James about anything to check before approving: figures you couldn't verify from the slides, US-specific numbers, claims that may have changed since publication, wording you were unsure how to translate. Empty if there is nothing.
+The caption is body text only: the code appends the credit, the links and any hashtags. Never write a URL.
 
-Voice in both languages: plain, warm, honest, sentence case, no emoji, no exclamation marks, no hype. British English. Dutch that reads as written in Dutch, not translated: natural word order, "je" not "u", common words over anglicisms where a Dutch word is normal, but keep established terms ("effectief altruïsme", "AI").`
+Voice: plain, warm, honest, sentence case, no emoji, no exclamation marks, no hype.`
 
-export type Draft = {
-  slides: Record<Lang, SlideText>
-  captions: Record<ExplainerChannel, string>
-  flags: string[]
+const CHANNEL_BRIEF: Record<ExplainerChannel, string> = {
+  linkedinPersonal: `This one is for James Herbert's own LinkedIn, in British English. James is co-director of EA Netherlands; his network is professionals in the Netherlands.
+
+"caption": in James's first person, warm and direct, as someone sharing an idea he thinks is worth a few minutes. 60 to 150 words. Open with the idea, not with "I came across". Don't invent anything about James: no anecdotes, no opinions he hasn't stated, nothing about people he knows. End by inviting people to swipe through. No hashtags.
+"hashtags": an empty list.`,
+  instagram: `This one is for EA Netherlands' Instagram, in Dutch: slides and caption both in Dutch. The followers are people in the Netherlands aged 25 to 44, mostly new to effective altruism.
+
+Write Dutch that reads as written in Dutch, not translated: natural word order, "je" not "u", common words over anglicisms where a Dutch word is normal, but keep established terms ("effectief altruïsme", "AI"). If the source is in English, translate the meaning, not the sentences.
+
+"caption": in EA Netherlands' voice (je/jij, plain and warm). 40 to 120 words. End by pointing to the slides.
+"hashtags": three to five lowercase hashtags without "#", Dutch or English as people in the Netherlands would use them (e.g. "effectiefaltruisme", "effectivealtruism", "dierenwelzijn").`,
 }
 
-type ModelDraft = {
-  en: SlideText
-  nl: SlideText
-  linkedinPersonal: string
-  instagram: string
-  hashtags: string[]
-  flags: string[]
-}
+export type Draft = { slides: SlideText; caption: string; flags: string[] }
+
+type ModelDraft = { slides: SlideText; caption: string; hashtags: string[]; flags: string[] }
 
 /** Keeps the marked phrase a real ending of the headline, so the slide never highlights text that isn't there. */
 export function tidySlides(s: SlideText): SlideText {
@@ -272,37 +309,38 @@ export function credit(source: SourceRef, lang: Lang): string {
     : 'Gebaseerd op een post van het Centre for Effective Altruism (@effectivealtruismofficial).'
 }
 
-/** The finished captions: the model's text, then the credit (and on LinkedIn the links). */
-export function composeCaptions(
+/** The finished caption: the model's text, then the credit (and on LinkedIn the links). */
+export function composeCaption(
+  channel: ExplainerChannel,
   source: SourceRef,
-  draft: Pick<ModelDraft, 'linkedinPersonal' | 'instagram' | 'hashtags'>,
+  draft: Pick<ModelDraft, 'caption' | 'hashtags'>,
   postDate: string,
-): Record<ExplainerChannel, string> {
-  const newsletter = new URL(NEWSLETTER_URL)
-  newsletter.searchParams.set('utm_source', 'linkedin')
-  newsletter.searchParams.set('utm_medium', 'social')
-  newsletter.searchParams.set('utm_campaign', `explainer-${postDate}`)
-  newsletter.searchParams.set('utm_content', 'james')
+): string {
+  if (channel === 'linkedinPersonal') {
+    const newsletter = new URL(NEWSLETTER_URL)
+    newsletter.searchParams.set('utm_source', 'linkedin')
+    newsletter.searchParams.set('utm_medium', 'social')
+    newsletter.searchParams.set('utm_campaign', `explainer-${postDate}`)
+    newsletter.searchParams.set('utm_content', 'james')
+    return [
+      draft.caption.trim(),
+      `${credit(source, 'en')} ${source.kind === 'forum' ? 'Read the whole post' : 'The original'}: ${source.url}`,
+      `One EA Forum post worth your time, plus jobs and events in the Netherlands, once a month: ${newsletter}`,
+    ].join('\n\n')
+  }
   const tags = draft.hashtags
     .map((h) => h.replace(/^#/, '').replace(/\s+/g, '').toLowerCase())
     .filter(Boolean)
     .slice(0, 5)
     .map((h) => `#${h}`)
     .join(' ')
-  return {
-    linkedinPersonal: [
-      draft.linkedinPersonal.trim(),
-      `${credit(source, 'en')} ${source.kind === 'forum' ? 'Read the whole post' : 'The original'}: ${source.url}`,
-      `One EA Forum post worth your time, plus jobs and events in the Netherlands, once a month: ${newsletter}`,
-    ].join('\n\n'),
-    instagram: [draft.instagram.trim(), credit(source, 'nl'), tags].filter(Boolean).join('\n\n'),
-  }
+  return [draft.caption.trim(), credit(source, 'nl'), tags].filter(Boolean).join('\n\n')
 }
 
-/** Writes the slides and captions for one source. */
+/** Writes one account's slides and caption from one source. */
 export async function draftFrom(
   source: SourceRef,
-  options: { postDate: string; instagram?: InstagramSource | null },
+  options: { channel: ExplainerChannel; postDate: string; instagram?: InstagramSource | null },
 ): Promise<Draft> {
   let user: string
   let images: Awaited<ReturnType<typeof fetchImages>> | undefined
@@ -325,19 +363,19 @@ export async function draftFrom(
 
   const { value } = await structuredCall<ModelDraft>({
     model: DRAFTING_MODEL,
-    system: DRAFT_SYSTEM,
+    system: `${COMMON}\n\n${CHANNEL_BRIEF[options.channel]}`,
     user,
     schema: DRAFT_SCHEMA,
-    maxTokens: 16_000,
+    maxTokens: 12_000,
     images,
   })
-  const slides = { en: tidySlides(value.en), nl: tidySlides(value.nl) }
-  if (slides.en.points.length < LIMITS.minPoints || slides.nl.points.length < LIMITS.minPoints) {
+  const slides = tidySlides(value.slides)
+  if (slides.points.length < LIMITS.minPoints) {
     throw new Error('The draft came back with too few slides. Redraft, or pick another source.')
   }
   return {
     slides,
-    captions: composeCaptions(source, value, options.postDate),
+    caption: composeCaption(options.channel, source, value, options.postDate),
     flags: value.flags.map((f) => f.trim()).filter(Boolean),
   }
 }

@@ -1,11 +1,11 @@
 /**
  * The weekly explainer's cycle.
  *
- * Wednesday 11:30: pick a source and draft Thursday's explainer, then mail
- * James a link to /review/social/explainer. Thursday, hourly: post what he
- * approved, in English on his LinkedIn at 09:00 and in Dutch on EA
- * Nederland's Instagram at 19:00 (the same times as the jobs post, so each
- * account keeps one rhythm).
+ * Wednesday 11:30: pick a source for each account and draft Thursday's two
+ * explainers, then mail James a link to /review/social/explainer. Thursday,
+ * hourly: post what he approved, in English on his LinkedIn at 09:00 and in
+ * Dutch on EA Nederland's Instagram at 19:00 (the same times as the jobs post,
+ * so each account keeps one rhythm). The two never share a source.
  *
  * The same switch as the jobs post (SOCIAL_POSTING) holds everything back,
  * and the same rules apply: a draft is only redrafted with `force`, a decided
@@ -21,21 +21,23 @@ import { channelPostAt, postingEnabled } from '../publish'
 import { amsterdamDate, CHANNEL_LABEL, type ChannelResult } from '../store'
 import { getToken } from '../tokens'
 import { approvers } from '../weekly'
-import { draftFrom, gatherCandidates, rankCandidates, ref, shortlist } from './draft'
+import { draftFrom, gatherCandidates, rankCandidates, ref, shortlist, type Gathered } from './draft'
 import { explainerSlidePaths } from './slides'
 import { sourceKey } from './sources'
 import {
+  EXPLAINER_CHANNELS,
+  EXPLAINER_LANG,
   getExplainer,
-  patchExplainer,
+  patchItem,
   saveExplainer,
   usedSources,
   type ExplainerChannel,
+  type ExplainerItem,
   type ExplainerPost,
   type Suggestion,
 } from './store'
 
-/** Posted by the API, in this order through the day. */
-export const EXPLAINER_CHANNELS: ExplainerChannel[] = ['linkedinPersonal', 'instagram']
+export { EXPLAINER_CHANNELS }
 
 const THURSDAY = 4
 const MAX_ATTEMPTS = 3
@@ -65,14 +67,69 @@ export function nextExplainerTime(now = new Date()): Date {
 const longDay = (at: Date) =>
   at.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Europe/Amsterdam' })
 
+/** Drafts one account's explainer from a chosen source; a failure is saved on the item, not thrown. */
+async function draftItem(
+  channel: ExplainerChannel,
+  chosen: Suggestion | null,
+  suggestions: Suggestion[],
+  postDate: string,
+  gathered: Gathered,
+  log: (line: string) => void,
+): Promise<ExplainerItem> {
+  const base = {
+    status: 'draft' as const,
+    suggestions,
+    approvedAt: null,
+    generatedAt: new Date().toISOString(),
+    result: null,
+  }
+  if (!chosen) {
+    const error = ['Nothing new to adapt this week.', ...gathered.problems].join(' ')
+    log(`${channel}: ${error}`)
+    return { ...base, source: null, topic: null, slides: null, caption: null, flags: [], error }
+  }
+  log(`${channel}: drafting from ${chosen.kind}: ${chosen.title}`)
+  try {
+    const instagram =
+      chosen.kind === 'instagram' ? (gathered.instagram.find((s) => s.candidate.id === chosen.id) ?? null) : null
+    const draft = await draftFrom(chosen, { channel, postDate, instagram })
+    return {
+      ...base,
+      source: ref(chosen),
+      topic: chosen.topic || null,
+      ...draft,
+      error: gathered.problems.length ? gathered.problems.join(' ') : null,
+    }
+  } catch (err) {
+    const message = (err as Error).message
+    log(`${channel}: drafting failed: ${message}`)
+    return {
+      ...base,
+      source: ref(chosen),
+      topic: chosen.topic || null,
+      slides: null,
+      caption: null,
+      flags: [],
+      error: `Drafting failed: ${message}`,
+    }
+  }
+}
+
+const asSuggestion = (item: ExplainerItem | null | undefined): Suggestion[] =>
+  item?.source ? [{ ...item.source, reason: '', topic: item.topic ?? '' }] : []
+
 /**
- * Picks a source and drafts the coming Thursday's explainer.
+ * Drafts the coming Thursday's explainers.
  *
- * - `force` redrafts a draft (the page's Redraft button).
- * - `source` drafts from that suggestion instead (the page's "use this one").
- * - `pass` also rules out the current source for good ("not this one").
+ * With no `channel`, both accounts that have nothing decided yet: the cron,
+ * and the page's first "Draft". With a `channel`, just that one:
+ * - `force` redrafts its draft (Redraft);
+ * - `source` drafts from that suggestion instead ("Use this one");
+ * - `pass` also rules out its current source for good ("Not this one").
+ * An account's draft never takes the other account's source.
  */
 export async function draftExplainer(options: {
+  channel?: ExplainerChannel
   force?: boolean
   source?: string
   pass?: boolean
@@ -82,79 +139,60 @@ export async function draftExplainer(options: {
   const log = (line: string) => options.onLog?.(line)
   const postAt = nextExplainerTime(options.now)
   const postDate = amsterdamDate(postAt)
-
   const existing = await getExplainer(postDate)
-  if (existing && (existing.status !== 'draft' || !options.force)) {
-    log(`explainer for ${postDate} already exists (${existing.status}); left alone`)
+
+  // Which accounts to (re)draft: an undecided draft only with force, a missing one always.
+  const targets = (options.channel ? [options.channel] : EXPLAINER_CHANNELS).filter((c) => {
+    const item = existing?.[c]
+    return !item || (item.status === 'draft' && options.force)
+  })
+  if (existing && !targets.length) {
+    log(`explainers for ${postDate} already exist; left alone`)
     return { post: existing, changed: false }
   }
 
   const passed = new Set(existing?.passed ?? [])
-  if (options.pass && existing?.source) passed.add(sourceKey(existing.source))
+  if (options.pass && options.channel && existing?.[options.channel]?.source) {
+    passed.add(sourceKey(existing[options.channel]!.source!))
+  }
   const [{ used, recentTopics }, token] = await Promise.all([usedSources(), getToken('instagram').catch(() => null)])
   for (const k of passed) used.add(k)
+  // The account not being redrafted keeps its source, which this one mustn't take.
+  for (const c of EXPLAINER_CHANNELS) {
+    const source = existing?.[c]?.source
+    if (!targets.includes(c) && source) used.add(sourceKey(source))
+  }
 
   const gathered = await gatherCandidates({ instagramToken: token?.accessToken })
   for (const p of gathered.problems) log(p)
 
-  let chosen: Suggestion | null = null
-  let suggestions: Suggestion[] = []
-  if (options.source) {
-    const pool = [...(existing?.suggestions ?? []), ...(existing?.source ? [{ ...existing.source, reason: '', topic: existing.topic ?? '' }] : [])]
-    chosen = pool.find((s) => sourceKey(s) === options.source) ?? null
+  const items: Partial<Record<ExplainerChannel, ExplainerItem>> = {}
+  if (options.source && options.channel) {
+    const channel = options.channel
+    const pool = [...(existing?.[channel]?.suggestions ?? []), ...asSuggestion(existing?.[channel])]
+    const chosen = pool.find((s) => sourceKey(s) === options.source)
     if (!chosen) throw new Error('That suggestion isn’t available any more.')
-    suggestions = pool.filter((s) => sourceKey(s) !== options.source && !used.has(sourceKey(s)) && s.reason)
+    const rest = pool.filter((s) => sourceKey(s) !== options.source && !used.has(sourceKey(s)) && s.reason)
+    items[channel] = await draftItem(channel, chosen, rest, postDate, gathered, log)
   } else {
     const ranked = await rankCandidates(shortlist(gathered.candidates, used), recentTopics)
-    chosen = ranked[0] ?? null
-    suggestions = ranked.slice(1)
+    // Drafting both at once: the model already keeps their first picks apart.
+    await Promise.all(
+      targets.map(async (c) => {
+        items[c] = await draftItem(c, ranked[c][0] ?? null, ranked[c].slice(1), postDate, gathered, log)
+      }),
+    )
   }
 
-  const base = {
+  const post = await saveExplainer({
     _id: `explainerPost-${postDate}`,
     postDate,
     postAt: postAt.toISOString(),
-    status: 'draft' as const,
-    suggestions,
+    linkedinPersonal: items.linkedinPersonal ?? existing?.linkedinPersonal ?? null,
+    instagram: items.instagram ?? existing?.instagram ?? null,
     passed: [...passed],
-    approvedAt: null,
-    generatedAt: new Date().toISOString(),
-  }
-
-  if (!chosen) {
-    const error = ['Nothing new to adapt this week.', ...gathered.problems].join(' ')
-    const post = await saveExplainer({ ...base, source: null, topic: null, slides: null, captions: null, flags: [], error })
-    log(error)
-    return { post, changed: true }
-  }
-
-  log(`drafting from ${chosen.kind}: ${chosen.title}`)
-  try {
-    const instagram =
-      chosen.kind === 'instagram' ? (gathered.instagram.find((s) => s.candidate.id === chosen!.id) ?? null) : null
-    const draft = await draftFrom(chosen, { postDate, instagram })
-    const post = await saveExplainer({
-      ...base,
-      source: ref(chosen),
-      topic: chosen.topic || null,
-      ...draft,
-      error: gathered.problems.length ? gathered.problems.join(' ') : null,
-    })
-    return { post, changed: true }
-  } catch (err) {
-    const message = (err as Error).message
-    const post = await saveExplainer({
-      ...base,
-      source: ref(chosen),
-      topic: chosen.topic || null,
-      slides: null,
-      captions: null,
-      flags: [],
-      error: `Drafting failed: ${message}`,
-    })
-    log(`drafting failed: ${message}`)
-    return { post, changed: true }
-  }
+  })
+  return { post, changed: true }
 }
 
 function reviewLink(): string {
@@ -181,42 +219,58 @@ export async function runWeeklyExplainer(
     ])
     const gathered = await gatherCandidates({ instagramToken: token?.accessToken })
     const ranked = await rankCandidates(shortlist(gathered.candidates, used), recentTopics)
-    for (const r of ranked) log(`${r.kind}: ${r.title} (${r.topic}) — ${r.reason}`)
-    return { postDate, status: 'dry run', source: ranked[0]?.title ?? null, mailed: [], note: gathered.problems.join(' ') || null }
+    for (const c of EXPLAINER_CHANNELS) {
+      for (const r of ranked[c]) log(`${c}: ${r.kind}: ${r.title} (${r.topic}) — ${r.reason}`)
+    }
+    return {
+      postDate,
+      status: 'dry run',
+      source: EXPLAINER_CHANNELS.map((c) => ranked[c][0]?.title ?? '-').join(' | '),
+      mailed: [],
+      note: gathered.problems.join(' ') || null,
+    }
   }
 
   const { post, changed } = await draftExplainer({ force: options.force, onLog: options.onLog })
   const report: ExplainerReport = {
     postDate,
-    status: changed ? post.status : 'unchanged',
-    source: post.source?.title ?? null,
+    status: changed ? 'drafted' : 'unchanged',
+    source: EXPLAINER_CHANNELS.map((c) => post[c]?.source?.title ?? '-').join(' | '),
     mailed: [],
     note: null,
   }
-  if (!changed) return { ...report, note: `already ${post.status}` }
+  if (!changed) return { ...report, note: 'already drafted' }
 
   const to = approvers()
   if (!to.length) return { ...report, note: 'SOCIAL_DIGEST_TO and REVIEW_DIGEST_TO not set' }
   if (!isMailConfigured()) return { ...report, note: 'RESEND_API_KEY not set' }
 
   const day = longDay(postAt)
-  const lines = post.slides
-    ? [
-        `Thursday's explainer is ready for you: “${post.source?.title}” ${post.source?.kind === 'forum' ? `by ${post.source.author} on the EA Forum` : 'from the Centre for Effective Altruism'}.`,
-        '',
-        `English slides for your LinkedIn, Dutch for EA Netherlands' Instagram. Check both, especially the Dutch, then approve it for ${day}:`,
-        reviewLink(),
-        '',
-        ...(post.flags.length ? ['Worth checking:', ...post.flags.map((f) => `- ${f}`), ''] : []),
-        ...(post.suggestions.length
-          ? ['If you’d rather use something else, the page offers:', ...post.suggestions.map((s) => `- ${s.title}`), '']
-          : []),
-      ]
-    : [`Thursday's explainer couldn't be drafted: ${post.error ?? 'no reason given'}`, '', `Have a look: ${reviewLink()}`, '']
-  lines.push('Nothing is posted until you approve it. The link signs you in for a week, so please do not forward this mail.')
+  const describe = (c: ExplainerChannel) => {
+    const item = post[c]
+    const where = c === 'linkedinPersonal' ? 'For your LinkedIn, in English' : "For EA Netherlands' Instagram, in Dutch"
+    if (!item?.slides || !item.source) return [`${where}: couldn't be drafted. ${item?.error ?? ''}`.trim(), '']
+    const from =
+      item.source.kind === 'forum' ? `by ${item.source.author} on the EA Forum` : 'from the Centre for Effective Altruism'
+    return [
+      `${where}: “${item.source.title}” ${from}.`,
+      ...(item.flags.length ? ['Worth checking:', ...item.flags.map((f) => `- ${f}`)] : []),
+      '',
+    ]
+  }
+  const ready = EXPLAINER_CHANNELS.filter((c) => post[c]?.slides)
+  const lines = [
+    `Thursday's explainers for ${day}, one per account, each from its own source:`,
+    '',
+    ...describe('linkedinPersonal'),
+    ...describe('instagram'),
+    `Check them (especially the Dutch), swap either for another suggestion, and approve each one: ${reviewLink()}`,
+    '',
+    'Nothing is posted until you approve it. The link signs you in for a week, so please do not forward this mail.',
+  ]
   await sendMail({
     to,
-    subject: post.slides ? 'Thursday’s explainer is ready to approve' : 'Thursday’s explainer needs you',
+    subject: ready.length === 2 ? 'Thursday’s explainers are ready to approve' : 'Thursday’s explainers need you',
     text: lines.join('\n'),
   })
   log(`mailed ${to.join(', ')}`)
@@ -242,57 +296,63 @@ export async function runExplainerPublish(
 
   const post = await getExplainer(postDate)
   if (!post) return (log(`no explainer for ${postDate}`), report)
-  if (post.status !== 'approved') return (log(`explainer for ${postDate} is ${post.status}; nothing to do`), report)
-  if (!post.slides || !post.captions) return (act('approved but incomplete; not posting'), report)
 
-  const results: Partial<Record<ExplainerChannel, ChannelResult>> = { ...(post.results ?? {}) }
   const failures: string[] = []
-
   for (const channel of EXPLAINER_CHANNELS) {
-    const done = results[channel]
+    const item = post[channel]
+    const label = CHANNEL_LABEL[channel]
+    if (!item || item.status !== 'approved') {
+      log(`${label}: ${item?.status ?? 'nothing'}; nothing to do`)
+      continue
+    }
+    if (!item.slides || !item.caption) {
+      act(`${label}: approved but incomplete; not posting`)
+      continue
+    }
+    const done = item.result
     if (done?.id) continue
     if ((done?.attempts ?? 0) >= MAX_ATTEMPTS) continue
     if (now < channelPostAt(postDate, channel)) continue
-    const label = CHANNEL_LABEL[channel]
     if (options.dryRun || !report.enabled) {
       act(`${options.dryRun ? 'dry run' : 'SOCIAL_POSTING is off'}: would post the explainer to ${label}`)
       continue
     }
     const attempts = (done?.attempts ?? 0) + 1
+    const lang = EXPLAINER_LANG[channel]
+    let result: ChannelResult
     try {
       const token = await getToken(channel)
       if (!token) throw new Error(`${label} is not connected`)
-      const result =
+      const urls = explainerSlidePaths(post, lang, channel === 'instagram' ? 'jpg' : 'png').map((p) => `${PUBLIC_ORIGIN}${p}`)
+      const posted =
         channel === 'instagram'
           ? await publishInstagramCarousel({
               userId: token.accountId,
               token: token.accessToken,
-              imageUrls: explainerSlidePaths(post, 'nl', 'jpg').map((p) => `${PUBLIC_ORIGIN}${p}`),
-              caption: post.captions.instagram,
+              imageUrls: urls,
+              caption: item.caption,
               http: options.http,
               sleep: options.sleep,
             })
           : await publishLinkedInImages({
               token: token.accessToken,
               personUrn: token.accountId,
-              imageUrls: explainerSlidePaths(post, 'en').map((p) => `${PUBLIC_ORIGIN}${p}`),
-              caption: post.captions.linkedinPersonal,
+              imageUrls: urls,
+              caption: item.caption,
               http: options.http,
             })
-      results[channel] = { at: now.toISOString(), id: result.id, url: result.url }
-      act(`posted the explainer to ${label}: ${result.url ?? result.id}`)
+      result = { at: now.toISOString(), id: posted.id, url: posted.url }
+      act(`posted the explainer to ${label}: ${posted.url ?? posted.id}`)
     } catch (err) {
       const message = (err as Error).message
-      results[channel] = { at: now.toISOString(), error: message, attempts }
+      result = { at: now.toISOString(), error: message, attempts }
       act(`${label} failed (attempt ${attempts} of ${MAX_ATTEMPTS}): ${message}`)
       if (attempts === 1) failures.push(`${label}: ${message}`)
     }
+    await patchItem(postDate, channel, { result, ...(result.id ? { status: 'posted' as const } : {}) })
   }
 
   if (options.dryRun || !report.enabled) return report
-  const allPosted = EXPLAINER_CHANNELS.every((c) => results[c]?.id)
-  await patchExplainer(postDate, { results, ...(allPosted ? { status: 'posted' as const } : {}) })
-
   const to = approvers()
   if (failures.length && to.length && isMailConfigured()) {
     await sendMail({

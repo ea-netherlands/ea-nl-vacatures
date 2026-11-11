@@ -1,7 +1,8 @@
 /**
- * The coming Thursday's explainer: its source, the slides in English and
- * Dutch, both captions, and James's decision. The accounts are connected on
- * /review/social; this page uses the same ones.
+ * The coming Thursday's two explainers, one per account, each from its own
+ * source: English for James's LinkedIn, Dutch for EA Nederland's Instagram.
+ * Each has its source, slides, caption and decision. The accounts are
+ * connected on /review/social; this page uses the same ones.
  */
 
 import type { Metadata } from 'next'
@@ -10,11 +11,17 @@ import l from '@jobboard/components/layout.module.css'
 import s from '@jobboard/components/review.module.css'
 import x from '@jobboard/components/social.module.css'
 import u from '@jobboard/components/ui.module.css'
-import { ExplainerEditor, type ExplainerEditorPost } from '@jobboard/components/ExplainerEditor'
+import { ExplainerEditor, ExplainerFirstDraft, type ExplainerItemView } from '@jobboard/components/ExplainerEditor'
 import { isReviewConfigured, issueToken, LINK_TTL_MS, SESSION_COOKIE, verifyToken } from '@jobboard/review/auth'
 import { explainerSlidePaths } from '@jobboard/social/explainer/slides'
 import { instagramSourceEnabled, sourceKey, type SourceRef } from '@jobboard/social/explainer/sources'
-import { getExplainer, type ExplainerPost, type Lang } from '@jobboard/social/explainer/store'
+import {
+  EXPLAINER_LANG,
+  getExplainer,
+  type ExplainerChannel,
+  type ExplainerItem,
+  type ExplainerPost,
+} from '@jobboard/social/explainer/store'
 import { EXPLAINER_CHANNELS, nextExplainerTime } from '@jobboard/social/explainer/weekly'
 import { channelPostAt, postingEnabled } from '@jobboard/social/publish'
 import { amsterdamDate, CHANNEL_LABEL } from '@jobboard/social/store'
@@ -45,31 +52,28 @@ function Frame({ children }: { children: React.ReactNode }) {
   )
 }
 
-const LANG_HEADING: Record<Lang, string> = {
-  en: 'English slides, for your LinkedIn',
-  nl: 'Dutch slides, for Instagram',
+const HEADING: Record<ExplainerChannel, string> = {
+  linkedinPersonal: 'For your LinkedIn, in English',
+  instagram: 'For EA Netherlands’ Instagram, in Dutch',
 }
 
-function Strip({ post, lang }: { post: ExplainerPost; lang: Lang }) {
-  const paths = explainerSlidePaths(post, lang)
+function Strip({ post, channel }: { post: ExplainerPost; channel: ExplainerChannel }) {
+  const paths = explainerSlidePaths(post, EXPLAINER_LANG[channel])
   if (!paths.length) return null
   return (
-    <section className={x.section}>
-      <h2 className={x.heading}>{LANG_HEADING[lang]}</h2>
-      <ol className={x.strip}>
-        {paths.map((src, i) => (
-          <li key={src} className={x.slide}>
-            <a href={src} target="_blank" rel="noreferrer">
-              {/* eslint-disable-next-line @next/next/no-img-element -- generated PNGs, shown as they will be posted */}
-              <img src={src} alt={`Slide ${i + 1}`} loading="lazy" width={1080} height={1350} />
-            </a>
-            <span>
-              {i + 1}. {i === 0 ? 'Cover' : i === paths.length - 1 ? 'Credit and sign-up' : 'Point'}
-            </span>
-          </li>
-        ))}
-      </ol>
-    </section>
+    <ol className={x.strip}>
+      {paths.map((src, i) => (
+        <li key={src} className={x.slide}>
+          <a href={src} target="_blank" rel="noreferrer">
+            {/* eslint-disable-next-line @next/next/no-img-element -- generated PNGs, shown as they will be posted */}
+            <img src={src} alt={`Slide ${i + 1}`} loading="lazy" width={1080} height={1350} />
+          </a>
+          <span>
+            {i + 1}. {i === 0 ? 'Cover' : i === paths.length - 1 ? 'Credit and sign-up' : 'Point'}
+          </span>
+        </li>
+      ))}
+    </ol>
   )
 }
 
@@ -81,43 +85,62 @@ const view = (src: SourceRef) => ({
   url: src.url,
 })
 
-function Posting({ post }: { post: ExplainerPost }) {
-  if (post.status !== 'approved' && post.status !== 'posted') return null
+function itemView(item: ExplainerItem | null): ExplainerItemView | null {
+  if (!item) return null
+  return {
+    status: item.status,
+    source: item.source ? view(item.source) : null,
+    topic: item.topic,
+    suggestions: (item.suggestions ?? []).map((sug) => ({ ...view(sug), reason: sug.reason })),
+    slides: item.slides,
+    caption: item.caption,
+    flags: item.flags ?? [],
+    error: item.error,
+  }
+}
+
+function Result({ item }: { item: ExplainerItem | null }) {
+  const r = item?.result
+  if (!r || (item?.status !== 'approved' && item?.status !== 'posted')) return null
+  return (
+    <p className={x.pickMeta}>
+      {r.id ? 'Posted' : r.error ? `Failed (${r.attempts ?? 1} of 3): ${r.error}` : 'Waiting'}
+      {r.url ? (
+        <>
+          {' '}
+          ·{' '}
+          <a href={r.url} target="_blank" rel="noreferrer">
+            View
+          </a>
+        </>
+      ) : null}
+    </p>
+  )
+}
+
+const at = (date: string, c: ExplainerChannel) =>
+  channelPostAt(date, c).toLocaleString('en-GB', {
+    weekday: 'long',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: 'Europe/Amsterdam',
+  })
+
+function Account({ post, channel }: { post: ExplainerPost; channel: ExplainerChannel }) {
+  const item = post[channel]
   return (
     <section className={x.section}>
-      <h2 className={x.heading}>Posting</h2>
-      <ul className={x.picks}>
-        {EXPLAINER_CHANNELS.map((c) => {
-          const r = post.results?.[c]
-          const at = channelPostAt(post.postDate, c).toLocaleString('en-GB', {
-            weekday: 'short',
-            hour: '2-digit',
-            minute: '2-digit',
-            timeZone: 'Europe/Amsterdam',
-          })
-          return (
-            <li key={c} className={x.account}>
-              <div>
-                <div className={x.pickTitle}>
-                  {CHANNEL_LABEL[c]} · {at}
-                </div>
-                <div className={x.pickMeta}>
-                  {r?.id ? 'Posted' : r?.error ? `Failed (${r.attempts ?? 1} of 3): ${r.error}` : 'Waiting'}
-                  {r?.url ? (
-                    <>
-                      {' '}
-                      ·{' '}
-                      <a href={r.url} target="_blank" rel="noreferrer">
-                        View
-                      </a>
-                    </>
-                  ) : null}
-                </div>
-              </div>
-            </li>
-          )
-        })}
-      </ul>
+      <h2 className={x.heading}>
+        {HEADING[channel]} · {at(post.postDate, channel)}
+      </h2>
+      <Result item={item} />
+      <ExplainerEditor
+        key={`${channel}-${post._rev ?? ''}`}
+        channel={channel}
+        item={itemView(item)}
+        postingTime={`on ${at(post.postDate, channel)}`}
+      />
+      <Strip post={post} channel={channel} />
     </section>
   )
 }
@@ -165,29 +188,27 @@ export default async function ExplainerPage() {
     storeError = (err as Error).message
   }
 
-  const editorPost: ExplainerEditorPost | null = post
-    ? {
-        status: post.status,
-        source: post.source ? view(post.source) : null,
-        topic: post.topic,
-        suggestions: (post.suggestions ?? []).map((sug) => ({ ...view(sug), reason: sug.reason })),
-        slides: post.slides,
-        captions: post.captions,
-        flags: post.flags ?? [],
-        error: post.error,
-      }
-    : null
-
-  const times = `${hhmm(channelPostAt(date, 'linkedinPersonal'))} on your LinkedIn, ${hhmm(channelPostAt(date, 'instagram'))} on Instagram`
-
   return (
     <Frame>
-      {todays && (todays.status === 'approved' || todays.status === 'posted') ? <Posting post={todays} /> : null}
-      <h1 className={s.title}>The explainer for {day}</h1>
+      {todays ? (
+        <section className={x.section}>
+          <h2 className={x.heading}>Today’s explainers</h2>
+          {EXPLAINER_CHANNELS.map((c) => (
+            <div key={c}>
+              <p className={x.pickTitle}>
+                {CHANNEL_LABEL[c]}: {todays[c]?.source?.title ?? 'nothing'} ({todays[c]?.status ?? 'not drafted'})
+              </p>
+              <Result item={todays[c]} />
+            </div>
+          ))}
+        </section>
+      ) : null}
+      <h1 className={s.title}>The explainers for {day}</h1>
       <p className={s.lead}>
-        One idea from a curated EA Forum post
-        {instagramSourceEnabled() ? ' or a Centre for Effective Altruism post' : ''}, in English for your LinkedIn and
-        in Dutch for EA Netherlands’ Instagram. Check both, especially the Dutch, then approve it. It goes out at {times}.
+        Two explainers, each from its own source so nobody who follows both accounts sees the same one twice: one in
+        English for your LinkedIn, one in Dutch for EA Netherlands’ Instagram. Sources are curated EA Forum posts
+        {instagramSourceEnabled() ? ' and the Centre for Effective Altruism’s Instagram' : ''}. Approve or skip each
+        one on its own.
       </p>
       {!postingEnabled() ? (
         <div className={x.warning} role="status">
@@ -198,20 +219,11 @@ export default async function ExplainerPage() {
         <div className={x.warning} role="status">
           Can’t read or save explainers: {storeError}
         </div>
+      ) : post ? (
+        EXPLAINER_CHANNELS.map((c) => <Account key={c} post={post} channel={c} />)
       ) : (
-        <ExplainerEditor key={post?._rev ?? 'none'} post={editorPost} day={day} />
+        <ExplainerFirstDraft day={day} />
       )}
-      {post ? (
-        <>
-          <Strip post={post} lang="en" />
-          <Strip post={post} lang="nl" />
-          <Posting post={post} />
-        </>
-      ) : null}
     </Frame>
   )
-}
-
-function hhmm(at: Date) {
-  return at.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Amsterdam' })
 }

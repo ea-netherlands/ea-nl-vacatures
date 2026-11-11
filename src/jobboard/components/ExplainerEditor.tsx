@@ -1,10 +1,10 @@
 'use client'
 
 /**
- * The editable half of /review/social/explainer: the slide text in English and
- * Dutch side by side, both captions, the source (with other suggestions to
- * swap to) and the decision. Writes through /api/review/social/explainer and
- * refreshes the server page after each change.
+ * The editable parts of /review/social/explainer, one per account: the source
+ * (with other suggestions to swap to), the slide text, the caption and the
+ * decision. Writes through /api/review/social/explainer and refreshes the
+ * server page after each change.
  */
 
 import { useRouter } from 'next/navigation'
@@ -13,31 +13,26 @@ import s from './review.module.css'
 import u from './ui.module.css'
 import x from './social.module.css'
 
-type Lang = 'en' | 'nl'
+type Channel = 'linkedinPersonal' | 'instagram'
 type SlideText = {
   cover: { headline: string; marked: string; sub: string }
   points: { heading: string; body: string }[]
 }
-type Captions = { linkedinPersonal: string; instagram: string }
 type SourceView = { key: string; kind: 'forum' | 'instagram'; title: string; author: string; url: string }
 
-export type ExplainerEditorPost = {
+export type ExplainerItemView = {
   status: 'draft' | 'approved' | 'skipped' | 'posted'
   source: SourceView | null
   topic: string | null
   suggestions: (SourceView & { reason: string })[]
-  slides: Record<Lang, SlideText> | null
-  captions: Captions | null
+  slides: SlideText | null
+  caption: string | null
   flags: string[]
   error: string | null
 }
 
-const LANG_LABEL: Record<Lang, string> = { en: 'English, for your LinkedIn', nl: 'Dutch, for Instagram' }
-const CAPTIONS: { key: keyof Captions; label: string; limit: number }[] = [
-  { key: 'linkedinPersonal', label: 'James on LinkedIn, in English', limit: 3000 },
-  { key: 'instagram', label: 'EA Netherlands on Instagram, in Dutch', limit: 2200 },
-]
 const LIMIT = { headline: 80, sub: 160, heading: 70, body: 300 }
+const CAPTION_LIMIT: Record<Channel, number> = { linkedinPersonal: 3000, instagram: 2200 }
 
 async function send(payload: Record<string, unknown>) {
   const res = await fetch('/api/review/social/explainer', {
@@ -47,6 +42,26 @@ async function send(payload: Record<string, unknown>) {
   })
   const data = (await res.json().catch(() => ({}))) as { error?: string }
   if (!res.ok) throw new Error(data.error ?? 'Something went wrong saving that. Try again.')
+}
+
+function useAct() {
+  const router = useRouter()
+  const [busy, setBusy] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  async function act(key: string, payload: Record<string, unknown>, confirmText?: string) {
+    if (confirmText && !window.confirm(confirmText)) return
+    setBusy(key)
+    setError(null)
+    try {
+      await send(payload)
+      router.refresh()
+    } catch (err) {
+      setError((err as Error).message)
+    } finally {
+      setBusy(null)
+    }
+  }
+  return { busy, error, act }
 }
 
 const sourceLine = (src: SourceView) =>
@@ -90,41 +105,50 @@ function Field({
   )
 }
 
-export function ExplainerEditor({ post, day }: { post: ExplainerEditorPost | null; day: string }) {
-  const router = useRouter()
-  const [slides, setSlides] = useState(post?.slides ?? null)
-  const [captions, setCaptions] = useState(post?.captions ?? null)
-  const [busy, setBusy] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const editable = post?.status === 'draft'
+/** Before anything is drafted for the week. */
+export function ExplainerFirstDraft({ day }: { day: string }) {
+  const { busy, error, act } = useAct()
+  return (
+    <div className={x.decision}>
+      <p className={s.hint}>
+        Nothing drafted for {day} yet. The Wednesday cron does this at 11:30; you can also do it now. It picks a source
+        for each account and writes both explainers, which takes a minute or two.
+      </p>
+      <div className={s.actions}>
+        <button className={`${u.btn} ${u.btnSolid}`} disabled={busy !== null} onClick={() => act('draft', { action: 'draft' })}>
+          {busy === 'draft' ? 'Drafting…' : 'Draft this week’s explainers'}
+        </button>
+      </div>
+      {error ? <p className={s.error}>{error}</p> : null}
+    </div>
+  )
+}
+
+export function ExplainerEditor({
+  channel,
+  item,
+  postingTime,
+}: {
+  channel: Channel
+  item: ExplainerItemView | null
+  postingTime: string
+}) {
+  const { busy, error, act } = useAct()
+  const [slides, setSlides] = useState(item?.slides ?? null)
+  const [caption, setCaption] = useState(item?.caption ?? null)
+  const editable = item?.status === 'draft'
   const dirty =
-    JSON.stringify(slides) !== JSON.stringify(post?.slides ?? null) ||
-    JSON.stringify(captions) !== JSON.stringify(post?.captions ?? null)
+    JSON.stringify(slides) !== JSON.stringify(item?.slides ?? null) || caption !== (item?.caption ?? null)
+  const send = (action: string, extra: Record<string, unknown> = {}, confirmText?: string) =>
+    act(action, { action, channel, ...extra }, confirmText)
 
-  async function act(action: string, extra: Record<string, unknown> = {}, confirmText?: string) {
-    if (confirmText && !window.confirm(confirmText)) return
-    setBusy(action)
-    setError(null)
-    try {
-      await send({ action, ...extra })
-      router.refresh()
-    } catch (err) {
-      setError((err as Error).message)
-    } finally {
-      setBusy(null)
-    }
-  }
-
-  if (!post) {
+  if (!item) {
     return (
       <div className={x.decision}>
-        <p className={s.hint}>
-          Nothing drafted for {day} yet. The Wednesday cron does this at 11:30; you can also do it now. It picks a source
-          and writes both languages, which takes a minute or two.
-        </p>
+        <p className={s.hint}>Nothing drafted for this account yet.</p>
         <div className={s.actions}>
-          <button className={`${u.btn} ${u.btnSolid}`} disabled={busy !== null} onClick={() => act('draft')}>
-            {busy === 'draft' ? 'Drafting…' : 'Draft this week’s explainer'}
+          <button className={`${u.btn} ${u.btnSolid}`} disabled={busy !== null} onClick={() => send('draft')}>
+            {busy === 'draft' ? 'Drafting…' : 'Draft it'}
           </button>
         </div>
         {error ? <p className={s.error}>{error}</p> : null}
@@ -132,56 +156,42 @@ export function ExplainerEditor({ post, day }: { post: ExplainerEditorPost | nul
     )
   }
 
-  const setCover = (lang: Lang, field: keyof SlideText['cover'], value: string) =>
-    slides && setSlides({ ...slides, [lang]: { ...slides[lang], cover: { ...slides[lang].cover, [field]: value } } })
-  const setPoint = (lang: Lang, i: number, field: 'heading' | 'body', value: string) =>
-    slides &&
-    setSlides({
-      ...slides,
-      [lang]: {
-        ...slides[lang],
-        points: slides[lang].points.map((p, j) => (j === i ? { ...p, [field]: value } : p)),
-      },
-    })
-  const removePoint = (i: number) =>
-    slides &&
-    setSlides({
-      en: { ...slides.en, points: slides.en.points.filter((_, j) => j !== i) },
-      nl: { ...slides.nl, points: slides.nl.points.filter((_, j) => j !== i) },
-    })
-  const pointCount = slides ? Math.max(slides.en.points.length, slides.nl.points.length) : 0
-  const swapWarning = 'Draft from this source instead? The current slides and captions, and your edits, will be replaced.'
+  const setCover = (field: keyof SlideText['cover'], value: string) =>
+    slides && setSlides({ ...slides, cover: { ...slides.cover, [field]: value } })
+  const setPoint = (i: number, field: 'heading' | 'body', value: string) =>
+    slides && setSlides({ ...slides, points: slides.points.map((p, j) => (j === i ? { ...p, [field]: value } : p)) })
+  const swapWarning = 'Draft this account’s explainer from this source instead? The current slides and caption, and your edits, will be replaced.'
 
   return (
     <>
       <div className={x.decision}>
         <p className={x.status}>
-          {post.status === 'draft'
+          {item.status === 'draft'
             ? 'Draft: waiting for you'
-            : post.status === 'approved'
-              ? 'Approved: it goes out on Thursday'
-              : post.status === 'skipped'
+            : item.status === 'approved'
+              ? `Approved: it goes out ${postingTime}`
+              : item.status === 'skipped'
                 ? 'Skipped this week'
                 : 'Posted'}
         </p>
-        {post.source ? (
+        {item.source ? (
           <p>
             From{' '}
-            <a href={post.source.url} target="_blank" rel="noreferrer">
-              {post.source.title}
+            <a href={item.source.url} target="_blank" rel="noreferrer">
+              {item.source.title}
             </a>{' '}
             <span className={x.pickMeta}>
-              ({sourceLine(post.source)}
-              {post.topic ? ` · ${post.topic}` : ''})
+              ({sourceLine(item.source)}
+              {item.topic ? ` · ${item.topic}` : ''})
             </span>
           </p>
         ) : null}
-        {post.error ? <p className={s.error}>{post.error}</p> : null}
-        {post.flags.length ? (
+        {item.error ? <p className={s.error}>{item.error}</p> : null}
+        {item.flags.length ? (
           <div>
             <p className={s.noteLabel}>Check before approving</p>
             <ul className={x.flags}>
-              {post.flags.map((f) => (
+              {item.flags.map((f) => (
                 <li key={f}>{f}</li>
               ))}
             </ul>
@@ -192,20 +202,20 @@ export function ExplainerEditor({ post, day }: { post: ExplainerEditorPost | nul
             <>
               <button
                 className={`${u.btn} ${u.btnSolid}`}
-                disabled={busy !== null || !post.slides || dirty}
+                disabled={busy !== null || !item.slides || dirty}
                 title={dirty ? 'Save your edits first' : undefined}
-                onClick={() => act('approve')}
+                onClick={() => send('approve')}
               >
                 {busy === 'approve' ? 'Approving…' : 'Approve'}
               </button>
-              <button className={`${u.btn} ${u.btnSubtle}`} disabled={busy !== null} onClick={() => act('skip')}>
+              <button className={`${u.btn} ${u.btnSubtle}`} disabled={busy !== null} onClick={() => send('skip')}>
                 Skip this week
               </button>
               <button
                 className={`${u.btn} ${u.btnGhost}`}
-                disabled={busy !== null || !post.source}
+                disabled={busy !== null || !item.source}
                 onClick={() =>
-                  act('draft', { source: post.source?.key }, 'Rewrite the slides and captions from the same source? Your edits will be lost.')
+                  send('draft', { source: item.source?.key }, 'Rewrite the slides and caption from the same source? Your edits will be lost.')
                 }
               >
                 {busy === 'draft' ? 'Working…' : 'Redraft'}
@@ -214,14 +224,14 @@ export function ExplainerEditor({ post, day }: { post: ExplainerEditorPost | nul
                 className={`${u.btn} ${u.btnGhost}`}
                 disabled={busy !== null}
                 onClick={() =>
-                  act('draft', { pass: true }, 'Drop this source for good and pick a new one? This takes a minute or two.')
+                  send('draft', { pass: true }, 'Drop this source for good and pick a new one? This takes a minute or two.')
                 }
               >
                 Not this one
               </button>
             </>
-          ) : post.status !== 'posted' ? (
-            <button className={`${u.btn} ${u.btnSubtle}`} disabled={busy !== null} onClick={() => act('reopen')}>
+          ) : item.status !== 'posted' ? (
+            <button className={`${u.btn} ${u.btnSubtle}`} disabled={busy !== null} onClick={() => send('reopen')}>
               Reopen to edit
             </button>
           ) : null}
@@ -229,11 +239,11 @@ export function ExplainerEditor({ post, day }: { post: ExplainerEditorPost | nul
         {error ? <p className={s.error}>{error}</p> : null}
       </div>
 
-      {editable && post.suggestions.length ? (
-        <section className={x.section}>
-          <h2 className={x.heading}>Other suggestions</h2>
+      {editable && item.suggestions.length ? (
+        <details className={x.more}>
+          <summary>Other suggestions for this account</summary>
           <ul className={x.picks}>
-            {post.suggestions.map((sug) => (
+            {item.suggestions.map((sug) => (
               <li key={sug.key} className={x.account}>
                 <div>
                   <a className={x.pickTitle} href={sug.url} target="_blank" rel="noreferrer">
@@ -246,127 +256,78 @@ export function ExplainerEditor({ post, day }: { post: ExplainerEditorPost | nul
                 <button
                   className={`${u.btn} ${u.btnGhost} ${u.btnSmall}`}
                   disabled={busy !== null}
-                  onClick={() => act('draft', { source: sug.key }, swapWarning)}
+                  onClick={() => send('draft', { source: sug.key }, swapWarning)}
                 >
                   Use this one
                 </button>
               </li>
             ))}
           </ul>
-        </section>
+        </details>
       ) : null}
 
       {slides ? (
-        <section className={x.section}>
-          <h2 className={x.heading}>Slide text</h2>
-          <p className={s.hint}>
-            The last slide, with the credit and the monthly email, is added for you. Save, then check the slides below.
-          </p>
-          <div className={x.pair}>
-            <div className={x.pairHead}>Cover</div>
-            {(['en', 'nl'] as const).map((lang) => (
-              <div key={lang} className={x.lang}>
-                <span className={s.noteLabel}>{LANG_LABEL[lang]}</span>
-                <Field
-                  label="Headline"
-                  value={slides[lang].cover.headline}
-                  limit={LIMIT.headline}
-                  readOnly={!editable}
-                  onChange={(v) => setCover(lang, 'headline', v)}
-                />
-                <Field
-                  label="Highlighted end of the headline"
-                  value={slides[lang].cover.marked}
-                  limit={40}
-                  readOnly={!editable}
-                  onChange={(v) => setCover(lang, 'marked', v)}
-                />
-                <Field
-                  label="Line below"
-                  value={slides[lang].cover.sub}
-                  limit={LIMIT.sub}
-                  rows={3}
-                  readOnly={!editable}
-                  onChange={(v) => setCover(lang, 'sub', v)}
-                />
-              </div>
-            ))}
+        <details className={x.more} open={editable}>
+          <summary>Slide text</summary>
+          <p className={s.hint}>The last slide, with the credit and the monthly email, is added for you.</p>
+          <div className={x.lang}>
+            <span className={x.pairHead}>Cover</span>
+            <Field label="Headline" value={slides.cover.headline} limit={LIMIT.headline} readOnly={!editable} onChange={(v) => setCover('headline', v)} />
+            <Field
+              label="Highlighted end of the headline"
+              value={slides.cover.marked}
+              limit={40}
+              readOnly={!editable}
+              onChange={(v) => setCover('marked', v)}
+            />
+            <Field label="Line below" value={slides.cover.sub} limit={LIMIT.sub} rows={3} readOnly={!editable} onChange={(v) => setCover('sub', v)} />
           </div>
-          {Array.from({ length: pointCount }, (_, i) => (
-            <div key={i} className={x.pair}>
-              <div className={x.pairHead}>
+          {slides.points.map((point, i) => (
+            <div key={i} className={x.lang}>
+              <span className={x.pairHead}>
                 Slide {i + 2}
-                {editable && pointCount > 3 ? (
+                {editable && slides.points.length > 3 ? (
                   <button
                     className={`${u.btn} ${u.btnGhost} ${u.btnSmall}`}
                     disabled={busy !== null}
-                    onClick={() => removePoint(i)}
+                    onClick={() => setSlides({ ...slides, points: slides.points.filter((_, j) => j !== i) })}
                   >
                     Remove slide
                   </button>
                 ) : null}
-              </div>
-              {(['en', 'nl'] as const).map((lang) => {
-                const point = slides[lang].points[i] ?? { heading: '', body: '' }
-                return (
-                  <div key={lang} className={x.lang}>
-                    <span className={s.noteLabel}>{LANG_LABEL[lang]}</span>
-                    <Field
-                      label="Heading"
-                      value={point.heading}
-                      limit={LIMIT.heading}
-                      readOnly={!editable}
-                      onChange={(v) => setPoint(lang, i, 'heading', v)}
-                    />
-                    <Field
-                      label="Text"
-                      value={point.body}
-                      limit={LIMIT.body}
-                      rows={5}
-                      readOnly={!editable}
-                      onChange={(v) => setPoint(lang, i, 'body', v)}
-                    />
-                  </div>
-                )
-              })}
+              </span>
+              <Field label="Heading" value={point.heading} limit={LIMIT.heading} readOnly={!editable} onChange={(v) => setPoint(i, 'heading', v)} />
+              <Field label="Text" value={point.body} limit={LIMIT.body} rows={5} readOnly={!editable} onChange={(v) => setPoint(i, 'body', v)} />
             </div>
           ))}
-        </section>
+        </details>
       ) : null}
 
-      {captions ? (
-        <section className={x.section}>
-          <h2 className={x.heading}>Captions</h2>
-          {CAPTIONS.map((c) => {
-            const n = captions[c.key].length
-            return (
-              <label key={c.key} className={s.noteField}>
-                <span className={s.noteLabel}>
-                  {c.label}
-                  <span className={n > c.limit ? s.countBad : s.count}>
-                    {n} / {c.limit}
-                  </span>
-                </span>
-                <textarea
-                  className={`${u.suggestTextarea} ${x.caption}`}
-                  value={captions[c.key]}
-                  rows={12}
-                  readOnly={!editable}
-                  onChange={(e) => setCaptions({ ...captions, [c.key]: e.target.value })}
-                  disabled={busy !== null}
-                />
-              </label>
-            )
-          })}
-        </section>
+      {caption !== null ? (
+        <label className={s.noteField}>
+          <span className={s.noteLabel}>
+            Caption
+            <span className={caption.length > CAPTION_LIMIT[channel] ? s.countBad : s.count}>
+              {caption.length} / {CAPTION_LIMIT[channel]}
+            </span>
+          </span>
+          <textarea
+            className={`${u.suggestTextarea} ${x.caption}`}
+            value={caption}
+            rows={12}
+            readOnly={!editable}
+            onChange={(e) => setCaption(e.target.value)}
+            disabled={busy !== null}
+          />
+        </label>
       ) : null}
 
-      {editable && slides && captions ? (
+      {editable && slides && caption !== null ? (
         <div className={s.actions}>
           <button
             className={`${u.btn} ${u.btnSolid}`}
             disabled={busy !== null || !dirty}
-            onClick={() => act('save', { slides, captions })}
+            onClick={() => send('save', { slides, caption })}
           >
             {busy === 'save' ? 'Saving…' : 'Save edits'}
           </button>
@@ -375,8 +336,8 @@ export function ExplainerEditor({ post, day }: { post: ExplainerEditorPost | nul
               className={`${u.btn} ${u.btnGhost}`}
               disabled={busy !== null}
               onClick={() => {
-                setSlides(post.slides)
-                setCaptions(post.captions)
+                setSlides(item.slides)
+                setCaption(item.caption)
               }}
             >
               Undo edits
