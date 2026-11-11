@@ -22,7 +22,8 @@ export async function GET(request: Request) {
   const focus = url.searchParams.get('focus')
   // The weekly social post's mail lands on its own page. A fixed value, not a
   // path, so this can't become an open redirect either.
-  const page = url.searchParams.get('next') === 'social' ? '/review/social' : '/review'
+  const next = url.searchParams.get('next')
+  const page = next === 'social' ? '/review/social' : next === 'explainer' ? '/review/social/explainer' : '/review'
 
   if (!verifyToken('link', token)) {
     return NextResponse.redirect(new URL('/review?link=expired', url), 303)

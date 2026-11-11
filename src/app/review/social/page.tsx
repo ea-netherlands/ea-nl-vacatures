@@ -42,7 +42,15 @@ function Frame({ children }: { children: React.ReactNode }) {
   return (
     <div className="jb-root" lang="en">
       <main className={`${l.container} ${s.page}`}>
-        <span className={l.eyebrow}>Weekly social post</span>
+        <span className={l.eyebrow}>Weekly social posts</span>
+        <nav className={x.tabs} aria-label="Weekly posts">
+          <a className={`${u.btn} ${u.btnSubtle} ${u.btnSmall}`} href="/review/social" aria-current="page">
+            Jobs, Tuesdays
+          </a>
+          <a className={`${u.btn} ${u.btnGhost} ${u.btnSmall}`} href="/review/social/explainer">
+            Explainer, Thursdays
+          </a>
+        </nav>
         {children}
       </main>
     </div>

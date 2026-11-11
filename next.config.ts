@@ -44,6 +44,7 @@ const config: NextConfig = {
   outputFileTracingIncludes: {
     '/vacatures/og': ['./src/jobboard/og/fonts/*', './src/jobboard/og/*.png'],
     '/vacatures/social/slide': ['./src/jobboard/og/fonts/*', './src/jobboard/og/*.png'],
+    '/vacatures/social/explainer': ['./src/jobboard/og/fonts/*', './src/jobboard/og/*.png'],
   },
   experimental: {
     // Sanity Studio ships its own client bundle; keep it out of the RSC graph.

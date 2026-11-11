@@ -138,3 +138,50 @@
   padding-bottom: var(--space-4);
   border-bottom: var(--rule-dashed);
 }
+
+/* --- The weekly explainer (/review/social/explainer) --- */
+
+/* Between the jobs post and the explainer. */
+.tabs {
+  display: flex;
+  gap: var(--space-2);
+  margin-bottom: var(--space-6);
+}
+
+.pairHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+  font-weight: var(--fw-semibold);
+  color: var(--primary-fg);
+}
+
+.lang {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-bottom: var(--space-5);
+  margin-bottom: var(--space-5);
+  border-bottom: var(--rule-dashed);
+}
+
+/* Suggestions and slide text fold away once the decision is made. */
+.more {
+  margin-bottom: var(--space-6);
+}
+
+.more > summary {
+  cursor: pointer;
+  font-weight: var(--fw-semibold);
+  color: var(--primary-fg);
+  margin-bottom: var(--space-4);
+}
+
+.flags {
+  margin: 0;
+  padding-left: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}

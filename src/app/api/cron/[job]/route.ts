@@ -22,6 +22,7 @@ import { runReviewDigest } from '@jobboard/review/digest'
 import { runSiteSync } from '@jobboard/lib/site-sync'
 import { runWeeklySocial } from '@jobboard/social/weekly'
 import { runSocialPublish } from '@jobboard/social/publish'
+import { runExplainerPublish, runWeeklyExplainer } from '@jobboard/social/explainer/weekly'
 
 export const dynamic = 'force-dynamic'
 /** Vercel's cron maximum on Pro. Adapters budget against this, minus a margin. */
@@ -39,6 +40,8 @@ const JOBS = [
   'site-sync',
   'social',
   'social-publish',
+  'explainer',
+  'explainer-publish',
 ] as const
 type Job = (typeof JOBS)[number]
 
@@ -202,6 +205,23 @@ export async function GET(request: Request, { params }: { params: Promise<{ job:
       */
       case 'social-publish': {
         const report = await runSocialPublish({ dryRun: url.searchParams.get('dryRun') === '1', onLog })
+        return NextResponse.json({ job, report, logs })
+      }
+      /*
+        Wednesday: picks a source and drafts Thursday's explainer (English for
+        James's LinkedIn, Dutch for EA Nederland's Instagram), and mails James.
+        Thursdays, hourly: posts the approved explainer (social/explainer).
+      */
+      case 'explainer': {
+        const report = await runWeeklyExplainer({
+          dryRun: url.searchParams.get('dryRun') === '1',
+          force: url.searchParams.get('force') === '1',
+          onLog,
+        })
+        return NextResponse.json({ job, report, logs })
+      }
+      case 'explainer-publish': {
+        const report = await runExplainerPublish({ dryRun: url.searchParams.get('dryRun') === '1', onLog })
         return NextResponse.json({ job, report, logs })
       }
       case 'translate': {

@@ -56,6 +56,14 @@
     {
       "path": "/api/cron/social-publish",
       "schedule": "5 * * * 2"
+    },
+    {
+      "path": "/api/cron/explainer",
+      "schedule": "30 10 * * 3"
+    },
+    {
+      "path": "/api/cron/explainer-publish",
+      "schedule": "5 * * * 4"
     }
   ],
   "functions": {
