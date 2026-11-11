@@ -70,9 +70,16 @@ export function explainerSlides(post: Slidable, channel: ExplainerChannel): Expl
   ]
 }
 
+/**
+ * Bump whenever the slides' layout or order changes. The CDN keeps a slide for
+ * an hour and may serve a stale one while it refreshes; without this, a URL
+ * whose text hasn't changed could still hand Instagram the old layout.
+ */
+const LAYOUT_VERSION = 2
+
 export function slideHash(text: SlideText | undefined, source: SourceRef | null): string {
   return createHash('sha256')
-    .update(JSON.stringify([text ?? null, source?.title ?? null, source?.author ?? null]))
+    .update(JSON.stringify([LAYOUT_VERSION, text ?? null, source?.title ?? null, source?.author ?? null]))
     .digest('hex')
     .slice(0, 10)
 }
