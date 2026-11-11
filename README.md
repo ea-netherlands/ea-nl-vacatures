@@ -321,6 +321,20 @@ the first two exist:
    - Tokens live in Postgres (`social_token`), sealed with AES-256-GCM, never in
      Sanity, whose dataset is publicly readable.
 
+4. **Done: the weekly explainer** (`social/explainer/`). Thursdays, one idea
+   adapted from a curated EA Forum post (CC BY 4.0 since 1 Dec 2022; linkposts
+   and older posts left out) or, with `EXPLAINER_INSTAGRAM=on`, a post by the
+   Centre for Effective Altruism. English slides and caption on James's
+   LinkedIn at 09:00, Dutch on EA Nederland's Instagram at 19:00, from the same
+   draft. The Wednesday `explainer` cron shortlists unused sources, has the
+   model rank them (evergreen, newcomer-friendly, a different topic from recent
+   weeks), drafts both languages in one call and mails James a link to
+   `/review/social/explainer`, where he edits the slide text side by side,
+   swaps to another suggestion or rules a source out. Credits and links are
+   written by the code. Slides render at `/vacatures/social/explainer`; the
+   hourly Thursday `explainer-publish` cron posts approved weeks, under the
+   same `SOCIAL_POSTING` switch. Stored as `explainerPost-YYYY-MM-DD` in Sanity.
+
    **Setup, once:**
    1. Meta: the app "EA Netherlands job posts" (developers.facebook.com, use
       case "Manage messaging & content on Instagram", business portfolio

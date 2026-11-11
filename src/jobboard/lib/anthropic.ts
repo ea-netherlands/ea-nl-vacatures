@@ -62,6 +62,8 @@ export async function structuredCall<T>(args: {
   maxTokens?: number
   /** Cache the system prompt — it is identical across every listing in a run. */
   cacheSystem?: boolean
+  /** Images shown before the text (the weekly explainer reads slides this way). */
+  images?: { mediaType: 'image/jpeg' | 'image/png' | 'image/webp'; data: string }[]
 }): Promise<{ value: T; usage: { input: number; output: number; cacheRead: number } }> {
   const tuning = modelTuning(args.model)
   const res = await anthropic().messages.create({
@@ -70,7 +72,20 @@ export async function structuredCall<T>(args: {
     system: args.cacheSystem
       ? [{ type: 'text', text: args.system, cache_control: { type: 'ephemeral' } }]
       : args.system,
-    messages: [{ role: 'user', content: args.user }],
+    messages: [
+      {
+        role: 'user',
+        content: args.images?.length
+          ? [
+              ...args.images.map((img) => ({
+                type: 'image' as const,
+                source: { type: 'base64' as const, media_type: img.mediaType, data: img.data },
+              })),
+              { type: 'text' as const, text: args.user },
+            ]
+          : args.user,
+      },
+    ],
     output_config: {
       ...tuning.output_config,
       format: { type: 'json_schema', schema: args.schema },

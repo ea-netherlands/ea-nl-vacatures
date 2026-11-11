@@ -17,7 +17,7 @@ import type { Band } from '../lib/bands'
 import { TOKENS } from '../og/card'
 import { NEWSLETTER, SITE, type Fact, type SlideContent } from './content'
 
-const PAD = 88
+export const PAD = 88
 const WIDTH = 1080
 const HEIGHT = 1350
 
@@ -71,7 +71,7 @@ const FUNDING = {
   note: 'A grant or funding round for work on this problem, not a job.',
 }
 
-function Glyph({ name, size, color }: { name: Fact['icon'] | 'arrow-right' | 'mail'; size: number; color: string }) {
+export function Glyph({ name, size, color }: { name: Fact['icon'] | 'arrow-right' | 'mail' | 'book' | 'bulb'; size: number; color: string }) {
   return (
     <svg
       width={size}
@@ -88,7 +88,7 @@ function Glyph({ name, size, color }: { name: Fact['icon'] | 'arrow-right' | 'ma
   )
 }
 
-function Pill({ children }: { children: string }) {
+export function Pill({ children }: { children: string }) {
   return (
     <div
       style={{
@@ -107,7 +107,7 @@ function Pill({ children }: { children: string }) {
   )
 }
 
-function Frame({
+export function Frame({
   logo,
   pill,
   footer,
@@ -172,9 +172,9 @@ function clip(text: string, max: number): string {
   return text.length <= max ? text : `${text.slice(0, max - 1).replace(/\s+\S*$/, '')}…`
 }
 
-const Swipe = () => (
+export const Swipe = ({ label = 'Swipe' }: { label?: string }) => (
   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-    Swipe
+    {label}
     <Glyph name="arrow-right" size={36} color={TOKENS.primaryFg} />
   </div>
 )
@@ -184,7 +184,7 @@ const Swipe = () => (
  * box, so a marked phrase that wraps would get one solid block; marking word
  * by word, with the space inside the mark, follows the lines like a highlighter.
  */
-function Marked({ plain, marked, size }: { plain: string; marked: string; size: number }) {
+export function Marked({ plain, marked, size }: { plain: string; marked: string; size: number }) {
   const gap = Math.round(size * 0.24)
   const words = marked.split(' ')
   return (
