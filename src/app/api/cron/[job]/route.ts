@@ -208,14 +208,18 @@ export async function GET(request: Request, { params }: { params: Promise<{ job:
         return NextResponse.json({ job, report, logs })
       }
       /*
-        Wednesday: picks a source and drafts Thursday's explainer (English for
-        James's LinkedIn, Dutch for EA Nederland's Instagram), and mails James.
+        Wednesday: picks a source for each account and drafts Thursday's
+        explainers (James's LinkedIn, EA Nederland's Instagram), and mails
+        James. `force=1&channel=…[&source=…]` redrafts one account.
         Thursdays, hourly: posts the approved explainer (social/explainer).
       */
       case 'explainer': {
+        const channel = url.searchParams.get('channel')
         const report = await runWeeklyExplainer({
           dryRun: url.searchParams.get('dryRun') === '1',
           force: url.searchParams.get('force') === '1',
+          channel: channel === 'instagram' || channel === 'linkedinPersonal' ? channel : undefined,
+          source: url.searchParams.get('source') ?? undefined,
           onLog,
         })
         return NextResponse.json({ job, report, logs })

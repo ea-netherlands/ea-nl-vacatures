@@ -3,7 +3,7 @@
  * pill, dashed footer rule; ../slides.tsx) with a cover, one slide per point
  * and a closing slide that credits the source and offers the monthly email.
  *
- * The image URL carries only the date, the language and the slide number,
+ * The image URL carries only the date, the account and the slide number,
  * plus a hash of the slide text so an edit shows straight away instead of
  * after the CDN's hour. The text itself is read from the stored post, so the
  * route can't be used to draw an EA Nederland slide saying anything else.
@@ -13,63 +13,50 @@ import { createHash } from 'node:crypto'
 import { TOKENS } from '../../og/card'
 import { NEWSLETTER } from '../content'
 import { Frame, Glyph, Marked, Swipe } from '../slides'
-import { FORUM_ABOUT, type SourceRef } from './sources'
-import { CHANNEL_FOR_LANG, type ExplainerPost, type Lang, type SlideText } from './store'
+import { FORUM_ABOUT, isCcBy, type SourceRef } from './sources'
+import { CHANNEL_CODE, type ExplainerChannel, type ExplainerPost, type SlideText } from './store'
 
 export const EXPLAINER_ROUTE = '/vacatures/social/explainer'
 const SITE = 'effectiefaltruisme.nl'
 
 const COPY = {
-  en: {
-    pill: 'Explainer',
-    swipe: 'Swipe',
-    of: 'of',
-    from: (s: SourceRef) =>
-      s.kind === 'forum' ? `Curated on the EA Forum, by ${s.author}` : 'From the Centre for Effective Altruism',
-    deeper: 'Want to go deeper?',
-    read: (s: SourceRef) =>
-      s.kind === 'forum'
-        ? `Read “${s.title}” by ${s.author} on the EA Forum.`
-        : 'This is adapted from a post by the Centre for Effective Altruism. Follow @effectivealtruismofficial for more.',
-    licence: (s: SourceRef) => (s.kind === 'forum' ? 'Adapted under CC BY 4.0.' : ''),
-    monthly: 'One EA Forum post worth your time, plus jobs and events in the Netherlands, once a month.',
-    free: 'It’s free. Sign up at the link below.',
-  },
-  nl: {
-    pill: 'Uitgelegd',
-    swipe: 'Swipe',
-    of: 'van',
-    from: (s: SourceRef) =>
-      s.kind === 'forum' ? `Uitgelicht op het EA Forum, door ${s.author}` : 'Van het Centre for Effective Altruism',
-    deeper: 'Meer weten?',
-    read: (s: SourceRef) =>
-      s.kind === 'forum'
-        ? `Lees “${s.title}” van ${s.author} op het EA Forum (in het Engels).`
-        : 'Gebaseerd op een post van het Centre for Effective Altruism. Volg @effectivealtruismofficial voor meer.',
-    licence: (s: SourceRef) => (s.kind === 'forum' ? 'Bewerkt onder CC BY 4.0.' : ''),
-    monthly: 'Elke maand één EA Forum-post die je tijd waard is, plus vacatures en evenementen in Nederland.',
-    free: 'Gratis. Aanmelden via de link in onze bio.',
-  },
+  pill: 'Explainer',
+  of: 'of',
+  from: (s: SourceRef) =>
+    s.kind === 'instagram'
+      ? 'From the Centre for Effective Altruism'
+      : s.via === 'handbook'
+        ? `From the EA Handbook, by ${s.author}`
+        : `Curated on the EA Forum, by ${s.author}`,
+  deeper: 'Want to go deeper?',
+  read: (s: SourceRef) =>
+    s.kind === 'forum'
+      ? `Read “${s.title}” by ${s.author} on the EA Forum.`
+      : 'This is adapted from a post by the Centre for Effective Altruism. Follow @effectivealtruismofficial for more.',
+  licence: (s: SourceRef) => (s.kind !== 'forum' ? '' : isCcBy(s) ? 'Adapted under CC BY 4.0.' : 'Adapted with permission.'),
+  monthly: 'One EA Forum post worth your time, plus jobs and events in the Netherlands, once a month.',
+  free: (c: ExplainerChannel) =>
+    c === 'instagram' ? 'It’s free. Sign up at the link in our bio.' : 'It’s free. Sign up at the link below.',
 } as const
 
 export type ExplainerSlideContent =
-  | { kind: 'cover'; lang: Lang; text: SlideText['cover']; source: SourceRef; count: number }
-  | { kind: 'point'; lang: Lang; point: SlideText['points'][number]; index: number; count: number }
-  | { kind: 'close'; lang: Lang; source: SourceRef }
+  | { kind: 'cover'; text: SlideText['cover']; source: SourceRef; count: number }
+  | { kind: 'point'; point: SlideText['points'][number]; index: number; count: number }
+  | { kind: 'close'; channel: ExplainerChannel; source: SourceRef }
 
 type Slidable = Pick<ExplainerPost, 'linkedinPersonal' | 'instagram'>
 
-/** Every slide of one language's explainer (English is LinkedIn's, Dutch Instagram's), in order. */
-export function explainerSlides(post: Slidable, lang: Lang): ExplainerSlideContent[] {
-  const item = post[CHANNEL_FOR_LANG[lang]]
+/** Every slide of one account's explainer, in order. */
+export function explainerSlides(post: Slidable, channel: ExplainerChannel): ExplainerSlideContent[] {
+  const item = post[channel]
   const text = item?.slides
   const source = item?.source
   if (!text || !source) return []
   const count = text.points.length + 2
   return [
-    { kind: 'cover', lang, text: text.cover, source, count },
-    ...text.points.map((point, i) => ({ kind: 'point' as const, lang, point, index: i + 2, count })),
-    { kind: 'close', lang, source },
+    { kind: 'cover', text: text.cover, source, count },
+    ...text.points.map((point, i) => ({ kind: 'point' as const, point, index: i + 2, count })),
+    { kind: 'close', channel, source },
   ]
 }
 
@@ -82,13 +69,13 @@ export function slideHash(text: SlideText | undefined, source: SourceRef | null)
 
 export function explainerSlidePaths(
   post: Slidable & Pick<ExplainerPost, 'postDate'>,
-  lang: Lang,
+  channel: ExplainerChannel,
   format: 'png' | 'jpg' = 'png',
 ): string[] {
-  const item = post[CHANNEL_FOR_LANG[lang]]
+  const item = post[channel]
   const v = slideHash(item?.slides ?? undefined, item?.source ?? null)
-  return explainerSlides(post, lang).map((_, i) => {
-    const q = new URLSearchParams({ d: post.postDate, l: lang, i: String(i), v })
+  return explainerSlides(post, channel).map((_, i) => {
+    const q = new URLSearchParams({ d: post.postDate, c: CHANNEL_CODE[channel], i: String(i), v })
     if (format === 'jpg') q.set('format', 'jpg')
     return `${EXPLAINER_ROUTE}?${q}`
   })
@@ -112,13 +99,13 @@ function coverSize(text: string): number {
 }
 
 export function ExplainerSlide({ content, logo }: { content: ExplainerSlideContent; logo: string }) {
-  const copy = COPY[content.lang]
+  const copy = COPY
 
   if (content.kind === 'cover') {
     const { headline, marked, sub } = content.text
     const plain = headline.endsWith(marked) ? headline.slice(0, headline.length - marked.length).trim() : headline
     return (
-      <Frame logo={logo} pill={copy.pill} footer={{ left: SITE, right: <Swipe label={copy.swipe} /> }}>
+      <Frame logo={logo} pill={copy.pill} footer={{ left: SITE, right: <Swipe /> }}>
         <Marked plain={plain} marked={headline.endsWith(marked) ? marked : ''} size={coverSize(headline)} />
         <div style={{ display: 'flex', marginTop: 48, fontSize: 44, lineHeight: 1.35 }}>{sub}</div>
         <div style={{ display: 'flex', marginTop: 32, fontSize: 34, color: TOKENS.fgMuted }}>
@@ -138,7 +125,7 @@ export function ExplainerSlide({ content, logo }: { content: ExplainerSlideConte
           right: (
             <div style={{ display: 'flex', alignItems: 'center', gap: 40 }}>
               <div style={{ display: 'flex', color: TOKENS.fgMuted }}>{`${content.index} ${copy.of} ${content.count}`}</div>
-              <Swipe label={copy.swipe} />
+              <Swipe />
             </div>
           ),
         }}
@@ -196,7 +183,7 @@ export function ExplainerSlide({ content, logo }: { content: ExplainerSlideConte
             backgroundColor: TOKENS.white,
           }}
         >
-          {FORUM_ABOUT[content.lang]}
+          {FORUM_ABOUT}
         </div>
       ) : null}
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 24, marginTop: 48, fontSize: 42, lineHeight: 1.4 }}>
@@ -220,7 +207,7 @@ export function ExplainerSlide({ content, logo }: { content: ExplainerSlideConte
       >
         <div style={{ display: 'flex', fontSize: 42, lineHeight: 1.4 }}>{copy.monthly}</div>
         <div style={{ display: 'flex', marginTop: 24, fontSize: 38, fontWeight: 600, color: TOKENS.primaryFg }}>
-          {copy.free}
+          {copy.free(content.channel)}
         </div>
       </div>
     </Frame>

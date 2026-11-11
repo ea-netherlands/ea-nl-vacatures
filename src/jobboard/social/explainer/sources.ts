@@ -3,13 +3,20 @@
  *
  * - Curated EA Forum posts. Everything posted to the Forum since 1 December
  *   2022 is CC BY 4.0 (forum.effectivealtruism.org/copyright, read 11 Nov
- *   2026), so it can be adapted and translated with credit. Older posts are
- *   all rights reserved unless the author says otherwise, and a linkpost's
- *   linked article isn't covered at all, so both are left out.
+ *   2026), so it can be adapted with credit. Older posts are all rights
+ *   reserved by default; James has permission to use them (11 Nov 2026), and
+ *   they're credited "with permission" rather than CC BY. A linkpost's linked
+ *   article belongs to another site and is covered by neither, so linkposts
+ *   are left out.
+ * - The Introduction to Effective Altruism Handbook, the Forum's collection for
+ *   newcomers (James, 11 Nov 2026), so often more accessible: classics such
+ *   as "On Caring" and "Radical Empathy". Same rules as the curated posts;
+ *   signposts, exercises and reading lists are left out, and CEA's chapter
+ *   introductions are mostly too short to carry an explainer.
  * - The Centre for Effective Altruism's Instagram (effectivealtruismofficial),
  *   read through Instagram's business discovery: captions, slide images and
- *   engagement of another business account's public posts. Off unless
- *   EXPLAINER_INSTAGRAM is "on", because adapting CEA's posts needs CEA's
+ *   engagement of another business account's public posts. Only with
+ *   EXPLAINER_CEA on, because adapting CEA's own material needs CEA's
  *   agreement, and it needs the token to carry instagram_manage_insights and
  *   pages_read_engagement as well as instagram_basic
  *   (developers.facebook.com/docs/instagram-platform/instagram-graph-api/reference/ig-user/business_discovery,
@@ -27,6 +34,8 @@ export type SourceKind = 'forum' | 'instagram'
 /** What a post is adapted from, as stored on it. */
 export type SourceRef = {
   kind: SourceKind
+  /** Forum posts read from the Introduction to EA Handbook. */
+  via?: 'handbook'
   id: string
   url: string
   title: string
@@ -50,16 +59,19 @@ export const sourceKey = (s: Pick<SourceRef, 'kind' | 'id'>) => `${s.kind}:${s.i
  * draw on the editors' curated posts since December 2022, the ones we may
  * adapt; the Forum's older classics are all rights reserved.
  */
-export const FORUM_ABOUT = {
-  en: 'The EA Forum is the best place online to discuss how best to help others. Each week we adapt one of the posts its editors have curated.',
-  nl: 'Het EA Forum is de beste plek online om te bespreken hoe je anderen het best kunt helpen. Elke week bewerken we een van de posts die de redactie heeft uitgelicht.',
-} as const
+export const FORUM_ABOUT =
+  'The EA Forum is the best place online to discuss how best to help others. Each week we adapt one of its curated posts or a chapter of its handbook for newcomers.'
 
 export const CEA_INSTAGRAM = 'effectivealtruismofficial'
 export const FORUM_LICENCE_FROM = '2022-12-01T00:00:00.000Z'
 
-export function instagramSourceEnabled(): boolean {
-  return process.env.EXPLAINER_INSTAGRAM === 'on'
+/** CC BY 4.0, or (older posts) adapted with the permission James has. */
+export const isCcBy = (s: Pick<SourceRef, 'kind' | 'publishedAt'>) =>
+  s.kind === 'forum' && s.publishedAt >= FORUM_LICENCE_FROM
+
+/** CEA has agreed to EA Nederland adapting its Instagram posts. */
+export function ceaSourcesEnabled(): boolean {
+  return process.env.EXPLAINER_CEA === 'on'
 }
 
 // ── EA Forum ────────────────────────────────────────────────────────────────
@@ -86,7 +98,7 @@ async function forum<T>(http: Http, query: string): Promise<T> {
 /** No emoji in EA Nederland material; Forum names often carry the pledge diamond. */
 export const noEmoji = (s: string) =>
   s
-    .replace(/[\p{Extended_Pictographic}\u{FE0F}\u{200D}]/gu, '')
+    .replace(/[\p{Extended_Pictographic}\u{FE0F}\u{200D}\u{23F8}]/gu, '')
     .replace(/\s+/g, ' ')
     .trim()
 
@@ -104,12 +116,16 @@ type RawForumPost = {
   contents: { plaintextDescription: string | null } | null
 }
 
-/** Curated posts we may adapt: CC BY (posted since Dec 2022) and not linkposts. */
+/** Posts we may adapt: the Forum's own text (not linkposts), long enough to explain something. */
 export function adaptableForumPosts(posts: RawForumPost[]): RawForumPost[] {
-  return posts.filter((p) => p.postedAt >= FORUM_LICENCE_FROM && !p.url && (p.wordCount ?? 0) >= 300)
+  return posts.filter((p) => !p.url && (p.wordCount ?? 0) >= 300)
 }
 
-export async function forumCandidates(http: Http = fetch, limit = 40): Promise<Candidate[]> {
+/** Forum usernames as names: "Toby_Ord" → "Toby Ord". */
+const displayName = (n: string) => noEmoji(n).replace(/_/g, ' ')
+
+/** Every curated post, newest first: 215 in Nov 2026, back to 2014. */
+export async function forumCandidates(http: Http = fetch, limit = 400): Promise<Candidate[]> {
   const data = await forum<{ posts: { results: RawForumPost[] } }>(
     http,
     `{ posts(input: { terms: { view: "curated", limit: ${limit} } }) { results {
@@ -125,7 +141,7 @@ export async function forumCandidates(http: Http = fetch, limit = 40): Promise<C
     title: noEmoji(p.title),
     author: [p.user?.displayName, ...(p.coauthors ?? []).map((c) => c.displayName)]
       .filter(Boolean)
-      .map((n) => noEmoji(n!))
+      .map((n) => displayName(n!))
       .join(', '),
     publishedAt: p.postedAt,
     score: p.baseScore,
@@ -159,6 +175,52 @@ export async function forumPostText(id: string, http: Http = fetch): Promise<str
   const html = data.post.result?.contents?.html
   if (!html) throw new SourceError('EA Forum: that post has no text')
   return htmlToText(html).slice(0, 60_000)
+}
+
+// ── The Introduction to EA Handbook ─────────────────────────────────────────
+
+const HANDBOOK_ID = 'MobebwWs2o86cS9Rd'
+/** Signposts, exercises and reading lists: not something to explain. */
+const NOT_AN_ESSAY = /^(about this handbook|exercise for|more to explore|explore |discover |apply for|attend |find a local)/i
+
+type RawHandbookPost = RawForumPost & { chapter: string }
+
+/** Handbook essays we may adapt: CC BY like any Forum post, and not a signpost or exercise. */
+export function handbookAdaptable(posts: RawHandbookPost[]): RawHandbookPost[] {
+  return adaptableForumPosts(posts).filter((p) => !NOT_AN_ESSAY.test(p.title.trim())) as RawHandbookPost[]
+}
+
+export async function handbookCandidates(http: Http = fetch): Promise<Candidate[]> {
+  const data = await forum<{
+    collection: {
+      result: { books: { sequences: { title: string; chapters: { posts: RawForumPost[] }[] }[] }[] } | null
+    }
+  }>(
+    http,
+    `{ collection(input: { selector: { _id: "${HANDBOOK_ID}" } }) { result { books { sequences { title chapters { posts {
+      _id title pageUrl url postedAt baseScore wordCount
+      user { displayName } coauthors { displayName } tags { name }
+      contents { plaintextDescription }
+    } } } } } } }`,
+  )
+  const posts: RawHandbookPost[] = (data.collection.result?.books ?? []).flatMap((b) =>
+    b.sequences.flatMap((s) => s.chapters.flatMap((c) => c.posts.map((p) => ({ ...p, chapter: s.title })))),
+  )
+  return handbookAdaptable(posts).map((p) => ({
+    kind: 'forum' as const,
+    via: 'handbook' as const,
+    id: p._id,
+    url: p.pageUrl,
+    title: noEmoji(p.title),
+    author: [p.user?.displayName, ...(p.coauthors ?? []).map((c) => c.displayName)]
+      .filter(Boolean)
+      .map((n) => displayName(n!))
+      .join(', '),
+    publishedAt: p.postedAt,
+    score: p.baseScore,
+    summary: (p.contents?.plaintextDescription ?? '').slice(0, 700),
+    topics: [p.chapter.replace(/^\d+\.\s*/, ''), ...(p.tags ?? []).map((t) => t.name)].slice(0, 5),
+  }))
 }
 
 // ── CEA on Instagram ────────────────────────────────────────────────────────
