@@ -25,6 +25,7 @@ import { DRAFTING_MODEL, structuredCall } from '../../lib/anthropic'
 import {
   fetchImages,
   forumCandidates,
+  FORUM_ABOUT,
   forumPostText,
   instagramSourceEnabled,
   instagramSources,
@@ -257,7 +258,7 @@ Faithfulness:
 
 "flags": short notes for James, in English, about anything to check before approving: figures you couldn't verify from the slides, US-specific numbers, claims that may have changed since publication, wording you were unsure how to translate. Empty if there is nothing.
 
-The caption is body text only: the code appends the credit, the links and any hashtags. Never write a URL.
+The caption is body text only: the code appends a line introducing the EA Forum, the credit, the links and any hashtags, so don't describe the Forum or credit the author yourself. Never write a URL.
 
 Voice: plain, warm, honest, sentence case, no emoji, no exclamation marks, no hype.`
 
@@ -324,6 +325,7 @@ export function composeCaption(
     newsletter.searchParams.set('utm_content', 'james')
     return [
       draft.caption.trim(),
+      ...(source.kind === 'forum' ? [FORUM_ABOUT.en] : []),
       `${credit(source, 'en')} ${source.kind === 'forum' ? 'Read the whole post' : 'The original'}: ${source.url}`,
       `One EA Forum post worth your time, plus jobs and events in the Netherlands, once a month: ${newsletter}`,
     ].join('\n\n')
@@ -334,7 +336,9 @@ export function composeCaption(
     .slice(0, 5)
     .map((h) => `#${h}`)
     .join(' ')
-  return [draft.caption.trim(), credit(source, 'nl'), tags].filter(Boolean).join('\n\n')
+  return [draft.caption.trim(), source.kind === 'forum' ? FORUM_ABOUT.nl : '', credit(source, 'nl'), tags]
+    .filter(Boolean)
+    .join('\n\n')
 }
 
 /** Writes one account's slides and caption from one source. */
