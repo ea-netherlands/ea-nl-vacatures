@@ -63,7 +63,7 @@
     },
     {
       "path": "/api/cron/explainer-publish",
-      "schedule": "5 * * * 4"
+      "schedule": "5 * * * 0,4"
     }
   ],
   "functions": {

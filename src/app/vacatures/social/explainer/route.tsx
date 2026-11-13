@@ -3,7 +3,7 @@
  * a PNG, or a JPEG with `format=jpg` for Instagram. Public for the same reason
  * as the jobs post's slides: Instagram and LinkedIn fetch them by URL.
  *
- * `d` (Thursday's date), `c` (li or ig, the account) and `i` (slide number) pick the slide;
+ * `d` (the week's Thursday), `c` (li or ig, the account) and `i` (slide number) pick the slide;
  * the text comes from the stored post. `v` is the slide text's hash, only there
  * so an edit gets a fresh URL past the CDN cache.
  */

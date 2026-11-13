@@ -208,10 +208,11 @@ export async function GET(request: Request, { params }: { params: Promise<{ job:
         return NextResponse.json({ job, report, logs })
       }
       /*
-        Wednesday: picks a source for each account and drafts Thursday's
+        Wednesday: picks a source for each account and drafts the week's
         explainers (James's LinkedIn, EA Nederland's Instagram), and mails
         James. `force=1&channel=…[&source=…]` redrafts one account.
-        Thursdays, hourly: posts the approved explainer (social/explainer).
+        Thursdays and Sundays, hourly: posts the approved explainers, LinkedIn
+        on Thursday, Instagram on Sunday (social/explainer).
       */
       case 'explainer': {
         const channel = url.searchParams.get('channel')

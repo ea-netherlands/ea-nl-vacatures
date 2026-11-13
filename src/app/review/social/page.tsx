@@ -49,7 +49,7 @@ function Frame({ children }: { children: React.ReactNode }) {
             Jobs, Tuesdays
           </a>
           <a className={`${u.btn} ${u.btnGhost} ${u.btnSmall}`} href="/review/social/explainer">
-            Explainer, Thursdays
+            Explainers, Thu and Sun
           </a>
         </nav>
         {children}

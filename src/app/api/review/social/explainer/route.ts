@@ -1,7 +1,7 @@
 /**
  * The weekly explainer's write endpoint (/review/social/explainer). Same locks
  * as the jobs post's: the review session cookie and a same-origin request.
- * Acts only on the coming Thursday's explainers; everything but the first
+ * Acts only on the week's explainers (nextExplainerTime); everything but the first
  * draft names the account (`channel`) it is about.
  */
 

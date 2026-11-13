@@ -1,5 +1,5 @@
 /**
- * The coming Thursday's two explainers, one per account, each from its own
+ * The week's two explainers, one per account, each from its own
  * source, both in English: one for James's LinkedIn, one for EA Nederland's Instagram.
  * Each has its source, slides, caption and decision. The accounts are
  * connected on /review/social; this page uses the same ones.
@@ -21,8 +21,8 @@ import {
   type ExplainerItem,
   type ExplainerPost,
 } from '@jobboard/social/explainer/store'
-import { EXPLAINER_CHANNELS, nextExplainerTime } from '@jobboard/social/explainer/weekly'
-import { channelPostAt, postingEnabled } from '@jobboard/social/publish'
+import { addDays, EXPLAINER_CHANNELS, explainerPostAt, nextExplainerTime } from '@jobboard/social/explainer/weekly'
+import { postingEnabled } from '@jobboard/social/publish'
 import { amsterdamDate, CHANNEL_LABEL } from '@jobboard/social/store'
 import { trackFor, trackLabel } from '@jobboard/social/music'
 
@@ -43,7 +43,7 @@ function Frame({ children }: { children: React.ReactNode }) {
             Jobs, Tuesdays
           </a>
           <a className={`${u.btn} ${u.btnSubtle} ${u.btnSmall}`} href="/review/social/explainer" aria-current="page">
-            Explainer, Thursdays
+            Explainers, Thu and Sun
           </a>
         </nav>
         {children}
@@ -121,7 +121,7 @@ function Result({ item }: { item: ExplainerItem | null }) {
 }
 
 const at = (date: string, c: ExplainerChannel) =>
-  channelPostAt(date, c).toLocaleString('en-GB', {
+  explainerPostAt(date, c).toLocaleString('en-GB', {
     weekday: 'long',
     hour: '2-digit',
     minute: '2-digit',
@@ -185,13 +185,17 @@ export default async function ExplainerPage() {
     month: 'long',
     timeZone: 'Europe/Amsterdam',
   })
-  // Today's explainer stays on the page through posting day, after "next Thursday" has moved on.
+  // On a Sunday evening the page moves on to next week; last week's results stay in view until midnight.
   const today = amsterdamDate(new Date())
+  const lastWeek = addDays(date, -7)
   let post: ExplainerPost | null = null
   let todays: ExplainerPost | null = null
   let storeError: string | null = null
   try {
-    ;[post, todays] = await Promise.all([getExplainer(date), today === date ? null : getExplainer(today)])
+    ;[post, todays] = await Promise.all([
+      getExplainer(date),
+      EXPLAINER_CHANNELS.some((c) => amsterdamDate(explainerPostAt(lastWeek, c)) === today) ? getExplainer(lastWeek) : null,
+    ])
   } catch (err) {
     storeError = (err as Error).message
   }
@@ -211,7 +215,7 @@ export default async function ExplainerPage() {
           ))}
         </section>
       ) : null}
-      <h1 className={s.title}>The explainers for {day}</h1>
+      <h1 className={s.title}>The explainers for the week of {day}</h1>
       <p className={s.lead}>
         Two explainers in English, each from its own source so nobody who follows both accounts sees the same one twice:
         one for your LinkedIn, one for EA Netherlands’ Instagram. Sources are curated EA Forum posts and the EA Handbook
@@ -230,7 +234,7 @@ export default async function ExplainerPage() {
       ) : post ? (
         EXPLAINER_CHANNELS.map((c) => <Account key={c} post={post} channel={c} />)
       ) : (
-        <ExplainerFirstDraft day={day} />
+        <ExplainerFirstDraft day={`the week of ${day}`} />
       )}
     </Frame>
   )

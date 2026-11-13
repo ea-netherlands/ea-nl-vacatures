@@ -326,10 +326,13 @@ the first two exist:
    - Tokens live in Postgres (`social_token`), sealed with AES-256-GCM, never in
      Sanity, whose dataset is publicly readable.
 
-4. **Done: the weekly explainers** (`social/explainer/`). Thursdays, two
+4. **Done: the weekly explainers** (`social/explainer/`). Each week two
    explainers in English, each adapted from its own source so nobody who
-   follows both accounts sees the same one twice: one on James's LinkedIn at
-   09:00 (as a PDF carousel), one on EA Nederland's Instagram at 18:00. Sources: every curated EA
+   follows both accounts sees the same one twice: one on James's LinkedIn on
+   Thursday at 09:00 (as a PDF carousel), one on EA Nederland's Instagram the
+   Sunday after at 18:00, when its followers are most active
+   (`EXPLAINER_DAY_OFFSET`). A week is named after its Thursday and stays open
+   on the review page until Sunday's post is out. Sources: every curated EA
    Forum post and the Introduction to EA Handbook's essays (not linkposts,
    signposts or exercises). Posts since 1 Dec 2022 are CC BY 4.0; for older
    ones James has permission (Nov 2026), and the credit says so. With
@@ -341,7 +344,7 @@ the first two exist:
    another suggestion, rules a source out, and approves or skips each
    account on its own. The Forum line, credits and links are written by the
    code. Slides render at `/vacatures/social/explainer?c=li|ig`; the hourly
-   Thursday `explainer-publish` cron posts approved ones under the same
+   Thursday and Sunday `explainer-publish` cron posts approved ones under the same
    `SOCIAL_POSTING` switch. `explainer?force=1&channel=…[&source=…]` redrafts
    one account. Stored as `explainerPost-YYYY-MM-DD` in Sanity.
 
