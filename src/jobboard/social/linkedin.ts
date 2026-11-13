@@ -3,9 +3,15 @@
  * "Share on LinkedIn" product (w_member_social) and "Sign In with LinkedIn
  * using OpenID Connect" (openid, profile) for who he is.
  *
- * https://learn.microsoft.com/en-us/linkedin/consumer/integrations/self-serve/share-on-linkedin
- * (read 9 Nov 2026): register each image with assets?action=registerUpload,
- * upload the bytes, then one ugcPosts call with every asset as IMAGE media.
+ * The slides go up as one PDF, posted as a document: LinkedIn shows a
+ * document as a swipeable carousel, where images show as a grid you have to
+ * click into (James, 13 Nov 2026). The Documents API and the Posts API
+ * (/rest/…, versioned by the LinkedIn-Version header) take the same
+ * w_member_social token: initializeUpload, PUT the bytes, wait until the
+ * document is AVAILABLE, then one post with the document as its media.
+ * https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/documents-api
+ * https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/posts-api
+ * A version is supported for about a year; LINKEDIN_VERSION overrides ours.
  * Member tokens last 60 days and can't be refreshed by an app like this one,
  * so James reconnects; the page and the Monday mail warn two weeks ahead.
  *
@@ -15,6 +21,8 @@
  *
  * `http` is injectable so the tests run the whole flow without LinkedIn.
  */
+
+import { jpegsToPdf } from './pdf'
 
 type Http = typeof fetch
 
@@ -71,69 +79,98 @@ export async function exchangeCode(code: string, redirectUri: string, http: Http
   }
 }
 
-const restli = (token: string) => ({
+/** The Posts and Documents APIs' monthly version, YYYYMM. */
+export const LINKEDIN_VERSION = process.env.LINKEDIN_VERSION || '202608'
+
+const rest = (token: string) => ({
   authorization: `Bearer ${token}`,
+  'linkedin-version': LINKEDIN_VERSION,
   'x-restli-protocol-version': '2.0.0',
   'content-type': 'application/json',
 })
 
-export async function publishLinkedInImages(args: {
+/**
+ * The Posts API reads commentary as "little text", where | { } @ [ ] ( ) < > #
+ * \ * _ ~ are markup: an unescaped "(" can cut the post off there. Escape them
+ * all, then write each hashtag as LinkedIn's hashtag template so it still links.
+ */
+export function littleText(text: string): string {
+  return text
+    .replace(/[\\|{}@[\]()<>#*_~]/g, (c) => `\\${c}`)
+    .replace(/\\#((?:[\p{L}\p{N}]|\\_)+)/gu, (_, tag: string) => `{hashtag|\\#|${tag.replace(/\\_/g, '_')}}`)
+}
+
+export async function publishLinkedInDocument(args: {
   token: string
   personUrn: string
+  /** The slides as JPEGs, in order: they go into the PDF as they are. */
   imageUrls: string[]
+  /** Shown above the carousel, and as the file's name. */
+  title: string
   caption: string
   http?: Http
+  sleep?: (ms: number) => Promise<void>
+  /** How long to wait for LinkedIn to process the document. */
+  timeoutMs?: number
 }): Promise<{ id: string; url: string | null }> {
   const http = args.http ?? fetch
-  const assets: string[] = []
+  const sleep = args.sleep ?? ((ms) => new Promise((r) => setTimeout(r, ms)))
 
-  for (const imageUrl of args.imageUrls) {
-    const reg = await json<{
-      value: {
-        asset: string
-        uploadMechanism: { 'com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest': { uploadUrl: string } }
-      }
-    }>(
-      await http('https://api.linkedin.com/v2/assets?action=registerUpload', {
-        method: 'POST',
-        headers: restli(args.token),
-        body: JSON.stringify({
-          registerUploadRequest: {
-            recipes: ['urn:li:digitalmediaRecipe:feedshare-image'],
-            owner: args.personUrn,
-            serviceRelationships: [{ relationshipType: 'OWNER', identifier: 'urn:li:userGeneratedContent' }],
-          },
-        }),
-      }),
-      'image registration',
+  const pdf = jpegsToPdf(await fetchSlides(args.imageUrls, http), args.title)
+
+  const init = await json<{ value: { uploadUrl: string; document: string } }>(
+    await http('https://api.linkedin.com/rest/documents?action=initializeUpload', {
+      method: 'POST',
+      headers: rest(args.token),
+      body: JSON.stringify({ initializeUploadRequest: { owner: args.personUrn } }),
+    }),
+    'document registration',
+  )
+  const upload = await http(init.value.uploadUrl, {
+    method: 'PUT',
+    headers: { authorization: `Bearer ${args.token}`, 'content-type': 'application/pdf' },
+    body: pdf,
+  })
+  if (!upload.ok) throw new LinkedInError(`LinkedIn document upload: HTTP ${upload.status}`)
+
+  const document = init.value.document
+  const deadline = Date.now() + (args.timeoutMs ?? 120_000)
+  for (;;) {
+    const { status } = await json<{ status?: string }>(
+      await http(`https://api.linkedin.com/rest/documents/${encodeURIComponent(document)}`, { headers: rest(args.token) }),
+      'document status',
     )
-    const image = await http(imageUrl)
-    if (!image.ok) throw new LinkedInError(`LinkedIn: could not fetch slide ${imageUrl} (HTTP ${image.status})`)
-    const upload = await http(
-      reg.value.uploadMechanism['com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest'].uploadUrl,
-      { method: 'PUT', headers: { authorization: `Bearer ${args.token}` }, body: await image.arrayBuffer() },
-    )
-    if (!upload.ok) throw new LinkedInError(`LinkedIn image upload: HTTP ${upload.status}`)
-    assets.push(reg.value.asset)
+    if (status === 'AVAILABLE') break
+    if (status === 'PROCESSING_FAILED') throw new LinkedInError('LinkedIn: the PDF could not be processed')
+    if (Date.now() > deadline) throw new LinkedInError('LinkedIn: the PDF was still processing after two minutes')
+    await sleep(3000)
   }
 
-  const res = await http('https://api.linkedin.com/v2/ugcPosts', {
+  const res = await http('https://api.linkedin.com/rest/posts', {
     method: 'POST',
-    headers: restli(args.token),
+    headers: rest(args.token),
     body: JSON.stringify({
       author: args.personUrn,
+      commentary: littleText(args.caption),
+      visibility: 'PUBLIC',
+      distribution: { feedDistribution: 'MAIN_FEED', targetEntities: [], thirdPartyDistributionChannels: [] },
+      content: { media: { title: args.title, id: document } },
       lifecycleState: 'PUBLISHED',
-      specificContent: {
-        'com.linkedin.ugc.ShareContent': {
-          shareCommentary: { text: args.caption },
-          shareMediaCategory: 'IMAGE',
-          media: assets.map((media) => ({ status: 'READY', media })),
-        },
-      },
-      visibility: { 'com.linkedin.ugc.MemberNetworkVisibility': 'PUBLIC' },
+      isReshareDisabledByAuthor: false,
     }),
   })
   if (!res.ok) await json(res, 'post')
   const id = res.headers.get('x-restli-id') ?? ''
   return { id, url: id ? `https://www.linkedin.com/feed/update/${id}/` : null }
+}
+
+/** Every slide's bytes, in order. */
+export async function fetchSlides(urls: string[], http: Http = fetch): Promise<Uint8Array[]> {
+  return Promise.all(
+    urls.map(async (url) => {
+      const res = await http(url)
+      if (!res.ok) throw new LinkedInError(`LinkedIn: could not fetch slide ${url} (HTTP ${res.status})`)
+      return new Uint8Array(await res.arrayBuffer())
+    }),
+  )
 }

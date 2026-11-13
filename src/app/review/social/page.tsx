@@ -148,6 +148,7 @@ async function Publishing({ upcoming, notice }: { upcoming: SocialPost | null; n
         ]}
         bundle={{
           slides: postSlides(roles, target.postDate, target.theme ?? 'mixed').map((spec) => slidePath(spec)),
+          pdf: `/api/review/social/pdf?date=${target.postDate}`,
           caption: target.captions?.linkedinOrg ?? '',
           done: Boolean(target.results?.linkedinOrg?.id),
         }}

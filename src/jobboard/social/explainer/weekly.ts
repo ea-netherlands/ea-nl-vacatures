@@ -4,7 +4,7 @@
  * Wednesday 11:30: pick a source for each account and draft Thursday's two
  * explainers, then mail James a link to /review/social/explainer. Thursday,
  * hourly: post what he approved, in English on his LinkedIn at 09:00 and in
- * English on EA Nederland's Instagram at 19:00 (the same times as the jobs post,
+ * English on EA Nederland's Instagram at 18:00 (the same times as the jobs post,
  * so each account keeps one rhythm). The two never share a source.
  *
  * The same switch as the jobs post (SOCIAL_POSTING) holds everything back,
@@ -16,7 +16,7 @@ import { isMailConfigured, sendMail } from '../../lib/mail'
 import { ADMIN_ORIGIN } from '../../lib/seo'
 import { issueToken, LINK_TTL_MS } from '../../review/auth'
 import { publishInstagramCarousel } from '../instagram'
-import { publishLinkedInImages } from '../linkedin'
+import { publishLinkedInDocument } from '../linkedin'
 import { channelPostAt, postingEnabled } from '../publish'
 import { amsterdamDate, CHANNEL_LABEL, type ChannelResult } from '../store'
 import { getToken } from '../tokens'
@@ -334,7 +334,7 @@ export async function runExplainerPublish(
     try {
       const token = await getToken(channel)
       if (!token) throw new Error(`${label} is not connected`)
-      const urls = explainerSlidePaths(post, channel, channel === 'instagram' ? 'jpg' : 'png').map((p) => `${PUBLIC_ORIGIN}${p}`)
+      const urls = explainerSlidePaths(post, channel, 'jpg').map((p) => `${PUBLIC_ORIGIN}${p}`)
       const posted =
         channel === 'instagram'
           ? await publishInstagramCarousel({
@@ -345,12 +345,14 @@ export async function runExplainerPublish(
               http: options.http,
               sleep: options.sleep,
             })
-          : await publishLinkedInImages({
+          : await publishLinkedInDocument({
               token: token.accessToken,
               personUrn: token.accountId,
               imageUrls: urls,
+              title: item.slides.cover.headline,
               caption: item.caption,
               http: options.http,
+              sleep: options.sleep,
             })
       result = { at: now.toISOString(), id: posted.id, url: posted.url }
       act(`posted the explainer to ${label}: ${posted.url ?? posted.id}`)
