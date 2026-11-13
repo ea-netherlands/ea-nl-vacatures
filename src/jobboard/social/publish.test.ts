@@ -2,8 +2,10 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import { graphBase, instagramAccount, InstagramError, publishInstagramCarousel } from './instagram'
-import { publishLinkedInImages } from './linkedin'
-import { channelPostAt } from './publish'
+import { postSlides } from './content'
+import { littleText, publishLinkedInDocument } from './linkedin'
+import { jpegsToPdf } from './pdf'
+import { channelPostAt, jobsDocumentTitle } from './publish'
 import { seal, unseal } from './tokens'
 
 type Call = { url: string; method: string; body: string | null; headers: Record<string, string> }
@@ -31,8 +33,8 @@ const json = (data: unknown, init?: ResponseInit) =>
 
 test('each account posts at its own Amsterdam time, summer or winter', () => {
   assert.equal(channelPostAt('2026-11-17', 'linkedinPersonal').toISOString(), '2026-11-17T08:00:00.000Z')
-  assert.equal(channelPostAt('2026-11-17', 'instagram').toISOString(), '2026-11-17T18:00:00.000Z')
-  assert.equal(channelPostAt('2027-06-01', 'instagram').toISOString(), '2027-06-01T17:00:00.000Z')
+  assert.equal(channelPostAt('2026-11-17', 'instagram').toISOString(), '2026-11-17T17:00:00.000Z')
+  assert.equal(channelPostAt('2027-06-01', 'instagram').toISOString(), '2027-06-01T16:00:00.000Z')
 })
 
 test('tokens are sealed, and a tampered one is refused', () => {
@@ -78,45 +80,79 @@ test('Instagram: an API error comes back as a readable message', async () => {
   )
 })
 
-test('LinkedIn: register and upload each slide, then one post with every image', async () => {
-  let n = 0
+test('LinkedIn: the slides as one PDF, uploaded as a document, then one post', async () => {
+  let polls = 0
+  const jpeg = tinyJpeg(1080, 1350)
   const { http, calls } = fakeHttp([
+    [/GET https:\/\/slides\//, () => new Response(jpeg)],
     [
-      /POST .*assets\?action=registerUpload/,
-      () => {
-        n++
-        return json({
-          value: {
-            asset: `urn:li:digitalmediaAsset:A${n}`,
-            uploadMechanism: {
-              'com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest': { uploadUrl: `https://upload/${n}` },
-            },
-          },
-        })
-      },
+      /POST .*\/rest\/documents\?action=initializeUpload/,
+      () => json({ value: { uploadUrl: 'https://upload/doc', document: 'urn:li:document:D1' } }),
     ],
-    [/GET https:\/\/slides\//, () => new Response(new Uint8Array([1, 2, 3]))],
-    [/PUT https:\/\/upload\//, () => new Response(null, { status: 201 })],
-    [/POST .*ugcPosts/, () => new Response(null, { status: 201, headers: { 'x-restli-id': 'urn:li:share:77' } })],
+    [/PUT https:\/\/upload\/doc/, () => new Response(null, { status: 201 })],
+    [/GET .*\/rest\/documents\/urn%3Ali%3Adocument%3AD1/, () => json({ status: ++polls < 2 ? 'PROCESSING' : 'AVAILABLE' })],
+    [/POST .*\/rest\/posts$/, () => new Response(null, { status: 201, headers: { 'x-restli-id': 'urn:li:share:77' } })],
   ])
-  const result = await publishLinkedInImages({
+  const result = await publishLinkedInDocument({
     token: 't',
     personUrn: 'urn:li:person:abc',
-    imageUrls: ['https://slides/1.png', 'https://slides/2.png'],
-    caption: 'Seven jobs',
+    imageUrls: ['https://slides/1.jpg', 'https://slides/2.jpg', 'https://slides/3.jpg'],
+    title: 'Jobs this week, 17 November',
+    caption: 'Seven jobs (remote too) #EffectiveAltruism',
     http,
+    sleep: async () => {},
   })
   assert.deepEqual(result, { id: 'urn:li:share:77', url: 'https://www.linkedin.com/feed/update/urn:li:share:77/' })
-  const share = JSON.parse(calls.find((c) => c.url.includes('ugcPosts'))!.body!)
-  const content = share.specificContent['com.linkedin.ugc.ShareContent']
+  assert.equal(polls, 2)
+
+  const init = calls.find((c) => c.url.includes('initializeUpload'))!
+  assert.equal(JSON.parse(init.body!).initializeUploadRequest.owner, 'urn:li:person:abc')
+  assert.match(init.headers['linkedin-version'], /^\d{6}$/)
+
+  const put = calls.find((c) => c.method === 'PUT')!
+  assert.equal(put.headers['content-type'], 'application/pdf')
+
+  const share = JSON.parse(calls.find((c) => c.url.endsWith('/rest/posts'))!.body!)
   assert.equal(share.author, 'urn:li:person:abc')
-  assert.equal(content.shareCommentary.text, 'Seven jobs')
-  assert.deepEqual(
-    content.media.map((m: { media: string }) => m.media),
-    ['urn:li:digitalmediaAsset:A1', 'urn:li:digitalmediaAsset:A2'],
-  )
-  assert.equal(calls.filter((c) => c.method === 'PUT').length, 2)
+  assert.deepEqual(share.content, { media: { title: 'Jobs this week, 17 November', id: 'urn:li:document:D1' } })
+  assert.equal(share.commentary, 'Seven jobs \\(remote too\\) {hashtag|\\#|EffectiveAltruism}')
 })
+
+test('the PDF has a page per slide, each the size of its image', () => {
+  const pdf = new TextDecoder('latin1').decode(jpegsToPdf([tinyJpeg(1080, 1350), tinyJpeg(1080, 1350)], 'Jobs’ week'))
+  assert.match(pdf, /^%PDF-1\.4/)
+  assert.match(pdf, /\/Type \/Pages \/Kids \[4 0 R 7 0 R\] \/Count 2/)
+  assert.equal(pdf.match(/\/MediaBox \[0 0 1080 1350\]/g)?.length, 2)
+  assert.equal(pdf.match(/\/Filter \/DCTDecode/g)?.length, 2)
+  // Every xref offset points at its object.
+  const xref = Number(pdf.match(/startxref\n(\d+)/)![1])
+  const offsets = pdf.slice(xref).match(/^\d{10} 00000 n/gm)!.map((l) => Number(l.slice(0, 10)))
+  offsets.forEach((at, i) => assert.ok(pdf.startsWith(`${i + 1} 0 obj`, at), `object ${i + 1}`))
+})
+
+test('little text: markup characters are escaped, hashtags still link', () => {
+  assert.equal(littleText('Apply @ EA (NL) by 1 Dec_'), 'Apply \\@ EA \\(NL\\) by 1 Dec\\_')
+  assert.equal(littleText('#EA #AI_safety.'), '{hashtag|\\#|EA} {hashtag|\\#|AI_safety}.')
+})
+
+test("the jobs document's title is the cover's pill and the day", () => {
+  assert.equal(jobsDocumentTitle(postSlides([{ id: 'a', title: 'Researcher' }], '2026-11-17')), 'Jobs this week, 17 November')
+  assert.equal(
+    jobsDocumentTitle([{ kind: 'cover', count: 2, date: '2027-06-01', theme: 'mixed', funding: true }, { kind: 'cta' }]),
+    'Opportunities this week, 1 June',
+  )
+})
+
+/** The smallest JPEG jpegSize reads: SOI, a baseline frame header, EOI. */
+function tinyJpeg(width: number, height: number): Uint8Array<ArrayBuffer> {
+  return new Uint8Array([
+    0xff, 0xd8,
+    0xff, 0xe0, 0x00, 0x04, 0x00, 0x00,
+    0xff, 0xc0, 0x00, 0x11, 0x08, height >> 8, height & 0xff, width >> 8, width & 0xff, 0x03,
+    0x01, 0x11, 0x00, 0x02, 0x11, 0x01, 0x03, 0x11, 0x01,
+    0xff, 0xd9,
+  ])
+}
 
 test('a system-user token posts through graph.facebook.com, an Instagram token through graph.instagram.com', () => {
   assert.match(graphBase('EAAB-system-user'), /^https:\/\/graph\.facebook\.com\//)

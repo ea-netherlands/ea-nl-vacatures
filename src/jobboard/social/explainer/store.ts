@@ -60,7 +60,7 @@ export type ExplainerPost = {
   _id: string
   _type: 'explainerPost'
   _rev?: string
-  /** Thursday in Amsterdam, YYYY-MM-DD. Also the id suffix. */
+  /** The week's Thursday in Amsterdam, YYYY-MM-DD (Instagram posts the Sunday after). Also the id suffix. */
   postDate: string
   postAt: string
   linkedinPersonal: ExplainerItem | null

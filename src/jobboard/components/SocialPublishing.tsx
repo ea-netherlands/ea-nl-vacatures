@@ -178,7 +178,7 @@ export function SocialPostingDay({
   heading: string
   rows: { label: string; time: string; result: Result | null; manual?: boolean }[]
   /** EA Nederland's LinkedIn, by hand: the slides and the caption. */
-  bundle: { slides: string[]; caption: string; done: boolean }
+  bundle: { slides: string[]; pdf: string; caption: string; done: boolean }
 }) {
   const { busy, error, act } = useAct()
   const [copied, setCopied] = useState(false)
@@ -228,9 +228,13 @@ export function SocialPostingDay({
         <div className={x.decision}>
           <p className={x.status}>EA Netherlands on LinkedIn, by hand</p>
           <p className={s.hint}>
-            On the page, start a post, add these images in order (LinkedIn takes up to 20), and paste the caption.
+            On the page, start a post, add the PDF as a document (it shows as a carousel people swipe through; give it
+            the same title as the file), and paste the caption. The single slides are there too, if you need one.
           </p>
           <div className={s.actions}>
+            <a className={`${u.btn} ${u.btnSubtle}`} href={bundle.pdf} download>
+              Download PDF
+            </a>
             {bundle.slides.map((src, i) => (
               <a key={src} className={`${u.btn} ${u.btnGhost} ${u.btnSmall}`} href={src} download={`slide-${i + 1}.png`}>
                 Slide {i + 1}

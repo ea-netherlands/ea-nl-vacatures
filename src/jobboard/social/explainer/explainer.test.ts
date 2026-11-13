@@ -4,7 +4,7 @@ import test from 'node:test'
 import { composeCaption, credit, dealOut, framing, shortlist, splitPicks, tidySlides } from './draft'
 import { explainerSlidePaths, explainerSlides } from './slides'
 import { adaptableForumPosts, handbookAdaptable, instagramSources, mediaToSource, type Candidate } from './sources'
-import { nextExplainerTime } from './weekly'
+import { explainerPostAt, nextExplainerTime } from './weekly'
 
 const forumPost = (over: Record<string, unknown> = {}) =>
   ({
@@ -146,13 +146,26 @@ test('the two accounts never get the same source', () => {
   )
 })
 
-test('the explainer goes out on the coming Thursday at 09:00 Amsterdam', () => {
-  // Wednesday 11 Nov 2026
-  assert.equal(nextExplainerTime(new Date('2026-11-11T10:30:00Z')).toISOString(), '2026-11-12T08:00:00.000Z')
-  // Thursday after 09:00 rolls on a week
-  assert.equal(nextExplainerTime(new Date('2026-11-12T09:00:00Z')).toISOString(), '2026-11-19T08:00:00.000Z')
+test("a week's explainers: LinkedIn on Thursday at 09:00, Instagram on Sunday at 18:00", () => {
+  assert.equal(explainerPostAt('2026-11-19', 'linkedinPersonal').toISOString(), '2026-11-19T08:00:00.000Z')
+  assert.equal(explainerPostAt('2026-11-19', 'instagram').toISOString(), '2026-11-22T17:00:00.000Z')
+  // Over a month's end, in summer time
+  assert.equal(explainerPostAt('2027-07-29', 'instagram').toISOString(), '2027-08-01T16:00:00.000Z')
+})
+
+test("the week stays open until its Sunday post is out, then moves on", () => {
+  const week = (at: string) => nextExplainerTime(new Date(at)).toISOString()
+  // Wednesday 11 Nov 2026: the coming Thursday
+  assert.equal(week('2026-11-11T10:30:00Z'), '2026-11-12T08:00:00.000Z')
+  // Thursday after LinkedIn's post, and Sunday before Instagram's: still that week
+  assert.equal(week('2026-11-12T09:00:00Z'), '2026-11-12T08:00:00.000Z')
+  assert.equal(week('2026-11-15T16:59:00Z'), '2026-11-12T08:00:00.000Z')
+  // Sunday once Instagram's time has passed: next week
+  assert.equal(week('2026-11-15T17:00:00Z'), '2026-11-19T08:00:00.000Z')
+  // Monday
+  assert.equal(week('2026-11-16T08:00:00Z'), '2026-11-19T08:00:00.000Z')
   // Summer time
-  assert.equal(nextExplainerTime(new Date('2027-06-01T12:00:00Z')).toISOString(), '2027-06-03T07:00:00.000Z')
+  assert.equal(week('2027-06-01T12:00:00Z'), '2027-06-03T07:00:00.000Z')
 })
 
 test('slides: cover, one per point, closing; each account from its own explainer', () => {

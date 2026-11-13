@@ -1,11 +1,16 @@
 /**
  * The weekly explainer's cycle.
  *
- * Wednesday 11:30: pick a source for each account and draft Thursday's two
- * explainers, then mail James a link to /review/social/explainer. Thursday,
- * hourly: post what he approved, in English on his LinkedIn at 09:00 and in
- * English on EA Nederland's Instagram at 19:00 (the same times as the jobs post,
- * so each account keeps one rhythm). The two never share a source.
+ * Wednesday 11:30: pick a source for each account and draft the week's two
+ * explainers, then mail James a link to /review/social/explainer. Then post
+ * what he approved, in English: on his LinkedIn on Thursday at 09:00, and on
+ * EA Nederland's Instagram on Sunday at 18:00. Instagram's insights (13 Nov
+ * 2026) put followers at their most active from 18:00 to 21:00 on Sundays,
+ * Mondays and Tuesdays; the jobs post has Tuesday, and Sunday keeps two days
+ * between the two. The two never share a source.
+ *
+ * A week is named after its Thursday (the document's id and `postDate`) and
+ * stays open on the review page until its Sunday post has gone out.
  *
  * The same switch as the jobs post (SOCIAL_POSTING) holds everything back,
  * and the same rules apply: a draft is only redrafted with `force`, a decided
@@ -16,7 +21,7 @@ import { isMailConfigured, sendMail } from '../../lib/mail'
 import { ADMIN_ORIGIN } from '../../lib/seo'
 import { issueToken, LINK_TTL_MS } from '../../review/auth'
 import { publishInstagramCarousel } from '../instagram'
-import { publishLinkedInImages } from '../linkedin'
+import { publishLinkedInDocument } from '../linkedin'
 import { channelPostAt, postingEnabled } from '../publish'
 import { amsterdamDate, CHANNEL_LABEL, type ChannelResult } from '../store'
 import { getToken } from '../tokens'
@@ -42,27 +47,37 @@ export { EXPLAINER_CHANNELS }
 const THURSDAY = 4
 const MAX_ATTEMPTS = 3
 
-/** The coming Thursday at 09:00 Amsterdam; the next week's once this one's 09:00 has passed. */
-export function nextExplainerTime(now = new Date()): Date {
-  const parts = Object.fromEntries(
-    new Intl.DateTimeFormat('en-GB', {
-      timeZone: 'Europe/Amsterdam',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      weekday: 'short',
-      hourCycle: 'h23',
-    })
-      .formatToParts(now)
-      .map((p) => [p.type, p.value]),
-  )
-  const weekday = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].indexOf(parts.weekday)
-  let days = (THURSDAY - weekday + 7) % 7
-  if (days === 0 && Number(parts.hour) >= 9) days = 7
-  const date = new Date(Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day) + days))
-  return channelPostAt(date.toISOString().slice(0, 10), 'linkedinPersonal')
+/** Days after the week's Thursday each account posts: LinkedIn that Thursday, Instagram the Sunday after. */
+export const EXPLAINER_DAY_OFFSET: Record<ExplainerChannel, number> = { linkedinPersonal: 0, instagram: 3 }
+
+/** YYYY-MM-DD plus `days`. */
+export function addDays(date: string, days: number): string {
+  const [y, m, d] = date.split('-').map(Number)
+  return new Date(Date.UTC(y, m - 1, d + days)).toISOString().slice(0, 10)
 }
+
+/** When one account's explainer for the week of `postDate` (its Thursday) goes out. */
+export function explainerPostAt(postDate: string, channel: ExplainerChannel): Date {
+  return channelPostAt(addDays(postDate, EXPLAINER_DAY_OFFSET[channel]), channel)
+}
+
+/** The account that posts last in a week. */
+const LAST = EXPLAINER_CHANNELS.reduce((a, b) => (EXPLAINER_DAY_OFFSET[b] > EXPLAINER_DAY_OFFSET[a] ? b : a))
+
+/**
+ * The week being drafted or posted, as its Thursday at 09:00 Amsterdam: this
+ * week's until its last post (Sunday's) has gone out, then the next.
+ */
+export function nextExplainerTime(now = new Date()): Date {
+  const today = amsterdamDate(now)
+  const weekday = new Date(`${today}T12:00:00Z`).getUTCDay()
+  const thisWeek = addDays(today, -((weekday - THURSDAY + 7) % 7))
+  const thursday = now < explainerPostAt(thisWeek, LAST) ? thisWeek : addDays(thisWeek, 7)
+  return channelPostAt(thursday, 'linkedinPersonal')
+}
+
+const hhmm = (at: Date) =>
+  at.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Amsterdam' })
 
 const longDay = (at: Date) =>
   at.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Europe/Amsterdam' })
@@ -119,7 +134,7 @@ const asSuggestion = (item: ExplainerItem | null | undefined): Suggestion[] =>
   item?.source ? [{ ...item.source, reason: '', topic: item.topic ?? '' }] : []
 
 /**
- * Drafts the coming Thursday's explainers.
+ * Drafts the week's explainers (see nextExplainerTime).
  *
  * With no `channel`, both accounts that have nothing decided yet: the cron,
  * and the page's first "Draft". With a `channel`, just that one:
@@ -272,7 +287,7 @@ export async function runWeeklyExplainer(
   }
   const ready = EXPLAINER_CHANNELS.filter((c) => post[c]?.slides)
   const lines = [
-    `Thursday's explainers for ${day}, one per account, each from its own source:`,
+    `This week's explainers, one per account, each from its own source: for your LinkedIn on ${day} at ${hhmm(explainerPostAt(postDate, 'linkedinPersonal'))}, for Instagram on ${longDay(explainerPostAt(postDate, 'instagram'))} at ${hhmm(explainerPostAt(postDate, 'instagram'))}.`,
     '',
     ...describe('linkedinPersonal'),
     ...describe('instagram'),
@@ -282,7 +297,7 @@ export async function runWeeklyExplainer(
   ]
   await sendMail({
     to,
-    subject: ready.length === 2 ? 'Thursday’s explainers are ready to approve' : 'Thursday’s explainers need you',
+    subject: ready.length === 2 ? 'This week’s explainers are ready to approve' : 'This week’s explainers need you',
     text: lines.join('\n'),
   })
   log(`mailed ${to.join(', ')}`)
@@ -293,26 +308,42 @@ const PUBLIC_ORIGIN = 'https://effectiefaltruisme.nl'
 
 type Http = typeof fetch
 
-/** Thursdays, hourly: posts the approved explainer to each account once its time has passed. */
+/**
+ * Thursdays and Sundays, hourly: posts each account's approved explainer once
+ * its time has passed. On a Sunday that is the Instagram one of the week that
+ * began on Thursday; `postDate` in the report is today.
+ */
 export async function runExplainerPublish(
   options: { now?: Date; dryRun?: boolean; http?: Http; sleep?: (ms: number) => Promise<void>; onLog?: (line: string) => void } = {},
 ): Promise<{ postDate: string; enabled: boolean; actions: string[] }> {
   const now = options.now ?? new Date()
   const log = (line: string) => options.onLog?.(line)
-  const postDate = amsterdamDate(now)
-  const report = { postDate, enabled: postingEnabled(), actions: [] as string[] }
+  const today = amsterdamDate(now)
+  const report = { postDate: today, enabled: postingEnabled(), actions: [] as string[] }
   const act = (line: string) => {
     report.actions.push(line)
     log(line)
   }
 
-  const post = await getExplainer(postDate)
-  if (!post) return (log(`no explainer for ${postDate}`), report)
+  // Each account's week: the Thursday its explainer belongs to, if it posts today.
+  const weeks = new Map<string, Promise<ExplainerPost | null>>()
+  const weekOf = (channel: ExplainerChannel) => {
+    const date = addDays(today, -EXPLAINER_DAY_OFFSET[channel])
+    if (!weeks.has(date)) weeks.set(date, getExplainer(date))
+    return { date, post: weeks.get(date)! }
+  }
 
   const failures: string[] = []
   for (const channel of EXPLAINER_CHANNELS) {
-    const item = post[channel]
     const label = CHANNEL_LABEL[channel]
+    const week = weekOf(channel)
+    const postDate = week.date
+    const post = await week.post
+    if (!post) {
+      log(`${label}: no explainer for the week of ${postDate}`)
+      continue
+    }
+    const item = post[channel]
     if (!item || item.status !== 'approved') {
       log(`${label}: ${item?.status ?? 'nothing'}; nothing to do`)
       continue
@@ -324,7 +355,7 @@ export async function runExplainerPublish(
     const done = item.result
     if (done?.id) continue
     if ((done?.attempts ?? 0) >= MAX_ATTEMPTS) continue
-    if (now < channelPostAt(postDate, channel)) continue
+    if (now < explainerPostAt(postDate, channel)) continue
     if (options.dryRun || !report.enabled) {
       act(`${options.dryRun ? 'dry run' : 'SOCIAL_POSTING is off'}: would post the explainer to ${label}`)
       continue
@@ -334,7 +365,7 @@ export async function runExplainerPublish(
     try {
       const token = await getToken(channel)
       if (!token) throw new Error(`${label} is not connected`)
-      const urls = explainerSlidePaths(post, channel, channel === 'instagram' ? 'jpg' : 'png').map((p) => `${PUBLIC_ORIGIN}${p}`)
+      const urls = explainerSlidePaths(post, channel, 'jpg').map((p) => `${PUBLIC_ORIGIN}${p}`)
       const posted =
         channel === 'instagram'
           ? await publishInstagramCarousel({
@@ -345,12 +376,14 @@ export async function runExplainerPublish(
               http: options.http,
               sleep: options.sleep,
             })
-          : await publishLinkedInImages({
+          : await publishLinkedInDocument({
               token: token.accessToken,
               personUrn: token.accountId,
               imageUrls: urls,
+              title: item.slides.cover.headline,
               caption: item.caption,
               http: options.http,
+              sleep: options.sleep,
             })
       result = { at: now.toISOString(), id: posted.id, url: posted.url }
       act(`posted the explainer to ${label}: ${posted.url ?? posted.id}`)

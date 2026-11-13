@@ -3,10 +3,10 @@
  *
  * Runs hourly on Tuesdays (vercel.json). Each account has its own time
  * (James, 9 Nov 2026): LinkedIn in the morning, when people read it at the
- * start of the working day; Instagram in the evening, when EA Nederland's
- * mostly Dutch, 25–44 followers use it. Business Suite no longer shows when
- * followers are online and the account has too few posts to compare, so these
- * are starting points to revisit with each post's reach.
+ * start of the working day; Instagram at 18:00. Instagram's own insights
+ * (13 Nov 2026) put EA Nederland's followers at their most active from 18:00
+ * to 21:00, most of all on Sundays, Mondays and Tuesdays, so the post goes
+ * out as that window opens. Revisit with each post's reach.
  *
  * Nothing posts unless SOCIAL_POSTING is "on" in the environment: the switch
  * for a first run, and for stopping everything without a deploy.
@@ -20,9 +20,9 @@
 import { isMailConfigured, sendMail } from '../lib/mail'
 import { ADMIN_ORIGIN } from '../lib/seo'
 import { getListingsByIds } from '../sanity/queries'
-import { postSlides, slidePath } from './content'
+import { postSlides, slidePath, type SlideSpec } from './content'
 import { publishInstagramCarousel } from './instagram'
-import { publishLinkedInImages } from './linkedin'
+import { publishLinkedInDocument } from './linkedin'
 import { amsterdamDate, CHANNEL_LABEL, getPost, patchPost, type Channel, type ChannelResult } from './store'
 import { getToken, type TokenChannel } from './tokens'
 import { sendMusicReminder, TRACKS } from './music'
@@ -32,7 +32,7 @@ import { approvers } from './weekly'
 export const CHANNEL_TIME: Record<Channel, { hour: number; minute: number }> = {
   linkedinOrg: { hour: 9, minute: 0 },
   linkedinPersonal: { hour: 9, minute: 0 },
-  instagram: { hour: 19, minute: 0 },
+  instagram: { hour: 18, minute: 0 },
 }
 
 /** Posted by the API; EA Nederland's LinkedIn page is by hand for now. */
@@ -53,6 +53,14 @@ export function channelPostAt(postDate: string, channel: Channel): Date {
     new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Amsterdam', hour: '2-digit', hourCycle: 'h23' }).format(guess),
   )
   return new Date(guess.getTime() - ((shown - hour + 24) % 24) * 36e5)
+}
+
+/** The document's title on LinkedIn, above the carousel: the cover's pill and the day. */
+export function jobsDocumentTitle(slides: SlideSpec[]): string {
+  const cover = slides.find((s) => s.kind === 'cover')
+  if (!cover || cover.kind !== 'cover') return 'Jobs this week'
+  const day = new Date(`${cover.date}T12:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', timeZone: 'UTC' })
+  return `${cover.funding ? 'Opportunities' : 'Jobs'} this week, ${day}`
 }
 
 export function postingEnabled(): boolean {
@@ -118,12 +126,14 @@ export async function runSocialPublish(
               http: options.http,
               sleep: options.sleep,
             })
-          : await publishLinkedInImages({
+          : await publishLinkedInDocument({
               token: token.accessToken,
               personUrn: token.accountId,
-              imageUrls: slides.map((s) => `${PUBLIC_ORIGIN}${slidePath(s)}`),
+              imageUrls: slides.map((s) => `${PUBLIC_ORIGIN}${slidePath(s, 'jpg')}`),
+              title: jobsDocumentTitle(slides),
               caption: post.captions.linkedinPersonal,
               http: options.http,
+              sleep: options.sleep,
             })
       results[channel] = { at: now.toISOString(), id: result.id, url: result.url }
       act(`posted to ${label}: ${result.url ?? result.id}`)

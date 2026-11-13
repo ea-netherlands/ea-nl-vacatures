@@ -300,7 +300,8 @@ the first two exist:
    can't be reached.
 3. **Done: posting.** The hourly Tuesday `social-publish` cron
    (`social/publish.ts`) posts an approved week to each account at its own
-   Amsterdam time: LinkedIn 09:00, Instagram 19:00 (`CHANNEL_TIME`). Results
+   Amsterdam time: LinkedIn 09:00, Instagram 18:00 (`CHANNEL_TIME`; Instagram's
+   insights put followers' peak at 18:00–21:00, Sunday to Tuesday most). Results
    (post links, or errors with up to three attempts) go on the week's Sanity
    document and show on `/review/social`; a first failure mails James.
    Nothing posts unless `SOCIAL_POSTING=on`.
@@ -311,20 +312,27 @@ the first two exist:
      container, then publish. An Instagram-login token (IG…) also works and is
      refreshed by the Monday cron, but Meta no longer offers that setup to new
      apps (Nov 2026).
-   - **James's LinkedIn** (`social/linkedin.ts`): "Share on LinkedIn" via
-     ugcPosts with every slide as an image. "Connect LinkedIn" on the page runs
+   - **James's LinkedIn** (`social/linkedin.ts`): "Share on LinkedIn"
+     (w_member_social). The slides go up as one PDF (`social/pdf.ts`) through
+     the Documents API and a Posts API post, so LinkedIn shows a swipeable
+     carousel rather than an image grid. `LINKEDIN_VERSION` (YYYYMM) overrides
+     the API version when ours is retired. "Connect LinkedIn" on the page runs
      the OAuth round trip; LinkedIn tokens last 60 days with no refresh, so the
      page and the Monday mail warn two weeks ahead.
    - **EA Nederland's LinkedIn page**: by hand until LinkedIn grants the
      Community Management API. At 09:00 James gets a reminder; the page has the
-     slides, a copy-caption button and "Mark as posted".
+     same PDF to upload as a document, the single slides, a copy-caption
+     button and "Mark as posted".
    - Tokens live in Postgres (`social_token`), sealed with AES-256-GCM, never in
      Sanity, whose dataset is publicly readable.
 
-4. **Done: the weekly explainers** (`social/explainer/`). Thursdays, two
+4. **Done: the weekly explainers** (`social/explainer/`). Each week two
    explainers in English, each adapted from its own source so nobody who
-   follows both accounts sees the same one twice: one on James's LinkedIn at
-   09:00, one on EA Nederland's Instagram at 19:00. Sources: every curated EA
+   follows both accounts sees the same one twice: one on James's LinkedIn on
+   Thursday at 09:00 (as a PDF carousel), one on EA Nederland's Instagram the
+   Sunday after at 18:00, when its followers are most active
+   (`EXPLAINER_DAY_OFFSET`). A week is named after its Thursday and stays open
+   on the review page until Sunday's post is out. Sources: every curated EA
    Forum post and the Introduction to EA Handbook's essays (not linkposts,
    signposts or exercises). Posts since 1 Dec 2022 are CC BY 4.0; for older
    ones James has permission (Nov 2026), and the credit says so. With
@@ -336,7 +344,7 @@ the first two exist:
    another suggestion, rules a source out, and approves or skips each
    account on its own. The Forum line, credits and links are written by the
    code. Slides render at `/vacatures/social/explainer?c=li|ig`; the hourly
-   Thursday `explainer-publish` cron posts approved ones under the same
+   Thursday and Sunday `explainer-publish` cron posts approved ones under the same
    `SOCIAL_POSTING` switch. `explainer?force=1&channel=…[&source=…]` redrafts
    one account. Stored as `explainerPost-YYYY-MM-DD` in Sanity.
 

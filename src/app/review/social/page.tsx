@@ -49,7 +49,7 @@ function Frame({ children }: { children: React.ReactNode }) {
             Jobs, Tuesdays
           </a>
           <a className={`${u.btn} ${u.btnGhost} ${u.btnSmall}`} href="/review/social/explainer">
-            Explainer, Thursdays
+            Explainers, Thu and Sun
           </a>
         </nav>
         {children}
@@ -148,6 +148,7 @@ async function Publishing({ upcoming, notice }: { upcoming: SocialPost | null; n
         ]}
         bundle={{
           slides: postSlides(roles, target.postDate, target.theme ?? 'mixed').map((spec) => slidePath(spec)),
+          pdf: `/api/review/social/pdf?date=${target.postDate}`,
           caption: target.captions?.linkedinOrg ?? '',
           done: Boolean(target.results?.linkedinOrg?.id),
         }}
