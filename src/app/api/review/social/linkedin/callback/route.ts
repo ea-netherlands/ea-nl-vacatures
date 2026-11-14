@@ -5,7 +5,7 @@
 
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
-import { SESSION_COOKIE, verifyToken } from '@jobboard/review/auth'
+import { verifyToken, SOCIAL_SESSION_COOKIE, socialSignedIn } from '@jobboard/review/auth'
 import { exchangeCode } from '@jobboard/social/linkedin'
 import { saveToken } from '@jobboard/social/tokens'
 
@@ -15,7 +15,7 @@ export async function GET(request: Request) {
   const url = new URL(request.url)
   const back = (result: string) => NextResponse.redirect(new URL(`/review/social?linkedin=${result}`, url), 303)
   const jar = await cookies()
-  if (!verifyToken('session', jar.get(SESSION_COOKIE)?.value)) return back('signed-out')
+  if (!socialSignedIn(jar.get(SOCIAL_SESSION_COOKIE)?.value)) return back('signed-out')
   if (!verifyToken('oauth', url.searchParams.get('state'))) return back('expired')
   const code = url.searchParams.get('code')
   if (!code) return back(url.searchParams.get('error') === 'user_cancelled_authorize' ? 'cancelled' : 'refused')

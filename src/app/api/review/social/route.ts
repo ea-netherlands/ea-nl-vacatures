@@ -7,7 +7,7 @@
 
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
-import { SESSION_COOKIE, verifyToken } from '@jobboard/review/auth'
+import { SOCIAL_SESSION_COOKIE, socialSignedIn } from '@jobboard/review/auth'
 import { nextPostTime, SELECTION } from '@jobboard/social/select'
 import { amsterdamDate, CHANNEL_LIMIT, CHANNELS, getPost, patchPost, type Channel } from '@jobboard/social/store'
 import { isThemeKey } from '@jobboard/social/themes'
@@ -28,7 +28,7 @@ const fail = (error: string, status = 400) => NextResponse.json({ error }, { sta
 
 export async function POST(request: Request) {
   const jar = await cookies()
-  if (!verifyToken('session', jar.get(SESSION_COOKIE)?.value)) {
+  if (!socialSignedIn(jar.get(SOCIAL_SESSION_COOKIE)?.value)) {
     return fail('Your session has expired. Open the link in the latest email.', 401)
   }
   if (!sameOrigin(request)) return fail('cross-origin request refused', 403)

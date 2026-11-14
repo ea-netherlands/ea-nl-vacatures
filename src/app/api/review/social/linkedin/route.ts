@@ -6,14 +6,14 @@
 
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
-import { issueToken, SESSION_COOKIE, verifyToken } from '@jobboard/review/auth'
+import { issueToken, SOCIAL_SESSION_COOKIE, socialSignedIn } from '@jobboard/review/auth'
 import { authoriseUrl, linkedinConfigured } from '@jobboard/social/linkedin'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: Request) {
   const jar = await cookies()
-  if (!verifyToken('session', jar.get(SESSION_COOKIE)?.value)) {
+  if (!socialSignedIn(jar.get(SOCIAL_SESSION_COOKIE)?.value)) {
     return NextResponse.redirect(new URL('/review/social', request.url), 303)
   }
   if (!linkedinConfigured()) {

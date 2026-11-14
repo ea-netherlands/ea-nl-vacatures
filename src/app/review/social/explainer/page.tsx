@@ -12,7 +12,7 @@ import s from '@jobboard/components/review.module.css'
 import x from '@jobboard/components/social.module.css'
 import u from '@jobboard/components/ui.module.css'
 import { ExplainerEditor, ExplainerFirstDraft, type ExplainerItemView } from '@jobboard/components/ExplainerEditor'
-import { isReviewConfigured, issueToken, LINK_TTL_MS, SESSION_COOKIE, verifyToken } from '@jobboard/review/auth'
+import { isReviewConfigured, issueToken, SOCIAL_LINK_TTL_MS, SOCIAL_SESSION_COOKIE, socialSignedIn } from '@jobboard/review/auth'
 import { explainerSlidePaths, explainerSlides } from '@jobboard/social/explainer/slides'
 import { ceaSourcesEnabled, sourceKey, type SourceRef } from '@jobboard/social/explainer/sources'
 import {
@@ -155,16 +155,16 @@ function Account({ post, channel }: { post: ExplainerPost; channel: ExplainerCha
 
 export default async function ExplainerPage() {
   const jar = await cookies()
-  if (!verifyToken('session', jar.get(SESSION_COOKIE)?.value)) {
+  if (!socialSignedIn(jar.get(SOCIAL_SESSION_COOKIE)?.value)) {
     const localLink =
       process.env.VERCEL !== '1' && isReviewConfigured()
-        ? `/api/review/session?t=${issueToken('link', LINK_TTL_MS)}&next=explainer`
+        ? `/api/review/session?t=${issueToken('social-link', SOCIAL_LINK_TTL_MS)}&next=explainer`
         : null
     return (
       <Frame>
         <h1 className={s.title}>Sign in first</h1>
         <p className={s.lead}>
-          This page uses the same sign-in as the review queue. Open the link in the latest email, then come back.
+          Posting has its own sign-in, separate from the review queue. Open the link in the latest social post email, then come back.
         </p>
         {localLink ? (
           <p>

@@ -16,7 +16,7 @@ import s from '@jobboard/components/review.module.css'
 import x from '@jobboard/components/social.module.css'
 import u from '@jobboard/components/ui.module.css'
 import { routes, t } from '@jobboard/content/i18n'
-import { isReviewConfigured, issueToken, LINK_TTL_MS, SESSION_COOKIE, verifyToken } from '@jobboard/review/auth'
+import { isReviewConfigured, issueToken, SOCIAL_LINK_TTL_MS, SOCIAL_SESSION_COOKIE, socialSignedIn } from '@jobboard/review/auth'
 import { SocialEditor, type EditorPost } from '@jobboard/components/SocialEditor'
 import { SocialConnections, SocialPostingDay } from '@jobboard/components/SocialPublishing'
 import { linkedinConfigured } from '@jobboard/social/linkedin'
@@ -179,16 +179,16 @@ export default async function SocialPreviewPage({
   const { linkedin: linkedinResult } = await searchParams
   const notice = linkedinResult ? (LINKEDIN_NOTICE[linkedinResult] ?? null) : null
   const jar = await cookies()
-  if (!verifyToken('session', jar.get(SESSION_COOKIE)?.value)) {
+  if (!socialSignedIn(jar.get(SOCIAL_SESSION_COOKIE)?.value)) {
     const localLink =
       process.env.VERCEL !== '1' && isReviewConfigured()
-        ? `/api/review/session?t=${issueToken('link', LINK_TTL_MS)}`
+        ? `/api/review/session?t=${issueToken('social-link', SOCIAL_LINK_TTL_MS)}&next=social`
         : null
     return (
       <Frame>
         <h1 className={s.title}>Sign in first</h1>
         <p className={s.lead}>
-          This page uses the same sign-in as the review queue. Open the link in the daily review email, then come back.
+          Posting has its own sign-in, separate from the review queue. Open the link in the latest social post email, then come back.
         </p>
         {localLink ? (
           <p>
