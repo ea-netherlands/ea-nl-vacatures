@@ -17,6 +17,8 @@ import { runClassification } from '@jobboard/classify/run'
 import { checkDeadLinks, runIngest } from '@jobboard/ingest/run'
 import { runExpiry, runPromotion } from '@jobboard/sanity/promote'
 import { runSuggestionDigest } from '@jobboard/sanity/notify'
+import { stripPublishedReasoning, type SweepClient } from '@jobboard/sanity/private-notes'
+import { writeClient } from '@jobboard/sanity/client'
 import { runTranslation } from '@jobboard/sanity/translate'
 import { runReviewDigest } from '@jobboard/review/digest'
 import { runSiteSync } from '@jobboard/lib/site-sync'
@@ -119,12 +121,14 @@ export async function GET(request: Request, { params }: { params: Promise<{ job:
         return NextResponse.json({ job, report, logs })
       }
       case 'promote': {
-        const report = await runPromotion({
-          limit: limitParam(50),
-          dryRun: url.searchParams.get('dryRun') === '1',
-          onLog,
-        })
-        return NextResponse.json({ job, report, logs })
+        const dryRun = url.searchParams.get('dryRun') === '1'
+        const report = await runPromotion({ limit: limitParam(50), dryRun, onLog })
+        // Listings published from the Studio carry the classifier's reasoning
+        // across; take it off before it sits in public data for long.
+        const privateNotes = await stripPublishedReasoning(writeClient() as unknown as SweepClient, { dryRun }).catch(
+          (err: unknown) => ({ error: err instanceof Error ? err.message : String(err) }),
+        )
+        return NextResponse.json({ job, report, privateNotes, logs })
       }
       case 'expire': {
         const report = await runExpiry({

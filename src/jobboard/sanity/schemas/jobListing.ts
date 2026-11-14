@@ -40,7 +40,8 @@ export const jobListing = defineType({
       of a separate "Provenance" tab, so every review began by clicking away
       from the form to find the argument and then clicking back to act on it.
       Read-only, never shown publicly — it is the classifier talking to the
-      curator, not to a reader.
+      curator, not to a reader. Only drafts carry it: published listings are
+      public data, so it is removed on publish (../private-notes.ts).
     */
     defineField({
       name: 'llmReasoning',
@@ -49,6 +50,7 @@ export const jobListing = defineType({
       rows: 5,
       group: 'editorial',
       readOnly: true,
+      hidden: ({ value }) => !value,
       description:
         'The classifier’s own argument, for triage. Not shown to readers, and not a substitute for reading the ad — it is what to check, not what to trust.',
     }),
