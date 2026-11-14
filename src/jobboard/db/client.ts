@@ -45,9 +45,11 @@ async function connectPg(connectionString: string): Promise<Db> {
     max: Number(process.env.PGPOOL_MAX ?? 5),
     idleTimeoutMillis: 10_000,
     connectionTimeoutMillis: 15_000,
-    ssl: /localhost|127\.0\.0\.1/.test(connectionString)
-      ? undefined
-      : { rejectUnauthorized: false },
+    // Always verify the server's certificate. Neon's certificates chain to a
+    // public CA that Node already trusts, so no CA file is needed. (An
+    // `sslmode` in DATABASE_URL takes precedence over this, and pg 8 treats
+    // `require` as full verification too.)
+    ssl: /localhost|127\.0\.0\.1/.test(connectionString) ? undefined : true,
   })
 
   const wrap = (exec: (sql: string, params?: unknown[]) => Promise<QueryResult<never>>): Db => ({
