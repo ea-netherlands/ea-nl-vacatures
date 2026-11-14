@@ -7,7 +7,7 @@
  */
 
 import { cookies } from 'next/headers'
-import { SESSION_COOKIE, verifyToken } from '@jobboard/review/auth'
+import { SOCIAL_SESSION_COOKIE, socialSignedIn } from '@jobboard/review/auth'
 import { getListingsByIds } from '@jobboard/sanity/queries'
 import { postSlides, slidePath } from '@jobboard/social/content'
 import { fetchSlides } from '@jobboard/social/linkedin'
@@ -20,7 +20,7 @@ export const maxDuration = 60
 
 export async function GET(request: Request) {
   const jar = await cookies()
-  if (!verifyToken('session', jar.get(SESSION_COOKIE)?.value)) return new Response('Sign in again', { status: 401 })
+  if (!socialSignedIn(jar.get(SOCIAL_SESSION_COOKIE)?.value)) return new Response('Sign in again', { status: 401 })
 
   const url = new URL(request.url)
   const date = url.searchParams.get('date') ?? ''

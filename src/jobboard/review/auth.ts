@@ -15,19 +15,33 @@
  *   • Tokens are HMACs over their own expiry, compared in constant time, so
  *     there is nothing stored to leak and nothing to revoke except the secret.
  *     Rotating REVIEW_SECRET signs everyone out.
+ *
+ * The social posting pages have their own link and their own session. The
+ * review queue's link arrives every morning and can do no more than accept or
+ * reject a listing; the social pages can put words on EA Netherlands'
+ * Instagram and on a personal LinkedIn. So a review link never opens them:
+ * only the link in a social post's own mail does, it lives for days rather
+ * than a week, and its session for a week rather than a month. A social link
+ * also signs you in to the review queue, since it is the stronger of the two.
  */
 
 import { createHmac, timingSafeEqual } from 'node:crypto'
 
 export const SESSION_COOKIE = 'jb_review'
+/** The separate session for the social posting pages. */
+export const SOCIAL_SESSION_COOKIE = 'jb_social'
 
 /** The link in the email. Long enough to survive a weekend away. */
 export const LINK_TTL_MS = 7 * 864e5
 /** The cookie the link is exchanged for. */
 export const SESSION_TTL_MS = 30 * 864e5
+/** The link in a social post's mail: drafted one day, posted the next or the one after. */
+export const SOCIAL_LINK_TTL_MS = 3 * 864e5
+/** A fresh social mail arrives at least weekly, so this never needs to outlive one. */
+export const SOCIAL_SESSION_TTL_MS = 7 * 864e5
 
 /** `oauth` is the state on the LinkedIn connect round trip; it can't sign anyone in. */
-type Purpose = 'link' | 'session' | 'oauth'
+type Purpose = 'link' | 'session' | 'social-link' | 'social-session' | 'oauth'
 
 /**
  * REVIEW_SECRET, falling back to CRON_SECRET so an existing deployment works
@@ -69,4 +83,9 @@ export function verifyToken(
   const expected = Buffer.from(sign(purpose, expires, key))
   const given = Buffer.from(signature)
   return expected.length === given.length && timingSafeEqual(expected, given)
+}
+
+/** Whether a request's cookie value is a live session for the social posting pages. */
+export function socialSignedIn(cookieValue: string | null | undefined): boolean {
+  return verifyToken('social-session', cookieValue)
 }

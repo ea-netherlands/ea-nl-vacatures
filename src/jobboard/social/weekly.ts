@@ -13,7 +13,7 @@
 
 import { isMailConfigured, sendMail } from '../lib/mail'
 import { ADMIN_ORIGIN } from '../lib/seo'
-import { issueToken, LINK_TTL_MS } from '../review/auth'
+import { issueToken, SOCIAL_LINK_TTL_MS } from '../review/auth'
 import { digestRecipients } from '../review/digest'
 import { getListingsByIds, getLiveListings } from '../sanity/queries'
 import { compose, draftCaptionParts } from './captions'
@@ -52,7 +52,7 @@ export function approvers(): string[] {
 
 export function socialLink(): string {
   const url = new URL('/api/review/session', ADMIN_ORIGIN)
-  url.searchParams.set('t', issueToken('link', LINK_TTL_MS))
+  url.searchParams.set('t', issueToken('social-link', SOCIAL_LINK_TTL_MS))
   url.searchParams.set('next', 'social')
   return url.toString()
 }

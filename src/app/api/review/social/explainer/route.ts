@@ -7,7 +7,7 @@
 
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
-import { SESSION_COOKIE, verifyToken } from '@jobboard/review/auth'
+import { SOCIAL_SESSION_COOKIE, socialSignedIn } from '@jobboard/review/auth'
 import { LIMITS, tidySlides } from '@jobboard/social/explainer/draft'
 import {
   EXPLAINER_LIMIT,
@@ -51,7 +51,7 @@ function readSlides(input: unknown): SlideText | string {
 
 export async function POST(request: Request) {
   const jar = await cookies()
-  if (!verifyToken('session', jar.get(SESSION_COOKIE)?.value)) {
+  if (!socialSignedIn(jar.get(SOCIAL_SESSION_COOKIE)?.value)) {
     return fail('Your session has expired. Open the link in the latest email.', 401)
   }
   const origin = request.headers.get('origin')

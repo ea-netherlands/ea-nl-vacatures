@@ -19,7 +19,7 @@
 
 import { isMailConfigured, sendMail } from '../../lib/mail'
 import { ADMIN_ORIGIN } from '../../lib/seo'
-import { issueToken, LINK_TTL_MS } from '../../review/auth'
+import { issueToken, SOCIAL_LINK_TTL_MS } from '../../review/auth'
 import { publishInstagramCarousel } from '../instagram'
 import { publishLinkedInDocument } from '../linkedin'
 import { channelPostAt, postingEnabled } from '../publish'
@@ -212,7 +212,7 @@ export async function draftExplainer(options: {
 
 function reviewLink(): string {
   const url = new URL('/api/review/session', ADMIN_ORIGIN)
-  url.searchParams.set('t', issueToken('link', LINK_TTL_MS))
+  url.searchParams.set('t', issueToken('social-link', SOCIAL_LINK_TTL_MS))
   url.searchParams.set('next', 'explainer')
   return url.toString()
 }

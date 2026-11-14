@@ -11,6 +11,8 @@ import {
   issueToken,
   SESSION_COOKIE,
   SESSION_TTL_MS,
+  SOCIAL_SESSION_COOKIE,
+  SOCIAL_SESSION_TTL_MS,
   verifyToken,
 } from '@jobboard/review/auth'
 
@@ -25,8 +27,11 @@ export async function GET(request: Request) {
   const next = url.searchParams.get('next')
   const page = next === 'social' ? '/review/social' : next === 'explainer' ? '/review/social/explainer' : '/review'
 
-  if (!verifyToken('link', token)) {
-    return NextResponse.redirect(new URL('/review?link=expired', url), 303)
+  // The social pages take their own kind of link (see review/auth.ts), so the
+  // daily review link cannot be turned into a social session by adding `next`.
+  const social = page !== '/review'
+  if (!verifyToken(social ? 'social-link' : 'link', token)) {
+    return NextResponse.redirect(new URL(social ? page : '/review?link=expired', url), 303)
   }
 
   // Only a plain anchor id, so this can never become an open redirect.
@@ -41,6 +46,15 @@ export async function GET(request: Request) {
     path: '/',
     maxAge: Math.floor(SESSION_TTL_MS / 1000),
   })
+  if (social) {
+    res.cookies.set(SOCIAL_SESSION_COOKIE, issueToken('social-session', SOCIAL_SESSION_TTL_MS), {
+      httpOnly: true,
+      secure: url.protocol === 'https:',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: Math.floor(SOCIAL_SESSION_TTL_MS / 1000),
+    })
+  }
   res.headers.set('Cache-Control', 'no-store')
   res.headers.set('Referrer-Policy', 'no-referrer')
   return res
