@@ -20,6 +20,7 @@
     "publish-trusted-drafts": "tsx src/scripts/publish-trusted-drafts.ts",
     "translate": "tsx src/scripts/translate.ts",
     "notify": "tsx src/scripts/notify.ts",
+    "privatise-suggestions": "tsx src/scripts/privatise-suggestions.ts",
     "review-digest": "tsx src/scripts/review-digest.ts",
     "expire": "tsx src/scripts/expire.ts",
     "grade": "tsx src/scripts/grade.ts",

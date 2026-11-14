@@ -31,6 +31,7 @@
 import { NextResponse } from 'next/server'
 import { isFeedbackKind, POINTER_KINDS } from '../../../jobboard/content/i18n'
 import { isSanityConfigured, writeClient } from '../../../jobboard/sanity/client'
+import { privateSuggestionId } from '../../../jobboard/sanity/suggestions'
 
 export const runtime = 'nodejs'
 
@@ -147,6 +148,9 @@ export async function POST(request: Request) {
 
   try {
     await writeClient().create({
+      // A dotted id keeps the sender's address and message out of the public
+      // dataset; see `jobboard/sanity/suggestions`.
+      _id: privateSuggestionId(),
       _type: 'suggestion',
       kind,
       url: parsed ? parsed.toString() : undefined,
