@@ -12,7 +12,9 @@
  * for a first run, and for stopping everything without a deploy.
  *
  * A failed account is retried on the next hourly run, at most three times, and
- * James is mailed on the first failure. EA Nederland's LinkedIn page can't be
+ * James is mailed on the first failure. Each account is claimed before posting
+ * and its outcome saved straight after, and a failure after the publishing
+ * request was sent is never retried (./once.ts), so a post can't go out twice. EA Nederland's LinkedIn page can't be
  * posted by API until LinkedIn approves the Community Management API, so at
  * its time James gets a reminder with the bundle on /review/social instead.
  */
@@ -24,7 +26,17 @@ import { postSlides, slidePath, type SlideSpec } from './content'
 import { publishInstagramCarousel } from './instagram'
 import { publishLinkedInDocument } from './linkedin'
 import { CHANGED_SINCE_APPROVAL, jobsApprovalHolds } from './approval'
-import { amsterdamDate, CHANNEL_LABEL, getPost, patchPost, type Channel, type ChannelResult } from './store'
+import {
+  amsterdamDate,
+  CHANNEL_LABEL,
+  claimPostChannel,
+  getPost,
+  patchPost,
+  setPostResult,
+  type Channel,
+  type ChannelResult,
+} from './store'
+import { nextStep, unclearMessage, watchedHttp } from './once'
 import { getToken, type TokenChannel } from './tokens'
 import { sendMusicReminder, TRACKS } from './music'
 import { approvers } from './weekly'
@@ -117,18 +129,39 @@ export async function runSocialPublish(
   const failures: string[] = []
 
   for (const channel of AUTO_CHANNELS) {
-    const done = results[channel]
-    if (done?.id) continue
-    if ((done?.attempts ?? 0) >= MAX_ATTEMPTS) continue
     if (now < channelPostAt(postDate, channel)) continue
     const label = CHANNEL_LABEL[channel]
+    const done = results[channel]
+    const step = nextStep(done, now, MAX_ATTEMPTS)
+
+    if (step.kind === 'in-progress') {
+      log(`${label}: another run is posting it; left alone`)
+      continue
+    }
+    if (step.kind === 'abandoned') {
+      // A run claimed it and never finished: it may or may not have gone out.
+      if (options.dryRun || !report.enabled) continue
+      results[channel] = { ...done!, at: now.toISOString(), claimedAt: null, unclear: true, error: unclearMessage(label) }
+      await setPostResult(postDate, channel, results[channel]!)
+      act(`${label}: an earlier run stopped mid-post; marked unclear`)
+      failures.push(`${label}: ${unclearMessage(label)}`)
+      continue
+    }
+    if (step.kind !== 'go') continue
 
     if (options.dryRun || !report.enabled) {
       act(`${options.dryRun ? 'dry run' : 'SOCIAL_POSTING is off'}: would post to ${label}`)
       continue
     }
 
-    const attempts = (done?.attempts ?? 0) + 1
+    const attempts = step.attempts
+    const claim: ChannelResult = { ...(done ?? {}), at: now.toISOString(), claimedAt: now.toISOString(), attempts }
+    if (!(await claimPostChannel(postDate, channel, claim, now))) {
+      log(`${label}: claimed by another run, or no longer approved; left alone`)
+      continue
+    }
+
+    const watched = watchedHttp(options.http)
     try {
       const token = await getToken(channel)
       if (!token) throw new Error(`${label} is not connected`)
@@ -139,7 +172,7 @@ export async function runSocialPublish(
               token: token.accessToken,
               imageUrls: slides.map((s) => `${PUBLIC_ORIGIN}${slidePath(s, 'jpg')}`),
               caption: post.captions.instagram,
-              http: options.http,
+              http: watched.http,
               sleep: options.sleep,
             })
           : await publishLinkedInDocument({
@@ -148,19 +181,27 @@ export async function runSocialPublish(
               imageUrls: slides.map((s) => `${PUBLIC_ORIGIN}${slidePath(s, 'jpg')}`),
               title: jobsDocumentTitle(slides),
               caption: post.captions.linkedinPersonal,
-              http: options.http,
+              http: watched.http,
               sleep: options.sleep,
             })
       results[channel] = { at: now.toISOString(), id: result.id, url: result.url }
+      await setPostResult(postDate, channel, results[channel]!)
       act(`posted to ${label}: ${result.url ?? result.id}`)
       if (channel === 'instagram') {
         if (await sendMusicReminder(approvers(), "Today's jobs post", result.url, TRACKS.jobs)) act('mailed the music reminder')
       }
     } catch (err) {
       const message = (err as Error).message
-      results[channel] = { at: now.toISOString(), error: message, attempts }
-      act(`${label} failed (attempt ${attempts} of ${MAX_ATTEMPTS}): ${message}`)
-      if (attempts === 1) failures.push(`${label}: ${message}`)
+      if (watched.publishSent()) {
+        results[channel] = { at: now.toISOString(), attempts, unclear: true, error: `${unclearMessage(label)} (${message})` }
+        act(`${label}: failed after the publish request was sent; marked unclear: ${message}`)
+        failures.push(`${label}: ${unclearMessage(label)} The error was: ${message}`)
+      } else {
+        results[channel] = { at: now.toISOString(), error: message, attempts }
+        act(`${label} failed (attempt ${attempts} of ${MAX_ATTEMPTS}): ${message}`)
+        if (attempts === 1) failures.push(`${label}: ${message}`)
+      }
+      await setPostResult(postDate, channel, results[channel]!)
     }
   }
 
@@ -170,8 +211,10 @@ export async function runSocialPublish(
 
   if (options.dryRun || !report.enabled) return report
 
+  // Each account's outcome is already saved; only the reminder and the status are left.
+  if (remind) await setPostResult(postDate, 'linkedinOrg', results.linkedinOrg!)
   const allPosted = AUTO_CHANNELS.every((c) => results[c]?.id)
-  await patchPost(postDate, { results, ...(allPosted ? { status: 'posted' as const } : {}) })
+  if (allPosted) await patchPost(postDate, { status: 'posted' as const })
   if (allPosted) act('every connected account is posted')
 
   const to = approvers()
@@ -184,7 +227,7 @@ export async function runSocialPublish(
         '',
         ...failures.map((f) => `- ${f}`),
         '',
-        `It retries on the next hourly run, up to ${MAX_ATTEMPTS} times. Details: ${link}`,
+        `A failure before anything was sent retries on the next hourly run, up to ${MAX_ATTEMPTS} times; an unclear one waits for you. Details: ${link}`,
         '',
       )
     }

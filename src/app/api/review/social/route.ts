@@ -12,6 +12,7 @@ import { SOCIAL_SESSION_COOKIE, socialSignedIn } from '@jobboard/review/auth'
 import { nextPostTime, SELECTION } from '@jobboard/social/select'
 import { amsterdamDate, CHANNEL_LIMIT, CHANNELS, getPost, patchPost, type Channel } from '@jobboard/social/store'
 import { isThemeKey } from '@jobboard/social/themes'
+import { lockedForEditing } from '@jobboard/social/once'
 import { draftPost, recompose } from '@jobboard/social/weekly'
 import { instagramAccount, tokenKind } from '@jobboard/social/instagram'
 import { deleteToken, saveToken } from '@jobboard/social/tokens'
@@ -123,9 +124,21 @@ export async function POST(request: Request) {
         })
       }
       case 'skip':
-        return NextResponse.json({ ok: true, post: await patchPost(postDate, { status: 'skipped', approvedAt: null, seal: null }) })
-      case 'reopen':
-        return NextResponse.json({ ok: true, post: await patchPost(postDate, { status: 'draft', approvedAt: null, seal: null }) })
+      case 'reopen': {
+        // Once an account has posted (or is posting), redrafting would send a
+        // second, different post to it (../../../../jobboard/social/once.ts).
+        if (CHANNELS.some((c) => lockedForEditing(post.results?.[c]))) {
+          return fail('Part of this post has gone out already, or is going out now, so it can no longer be changed.', 409)
+        }
+        return NextResponse.json({
+          ok: true,
+          post: await patchPost(postDate, {
+            status: body.action === 'skip' ? 'skipped' : 'draft',
+            approvedAt: null,
+            seal: null,
+          }),
+        })
+      }
       default:
         return fail('Unknown action.')
     }
