@@ -19,6 +19,7 @@ import {
 } from '@jobboard/social/explainer/store'
 import { draftExplainer, nextExplainerTime } from '@jobboard/social/explainer/weekly'
 import { amsterdamDate } from '@jobboard/social/store'
+import { lockedForEditing } from '@jobboard/social/once'
 
 export const dynamic = 'force-dynamic'
 // Drafting reads a whole Forum post and writes the explainer in one call.
@@ -106,9 +107,19 @@ export async function POST(request: Request) {
           }),
         })
       case 'skip':
-        return NextResponse.json({ ok: true, post: await patchItem(postDate, channel, { status: 'skipped', approvedAt: null, seal: null }) })
       case 'reopen':
-        return NextResponse.json({ ok: true, post: await patchItem(postDate, channel, { status: 'draft', approvedAt: null, seal: null }) })
+        // Posted or posting: redrafting would send a second, different post.
+        if (lockedForEditing(item.result)) {
+          return fail('This explainer has gone out already, or is going out now, so it can no longer be changed.', 409)
+        }
+        return NextResponse.json({
+          ok: true,
+          post: await patchItem(postDate, channel, {
+            status: body.action === 'skip' ? 'skipped' : 'draft',
+            approvedAt: null,
+            seal: null,
+          }),
+        })
       default:
         return fail('Unknown action.')
     }

@@ -32,6 +32,7 @@ import { draftFrom, gatherCandidates, rankCandidates, ref, shortlist, type Gathe
 import { explainerSlidePaths } from './slides'
 import { sourceKey } from './sources'
 import {
+  claimItem,
   EXPLAINER_CHANNELS,
   explainerId,
   getExplainer,
@@ -43,6 +44,7 @@ import {
   type ExplainerPost,
   type Suggestion,
 } from './store'
+import { nextStep, unclearMessage, watchedHttp } from '../once'
 
 export { EXPLAINER_CHANNELS }
 
@@ -362,15 +364,35 @@ export async function runExplainerPublish(
       }
       continue
     }
-    const done = item.result
-    if (done?.id) continue
-    if ((done?.attempts ?? 0) >= MAX_ATTEMPTS) continue
     if (now < explainerPostAt(postDate, channel)) continue
+    const done = item.result
+    const step = nextStep(done, now, MAX_ATTEMPTS)
+    if (step.kind === 'in-progress') {
+      log(`${label}: another run is posting it; left alone`)
+      continue
+    }
+    if (step.kind === 'abandoned') {
+      // A run claimed it and never finished: it may or may not have gone out.
+      if (options.dryRun || !report.enabled) continue
+      await patchItem(postDate, channel, {
+        result: { ...done!, at: now.toISOString(), claimedAt: null, unclear: true, error: unclearMessage(label) },
+      })
+      act(`${label}: an earlier run stopped mid-post; marked unclear`)
+      failures.push(`${label}: ${unclearMessage(label)}`)
+      continue
+    }
+    if (step.kind !== 'go') continue
     if (options.dryRun || !report.enabled) {
       act(`${options.dryRun ? 'dry run' : 'SOCIAL_POSTING is off'}: would post the explainer to ${label}`)
       continue
     }
-    const attempts = (done?.attempts ?? 0) + 1
+    const attempts = step.attempts
+    const claim: ChannelResult = { ...(done ?? {}), at: now.toISOString(), claimedAt: now.toISOString(), attempts }
+    if (!(await claimItem(postDate, channel, claim, now))) {
+      log(`${label}: claimed by another run, or no longer approved; left alone`)
+      continue
+    }
+    const watched = watchedHttp(options.http)
     let result: ChannelResult
     try {
       const token = await getToken(channel)
@@ -383,7 +405,7 @@ export async function runExplainerPublish(
               token: token.accessToken,
               imageUrls: urls,
               caption: item.caption,
-              http: options.http,
+              http: watched.http,
               sleep: options.sleep,
             })
           : await publishLinkedInDocument({
@@ -392,7 +414,7 @@ export async function runExplainerPublish(
               imageUrls: urls,
               title: item.slides.cover.headline,
               caption: item.caption,
-              http: options.http,
+              http: watched.http,
               sleep: options.sleep,
             })
       result = { at: now.toISOString(), id: posted.id, url: posted.url }
@@ -402,9 +424,15 @@ export async function runExplainerPublish(
       }
     } catch (err) {
       const message = (err as Error).message
-      result = { at: now.toISOString(), error: message, attempts }
-      act(`${label} failed (attempt ${attempts} of ${MAX_ATTEMPTS}): ${message}`)
-      if (attempts === 1) failures.push(`${label}: ${message}`)
+      if (watched.publishSent()) {
+        result = { at: now.toISOString(), attempts, unclear: true, error: `${unclearMessage(label)} (${message})` }
+        act(`${label}: failed after the publish request was sent; marked unclear: ${message}`)
+        failures.push(`${label}: ${unclearMessage(label)} The error was: ${message}`)
+      } else {
+        result = { at: now.toISOString(), error: message, attempts }
+        act(`${label} failed (attempt ${attempts} of ${MAX_ATTEMPTS}): ${message}`)
+        if (attempts === 1) failures.push(`${label}: ${message}`)
+      }
     }
     await patchItem(postDate, channel, { result, ...(result.id ? { status: 'posted' as const } : {}) })
   }

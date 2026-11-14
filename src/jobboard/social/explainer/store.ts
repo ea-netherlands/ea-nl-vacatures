@@ -16,6 +16,7 @@ import { writeClient } from '../../sanity/client'
 import { BY_DATE_QUERY, byDateParams, legacySocialId, privateSocialId } from '../private-ids'
 import type { ChannelResult, PostStatus } from '../store'
 import { sourceKey, type SourceRef } from './sources'
+import { claimable } from '../once'
 
 /** The accounts an explainer goes to. */
 export type ExplainerChannel = 'linkedinPersonal' | 'instagram'
@@ -140,4 +141,31 @@ export async function patchExplainer(
     .patch(current?._id ?? explainerId(postDate))
     .set(set)
     .commit<ExplainerPost>()
+}
+
+/**
+ * Claims one account's approved explainer for this run (../once.ts). False if
+ * it is no longer approved, is posted or being posted, or another run changed
+ * the document first.
+ */
+export async function claimItem(
+  postDate: string,
+  channel: ExplainerChannel,
+  claim: ChannelResult,
+  now: Date,
+): Promise<boolean> {
+  const post = await getExplainer(postDate)
+  const item = post?.[channel]
+  if (!post || !item || item.status !== 'approved' || !claimable(item.result, now)) return false
+  try {
+    await writeClient()
+      .patch(post._id)
+      .ifRevisionId(post._rev!)
+      .set({ [channel]: { ...item, result: claim } })
+      .commit()
+    return true
+  } catch (err) {
+    if ((err as { statusCode?: number })?.statusCode === 409) return false
+    throw err
+  }
 }

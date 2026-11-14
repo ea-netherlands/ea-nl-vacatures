@@ -166,7 +166,16 @@ export function SocialConnections({
   )
 }
 
-type Result = { at: string; id?: string; url?: string | null; error?: string; attempts?: number; manual?: boolean }
+type Result = {
+  at: string
+  id?: string
+  url?: string | null
+  error?: string
+  attempts?: number
+  manual?: boolean
+  claimedAt?: string | null
+  unclear?: boolean
+}
 
 export function SocialPostingDay({
   postDate,
@@ -191,8 +200,12 @@ export function SocialPostingDay({
         : r.id === 'manual'
           ? 'Marked as posted'
           : 'Posted'
-      : r?.error
-        ? `Failed (${r.attempts ?? 1} of 3): ${r.error}`
+      : r?.unclear
+        ? (r.error ?? 'Unclear whether it went out: check the account')
+        : r?.claimedAt
+          ? 'Posting now'
+          : r?.error
+            ? `Failed (${r.attempts ?? 1} of 3): ${r.error}`
         : manual
           ? 'To post by hand'
           : 'Waiting'

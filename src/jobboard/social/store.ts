@@ -19,6 +19,7 @@
  */
 
 import { writeClient } from '../sanity/client'
+import { claimable } from './once'
 import { BY_DATE_QUERY, byDateParams, legacySocialId, privateSocialId } from './private-ids'
 import { SELECTION } from './select'
 import type { ThemeKey } from './themes'
@@ -55,6 +56,10 @@ export type ChannelResult = {
   attempts?: number
   manual?: boolean
   reminded?: boolean
+  /** Set while a run is posting to this account (./once.ts). */
+  claimedAt?: string | null
+  /** The publishing request was sent but the outcome is unknown; never retried automatically. */
+  unclear?: boolean
 }
 
 export type PostStatus = 'draft' | 'approved' | 'skipped' | 'posted'
@@ -129,4 +134,35 @@ export async function patchPost(postDate: string, set: Partial<Omit<SocialPost, 
     .patch(current?._id ?? postId(postDate))
     .set(set)
     .commit<SocialPost>()
+}
+
+const isConflict = (err: unknown) => (err as { statusCode?: number })?.statusCode === 409
+
+/** Sets one account's result without touching the others (read fresh, so a hand-marked account isn't overwritten). */
+function resultPatch(post: SocialPost, channel: Channel, result: ChannelResult) {
+  return post.results ? { [`results.${channel}`]: result } : { results: { [channel]: result } }
+}
+
+/**
+ * Claims one account of an approved post for this run (./once.ts). False if
+ * the post is no longer approved, the account is posted or being posted, or
+ * another run changed the document first.
+ */
+export async function claimPostChannel(postDate: string, channel: Channel, claim: ChannelResult, now: Date): Promise<boolean> {
+  const fresh = await getPost(postDate)
+  if (!fresh || fresh.status !== 'approved' || !claimable(fresh.results?.[channel], now)) return false
+  try {
+    await writeClient().patch(fresh._id).ifRevisionId(fresh._rev!).set(resultPatch(fresh, channel, claim)).commit()
+    return true
+  } catch (err) {
+    if (isConflict(err)) return false
+    throw err
+  }
+}
+
+/** Records one account's outcome as soon as it is known. */
+export async function setPostResult(postDate: string, channel: Channel, result: ChannelResult): Promise<SocialPost | null> {
+  const fresh = await getPost(postDate)
+  if (!fresh) return null
+  return writeClient().patch(fresh._id).set(resultPatch(fresh, channel, result)).commit<SocialPost>()
 }
