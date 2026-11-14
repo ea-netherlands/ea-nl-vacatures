@@ -323,7 +323,10 @@ export async function runPromotion(options: PromoteOptions = {}): Promise<Promot
         sourceId: row.source_id,
         listedByEaBoard: row.listed_by_ea_board,
         llmScore: row.total_score,
-        llmReasoning: row.reasoning,
+        // The classifier's reasoning is for the curator, so only drafts (private
+        // in Sanity) get it; a listing going straight live never does
+        // (./private-notes.ts).
+        llmReasoning: live ? undefined : row.reasoning,
       })
 
       // An auto-published listing records 'published' by the pipeline, which

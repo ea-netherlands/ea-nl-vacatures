@@ -29,6 +29,7 @@ import {
   SUB_AREAS,
   type SubArea,
 } from '../taxonomy'
+import { withoutPrivateFields } from '../sanity/private-notes'
 
 /** The Studio's own bounds on the note (schemas/jobListing.ts). */
 export const NOTE_MIN = 80
@@ -183,7 +184,8 @@ export async function acceptListing(
   await client
     .transaction()
     .createOrReplace({
-      ...content,
+      // The classifier's reasoning stays on the private draft (../sanity/private-notes.ts).
+      ...withoutPrivateFields(content),
       ...placementFields,
       _id: publishedId,
       _type: 'jobListing',
