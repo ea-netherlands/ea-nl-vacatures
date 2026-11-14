@@ -5,6 +5,7 @@
  * draft names the account (`channel`) it is about.
  */
 
+import { sealExplainer } from '@jobboard/social/approval'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { SOCIAL_SESSION_COOKIE, socialSignedIn } from '@jobboard/review/auth'
@@ -97,12 +98,17 @@ export async function POST(request: Request) {
         if (!item.slides || !item.caption || !item.source) return fail('Draft the explainer first.')
         return NextResponse.json({
           ok: true,
-          post: await patchItem(postDate, channel, { status: 'approved', approvedAt: new Date().toISOString() }),
+          post: await patchItem(postDate, channel, {
+            status: 'approved',
+            approvedAt: new Date().toISOString(),
+            seal: sealExplainer(postDate, channel, item),
+            error: null,
+          }),
         })
       case 'skip':
-        return NextResponse.json({ ok: true, post: await patchItem(postDate, channel, { status: 'skipped', approvedAt: null }) })
+        return NextResponse.json({ ok: true, post: await patchItem(postDate, channel, { status: 'skipped', approvedAt: null, seal: null }) })
       case 'reopen':
-        return NextResponse.json({ ok: true, post: await patchItem(postDate, channel, { status: 'draft', approvedAt: null }) })
+        return NextResponse.json({ ok: true, post: await patchItem(postDate, channel, { status: 'draft', approvedAt: null, seal: null }) })
       default:
         return fail('Unknown action.')
     }

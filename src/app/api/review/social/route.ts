@@ -5,6 +5,7 @@
  * request's Origin must be this site. Acts only on the next Tuesday's post.
  */
 
+import { sealJobsPost } from '@jobboard/social/approval'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { SOCIAL_SESSION_COOKIE, socialSignedIn } from '@jobboard/review/auth'
@@ -118,13 +119,13 @@ export async function POST(request: Request) {
         if (!post.captions) return fail('Draft the captions first.')
         return NextResponse.json({
           ok: true,
-          post: await patchPost(postDate, { status: 'approved', approvedAt: new Date().toISOString() }),
+          post: await patchPost(postDate, { status: 'approved', approvedAt: new Date().toISOString(), seal: sealJobsPost(post), error: null }),
         })
       }
       case 'skip':
-        return NextResponse.json({ ok: true, post: await patchPost(postDate, { status: 'skipped', approvedAt: null }) })
+        return NextResponse.json({ ok: true, post: await patchPost(postDate, { status: 'skipped', approvedAt: null, seal: null }) })
       case 'reopen':
-        return NextResponse.json({ ok: true, post: await patchPost(postDate, { status: 'draft', approvedAt: null }) })
+        return NextResponse.json({ ok: true, post: await patchPost(postDate, { status: 'draft', approvedAt: null, seal: null }) })
       default:
         return fail('Unknown action.')
     }
