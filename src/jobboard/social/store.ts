@@ -19,6 +19,7 @@
  */
 
 import { writeClient } from '../sanity/client'
+import { BY_DATE_QUERY, byDateParams, legacySocialId, privateSocialId } from './private-ids'
 import { SELECTION } from './select'
 import type { ThemeKey } from './themes'
 
@@ -85,7 +86,8 @@ export type SocialPost = {
   error: string | null
 }
 
-export const postId = (postDate: string) => `socialPost-${postDate}`
+/** Private (dotted) id; see ./private-ids.ts. */
+export const postId = (postDate: string) => privateSocialId('socialPost', postDate)
 
 /** Amsterdam calendar day of an instant, YYYY-MM-DD. */
 export function amsterdamDate(at: Date): string {
@@ -93,7 +95,7 @@ export function amsterdamDate(at: Date): string {
 }
 
 export async function getPost(postDate: string): Promise<SocialPost | null> {
-  return writeClient().fetch<SocialPost | null>(`*[_id == $id][0]`, { id: postId(postDate) })
+  return writeClient().fetch<SocialPost | null>(BY_DATE_QUERY, byDateParams('socialPost', postDate))
 }
 
 /**
@@ -109,10 +111,22 @@ export async function recentlyFeatured(postAt: Date): Promise<Set<string>> {
   return new Set(rows.flatMap((r) => r.listingIds ?? []))
 }
 
+/** Saves a week's post on its private id, removing any public copy from before the move. */
 export async function savePost(post: Omit<SocialPost, '_type'>): Promise<SocialPost> {
-  return writeClient().createOrReplace<SocialPost>({ ...post, _type: 'socialPost' })
+  const doc = { ...post, _id: postId(post.postDate), _type: 'socialPost' as const }
+  await writeClient()
+    .transaction()
+    .createOrReplace(doc)
+    .delete(legacySocialId('socialPost', post.postDate))
+    .commit()
+  return (await getPost(post.postDate)) ?? (doc as SocialPost)
 }
 
 export async function patchPost(postDate: string, set: Partial<Omit<SocialPost, '_id' | '_type'>>): Promise<SocialPost> {
-  return writeClient().patch(postId(postDate)).set(set).commit<SocialPost>()
+  // Patch whichever copy exists: a week saved before the move is still on its old id.
+  const current = await getPost(postDate)
+  return writeClient()
+    .patch(current?._id ?? postId(postDate))
+    .set(set)
+    .commit<SocialPost>()
 }

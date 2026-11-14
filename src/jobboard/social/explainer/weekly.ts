@@ -33,6 +33,7 @@ import { explainerSlidePaths } from './slides'
 import { sourceKey } from './sources'
 import {
   EXPLAINER_CHANNELS,
+  explainerId,
   getExplainer,
   patchItem,
   saveExplainer,
@@ -201,7 +202,7 @@ export async function draftExplainer(options: {
   }
 
   const post = await saveExplainer({
-    _id: `explainerPost-${postDate}`,
+    _id: explainerId(postDate),
     postDate,
     postAt: postAt.toISOString(),
     linkedinPersonal: items.linkedinPersonal ?? existing?.linkedinPersonal ?? null,
