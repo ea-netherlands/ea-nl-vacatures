@@ -23,6 +23,7 @@ import {
   amsterdamDate,
   CHANNELS,
   getPost,
+  postId,
   recentlyFeatured,
   savePost,
   type CaptionParts,
@@ -104,7 +105,7 @@ export async function draftPost(options: {
   )
 
   const base = {
-    _id: `socialPost-${postDate}`,
+    _id: postId(postDate),
     postDate,
     postAt: postAt.toISOString(),
     status: 'draft' as const,

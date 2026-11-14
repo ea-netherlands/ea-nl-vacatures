@@ -13,6 +13,7 @@
  */
 
 import { writeClient } from '../../sanity/client'
+import { BY_DATE_QUERY, byDateParams, legacySocialId, privateSocialId } from '../private-ids'
 import type { ChannelResult, PostStatus } from '../store'
 import { sourceKey, type SourceRef } from './sources'
 
@@ -71,10 +72,11 @@ export type ExplainerPost = {
   passed: string[]
 }
 
-export const explainerId = (postDate: string) => `explainerPost-${postDate}`
+/** Private (dotted) id; see ../private-ids.ts. */
+export const explainerId = (postDate: string) => privateSocialId('explainerPost', postDate)
 
 export async function getExplainer(postDate: string): Promise<ExplainerPost | null> {
-  return writeClient().fetch<ExplainerPost | null>(`*[_id == $id][0]`, { id: explainerId(postDate) })
+  return writeClient().fetch<ExplainerPost | null>(BY_DATE_QUERY, byDateParams('explainerPost', postDate))
 }
 
 /**
@@ -100,8 +102,15 @@ export async function usedSources(): Promise<{ used: Set<string>; recentTopics: 
   return { used, recentTopics: recentTopics.slice(0, 6) }
 }
 
+/** Saves a week's explainer on its private id, removing any public copy from before the move. */
 export async function saveExplainer(post: Omit<ExplainerPost, '_type'>): Promise<ExplainerPost> {
-  return writeClient().createOrReplace<ExplainerPost>({ ...post, _type: 'explainerPost' })
+  const doc = { ...post, _id: explainerId(post.postDate), _type: 'explainerPost' as const }
+  await writeClient()
+    .transaction()
+    .createOrReplace(doc)
+    .delete(legacySocialId('explainerPost', post.postDate))
+    .commit()
+  return (await getExplainer(post.postDate)) ?? (doc as ExplainerPost)
 }
 
 /** Sets fields on one account's explainer. */
@@ -115,7 +124,7 @@ export async function patchItem(
   const current = post?.[channel]
   if (!post || !current) throw new Error('There is no explainer for that account this week.')
   return writeClient()
-    .patch(explainerId(postDate))
+    .patch(post._id)
     .ifRevisionId(post._rev!)
     .set({ [channel]: { ...current, ...set } })
     .commit<ExplainerPost>()
@@ -125,5 +134,10 @@ export async function patchExplainer(
   postDate: string,
   set: Partial<Omit<ExplainerPost, '_id' | '_type'>>,
 ): Promise<ExplainerPost> {
-  return writeClient().patch(explainerId(postDate)).set(set).commit<ExplainerPost>()
+  // Patch whichever copy exists: a week saved before the move is still on its old id.
+  const current = await getExplainer(postDate)
+  return writeClient()
+    .patch(current?._id ?? explainerId(postDate))
+    .set(set)
+    .commit<ExplainerPost>()
 }
