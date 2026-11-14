@@ -23,6 +23,7 @@ import { getListingsByIds } from '../sanity/queries'
 import { postSlides, slidePath, type SlideSpec } from './content'
 import { publishInstagramCarousel } from './instagram'
 import { publishLinkedInDocument } from './linkedin'
+import { CHANGED_SINCE_APPROVAL, jobsApprovalHolds } from './approval'
 import { amsterdamDate, CHANNEL_LABEL, getPost, patchPost, type Channel, type ChannelResult } from './store'
 import { getToken, type TokenChannel } from './tokens'
 import { sendMusicReminder, TRACKS } from './music'
@@ -94,6 +95,21 @@ export async function runSocialPublish(
   if (!post) return (log(`no post for ${postDate}`), report)
   if (post.status !== 'approved') return (log(`post for ${postDate} is ${post.status}; nothing to do`), report)
   if (!post.captions) return (act('approved but has no captions; not posting'), report)
+  if (!jobsApprovalHolds(post)) {
+    act(`not posting: ${CHANGED_SINCE_APPROVAL}`)
+    if (!options.dryRun && report.enabled && !post.error) {
+      await patchPost(postDate, { error: `Not posted: ${CHANGED_SINCE_APPROVAL}` })
+      const to = approvers()
+      if (to.length && isMailConfigured()) {
+        await sendMail({
+          to,
+          subject: "Today's jobs post was held back",
+          text: `Today's jobs post was not sent, because ${CHANGED_SINCE_APPROVAL}\n\n${ADMIN_ORIGIN}/review/social`,
+        })
+      }
+    }
+    return report
+  }
 
   const results: Partial<Record<Channel, ChannelResult>> = { ...(post.results ?? {}) }
   const listings = await getListingsByIds(post.listingIds)

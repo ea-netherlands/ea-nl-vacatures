@@ -77,6 +77,8 @@ export type SocialPost = {
   captions: Record<Channel, string> | null
   generatedAt: string | null
   approvedAt: string | null
+  /** Set on approval: binds it to the exact listings and captions (approval.ts). */
+  seal?: string | null
   /** What happened on each account on posting day (publish.ts). */
   results?: Partial<Record<Channel, ChannelResult>> | null
   /** The last thing that went wrong drafting it, shown on the page. */

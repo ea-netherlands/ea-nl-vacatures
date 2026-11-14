@@ -17,6 +17,7 @@
  * week is never touched, a failed account is retried up to three times.
  */
 
+import { CHANGED_SINCE_APPROVAL, explainerApprovalHolds } from '../approval'
 import { isMailConfigured, sendMail } from '../../lib/mail'
 import { ADMIN_ORIGIN } from '../../lib/seo'
 import { issueToken, SOCIAL_LINK_TTL_MS } from '../../review/auth'
@@ -350,6 +351,14 @@ export async function runExplainerPublish(
     }
     if (!item.slides || !item.caption) {
       act(`${label}: approved but incomplete; not posting`)
+      continue
+    }
+    if (!explainerApprovalHolds(postDate, channel, item)) {
+      act(`${label}: not posting: ${CHANGED_SINCE_APPROVAL}`)
+      if (!options.dryRun && report.enabled && !item.error) {
+        await patchItem(postDate, channel, { error: `Not posted: ${CHANGED_SINCE_APPROVAL}` })
+        failures.push(`${label}: held back, because ${CHANGED_SINCE_APPROVAL}`)
+      }
       continue
     }
     const done = item.result

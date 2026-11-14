@@ -52,6 +52,8 @@ export type ExplainerItem = {
   flags: string[]
   generatedAt: string | null
   approvedAt: string | null
+  /** Set on approval: binds it to the exact slides and caption (../approval.ts). */
+  seal?: string | null
   result?: ChannelResult | null
   error: string | null
 }
