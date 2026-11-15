@@ -37,7 +37,8 @@
  * effectiefaltruisme.nl its script and beacon live at /_vercel/insights on the
  * main domain, which the website's Vercel project answers, so board views show
  * up in the *website's* Vercel Analytics dashboard under /vacatures and
- * /en/jobs. The apply click goes there too, as `job_apply_click`.
+ * /en/jobs. The apply click goes there too, as `job_apply_click`. Our own
+ * visits and self-declared crawlers are dropped (lib/analytics-filter.ts).
  *
  * Rebuilt in plain elements rather than ported from the website's Chakra
  * version: this module deliberately has no UI framework (§6.2a), and at merge
@@ -49,7 +50,7 @@
 
 'use client'
 
-import { Analytics as VercelAnalytics } from '@vercel/analytics/next'
+import { Analytics as VercelAnalytics, type BeforeSendEvent } from '@vercel/analytics/next'
 import { track } from '@vercel/analytics'
 import Script from 'next/script'
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -63,6 +64,7 @@ import {
   type ConsentCategories,
   type ConsentCategory,
 } from '../lib/consent'
+import { skipAnalytics } from '../lib/analytics-filter'
 import { Icon } from './Icon'
 import c from './consent.module.css'
 import u from './ui.module.css'
@@ -79,6 +81,9 @@ const NONE: ConsentCategories = { analytics: false, marketing: false }
 const ALL: ConsentCategories = { analytics: true, marketing: true }
 const OPTIONAL_CATEGORIES: ConsentCategory[] = ['analytics', 'marketing']
 
+// Staff and crawlers stay out of Vercel Web Analytics: see lib/analytics-filter.ts
+const dropUncounted = (event: BeforeSendEvent) => (skipAnalytics(event.url) ? null : event)
+
 /** Everything the board needs for measurement, in one mount point. */
 export function Analytics({ locale }: { locale: Locale }) {
   return (
@@ -86,7 +91,7 @@ export function Analytics({ locale }: { locale: Locale }) {
       <CookieConsent locale={locale} />
       {GTM_ID ? <GoogleTagManager gtmId={GTM_ID} /> : null}
       <ApplyClickTracker />
-      <VercelAnalytics />
+      <VercelAnalytics beforeSend={dropUncounted} />
     </>
   )
 }

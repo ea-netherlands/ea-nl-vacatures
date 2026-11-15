@@ -32,6 +32,7 @@ const GA4_MEASUREMENT_ID = 'G-KWJ584SDNL'
 const COPY = {
   nl: {
     heading: 'Nieuwe vacatures in je inbox',
+    headingOnListing: 'Niet de juiste functie? Krijg elke maand nieuwe',
     body: 'Elke eerste dinsdag van de maand: nieuwe vacatures en programma’s van dit bord, plus evenementen in de komende zes weken en het beste van het EA Forum.',
     languageLegend: 'In welke taal?',
     emailLabel: 'E-mailadres',
@@ -50,6 +51,7 @@ const COPY = {
   },
   en: {
     heading: 'New roles in your inbox',
+    headingOnListing: 'Not the right role? Get new ones every month',
     body: 'On the first Tuesday of every month: new jobs and programmes from this board, plus events in the next six weeks and the best of the EA Forum.',
     languageLegend: 'Which language?',
     emailLabel: 'Email address',
@@ -79,8 +81,21 @@ type State =
   | { kind: 'done'; status: 'pending' | 'subscribed'; edition: Locale }
   | { kind: 'error'; error: 'invalid' | 'blocked' | 'failed' }
 
-export function NewsletterBand({ locale }: { locale: Locale }) {
+/**
+ * `placement` says where the form sits, for the sign-up event. On a single
+ * listing ("job-page") the heading speaks to someone for whom this role isn't
+ * the one: most visitors land on a listing, not on the index (November 2026:
+ * 182 visitors to English listings against 119 to the English index).
+ */
+export function NewsletterBand({
+  locale,
+  placement = 'jobs',
+}: {
+  locale: Locale
+  placement?: 'jobs' | 'job-page'
+}) {
   const copy = COPY[locale]
+  const heading = placement === 'job-page' ? copy.headingOnListing : copy.heading
   const id = useId()
   const [edition, setEdition] = useState<Locale>(locale)
   const [state, setState] = useState<State>({ kind: 'idle' })
@@ -105,10 +120,10 @@ export function NewsletterBand({ locale }: { locale: Locale }) {
       if (!('error' in data)) {
         setState({ kind: 'done', status: data.status, edition })
         // Cookieless, so it counts every sign-up; two properties, the Pro limit
-        track('newsletter_signup', { placement: 'jobs', edition })
+        track('newsletter_signup', { placement, edition })
         if (readConsent()?.analytics) {
           window.gtag?.('event', 'newsletter_signup', {
-            placement: 'jobs',
+            placement,
             edition,
             site_language: locale,
             send_to: GA4_MEASUREMENT_ID,
@@ -131,7 +146,7 @@ export function NewsletterBand({ locale }: { locale: Locale }) {
         <Icon name="mail" />
       </span>
       <div className={u.feedbackBandMain}>
-        <h2 className={u.feedbackBandHeading}>{copy.heading}</h2>
+        <h2 className={u.feedbackBandHeading}>{heading}</h2>
         <p className={u.feedbackBandBody}>{copy.body}</p>
 
         {state.kind === 'done' ? (

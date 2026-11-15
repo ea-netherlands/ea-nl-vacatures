@@ -26,6 +26,7 @@ import {
 import { fieldGuideFor } from '../lib/field-guides'
 import { bandOf } from '../lib/bands'
 import { Icon } from '../components/Icon'
+import { NewsletterBand } from '../components/NewsletterBand'
 import { excerptFor, noteFor, salaryFor } from '../components/ListingCard'
 import { Callout } from '../components/Prose'
 import { ONWARD_LINKS, routes, t, type Locale } from '../content/i18n'
@@ -294,6 +295,12 @@ export async function DetailPage({ locale, slug }: { locale: Locale; slug: strin
             />
           </aside>
         </div>
+      </Section>
+
+      {/* Someone who came for this one role and won't apply still leaves with
+          a way to hear about the next ones. */}
+      <Section tight>
+        <NewsletterBand locale={locale} placement="job-page" />
       </Section>
 
       <Section tight>
