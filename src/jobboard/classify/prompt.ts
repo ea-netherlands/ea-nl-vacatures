@@ -279,6 +279,13 @@ an AI safety lab is \`software-engineering\`, not \`research\`, unless the ad is
 plainly describing a research post. \`engineering\` is physical, biological,
 chemical and process engineering — never software.
 
+The second most common mistake: tagging \`policy\` because the employer is a
+regulator, inspectorate or ministry. \`policy\` is for people who analyse, advise
+on, advocate for or draft the rules. A data analyst building inspection risk
+models at the NVWA is \`data\`; an inspector is whatever the inspection work is,
+not \`policy\`. And a second skill is optional: give one when only one fits,
+rather than filling the second slot with the employer's sector.
+
 ${(Object.entries(SKILL_DEFINITIONS) as [Skill, string][])
   .map(([key, def]) => `- \`${key}\` — ${def}`)
   .join('\n')}
