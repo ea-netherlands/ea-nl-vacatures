@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import type { ListingView } from '../sanity/queries'
-import { isFundingCall, nextPostTime, SELECTION, selectForWeek, selectWeeklyJobs } from './select'
+import { isFundingCall, nextPostTime, SELECTION, selectForWeek, selectRedraft, selectWeeklyJobs } from './select'
 
 const POST = new Date('2026-11-10T08:00:00Z') // Tuesday 09:00 in Amsterdam
 const days = (n: number) => new Date(POST.getTime() + n * 864e5).toISOString()
@@ -251,4 +251,31 @@ test('the post goes out on the next Tuesday at 09:00 Amsterdam time', () => {
   assert.equal(nextPostTime(new Date('2026-11-10T09:00:00Z')).toISOString(), '2026-11-17T08:00:00.000Z')
   // Summer time: 07:00 UTC
   assert.equal(nextPostTime(new Date('2026-06-01T12:00:00Z')).toISOString(), '2026-06-02T07:00:00.000Z')
+})
+
+test('a redraft of the same theme picks roles the week has not shown yet', () => {
+  const pool = spread(30)
+  const opts = { postAt: POST, theme: 'mixed' as const }
+  const first = selectForWeek(pool, opts)
+  const firstIds = first.picks.map((p) => p.listing.id)
+
+  const second = selectRedraft(pool, opts, firstIds)
+  const secondIds = second.picks.map((p) => p.listing.id)
+  assert.ok(second.enough)
+  assert.equal(secondIds.filter((id) => firstIds.includes(id)).length, 0)
+  assert.deepEqual(second.passedOver, firstIds)
+
+  // The third leaves out both earlier drafts.
+  const third = selectRedraft(pool, opts, secondIds, second.passedOver)
+  const thirdIds = third.picks.map((p) => p.listing.id)
+  assert.equal(thirdIds.filter((id) => firstIds.includes(id) || secondIds.includes(id)).length, 0)
+})
+
+test('a redraft forgets what it has shown when leaving it out would leave too few', () => {
+  const pool = spread(SELECTION.min + 2)
+  const opts = { postAt: POST, theme: 'mixed' as const }
+  const firstIds = selectForWeek(pool, opts).picks.map((p) => p.listing.id)
+  const again = selectRedraft(pool, opts, firstIds)
+  assert.ok(again.enough)
+  assert.deepEqual(again.passedOver, [])
 })

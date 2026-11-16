@@ -318,3 +318,30 @@ export function nextPostTime(now = new Date()): Date {
     ) - 9
   return new Date(date.getTime() - offsetHours * 36e5)
 }
+
+/**
+ * A redraft of the same theme: the week's selection again, but without the
+ * roles earlier drafts of this week already showed, so pressing Redraft gives
+ * different jobs rather than the same top-scored ones. `current` is the draft
+ * on screen, `passedOver` every role shown before it. When leaving them all out
+ * can't fill the post as well as before (too few roles, or the theme falls back
+ * to mixed), it forgets the older ones, then all of them; `passedOver` in the
+ * result is what the next redraft should leave out on top of its picks.
+ */
+export function selectRedraft(
+  listings: ListingView[],
+  opts: { postAt: Date; recentlyFeatured?: ReadonlySet<string>; theme?: ThemeKey },
+  current: readonly string[],
+  passedOver: readonly string[] = [],
+): Selection & { passedOver: string[] } {
+  const recent = opts.recentlyFeatured ?? new Set<string>()
+  const fresh = selectForWeek(listings, opts)
+  const asGood = (s: Selection) => s.enough && (s.fallbackFrom === null || fresh.fallbackFrom !== null)
+
+  for (const avoid of [[...new Set([...passedOver, ...current])], [...current]]) {
+    if (!avoid.length) continue
+    const s = selectForWeek(listings, { ...opts, recentlyFeatured: new Set([...recent, ...avoid]) })
+    if (asGood(s)) return { ...s, passedOver: avoid }
+  }
+  return { ...fresh, passedOver: [] }
+}

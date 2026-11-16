@@ -231,6 +231,8 @@ export default async function SocialPreviewPage({
       captions: stored.captions,
       error: stored.error,
       roles: roles.map((r) => ({ id: r.id, title: r.title, employer: r.employer?.name ?? '' })),
+      feedback: stored.feedback ?? [],
+      selectionNote: stored.selectionNote ?? null,
     }
     return (
       <Frame>

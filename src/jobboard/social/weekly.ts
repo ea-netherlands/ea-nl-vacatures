@@ -17,8 +17,9 @@ import { issueToken, SOCIAL_LINK_TTL_MS } from '../review/auth'
 import { digestRecipients } from '../review/digest'
 import { getListingsByIds, getLiveListings } from '../sanity/queries'
 import { compose, draftCaptionParts } from './captions'
-import { isLocal, nextPostTime, SELECTION, selectForWeek } from './select'
-import { THEMES, type ThemeKey } from './themes'
+import { chooseWithFeedback, feedbackPool } from './feedback'
+import { isLocal, nextPostTime, SELECTION, selectForWeek, selectRedraft, type Selection } from './select'
+import { THEMES, themeForWeek, type ThemeKey } from './themes'
 import {
   amsterdamDate,
   CHANNELS,
@@ -79,11 +80,16 @@ export async function composeAll(
  * Picks the jobs and writes the captions for the next Tuesday, and saves it as
  * a draft. Returns the saved post, or the existing one if James has decided.
  */
+/** A feedback round that couldn't produce a post; its message is for James. */
+export class FeedbackError extends Error {}
+
 export async function draftPost(options: {
   force?: boolean
   now?: Date
   /** Overrides the rotation for this week (the page's theme switch). */
   theme?: ThemeKey
+  /** James's feedback on the draft on screen: the model picks again with it (./feedback.ts). */
+  feedback?: string
   onLog?: (line: string) => void
 }): Promise<{ post: SocialPost; changed: boolean }> {
   const log = (line: string) => options.onLog?.(line)
@@ -97,7 +103,42 @@ export async function draftPost(options: {
   }
 
   const [listings, recent] = await Promise.all([getLiveListings({ excludeEarningToGive: true }), recentlyFeatured(postAt)])
-  const selection = selectForWeek(listings, { postAt, recentlyFeatured: recent, theme: options.theme })
+  // Redrafting the same theme moves on to roles this week hasn't shown yet;
+  // a new theme starts afresh.
+  const theme = options.theme ?? existing?.theme ?? themeForWeek(postAt)
+  const opts = { postAt, recentlyFeatured: recent, theme }
+  const feedback = options.feedback?.trim()
+  let selection: Selection & { passedOver: string[] }
+  let feedbackLog: string[] = []
+  let selectionNote: string | null = null
+  if (feedback && existing) {
+    // Same theme as the draft on screen; the feedback steers which roles.
+    const scored = selectForWeek(listings, { ...opts, theme: existing.theme ?? theme })
+    feedbackLog = [...(existing.feedback ?? []), feedback]
+    const pool = feedbackPool(scored, existing.listingIds)
+    const chosen = await chooseWithFeedback({ pool, current: existing.listingIds, feedback: feedbackLog, theme: scored.theme })
+    if (chosen.picks.length < SELECTION.min) {
+      throw new FeedbackError(
+        `That leaves ${chosen.picks.length} roles, fewer than the ${SELECTION.min} a post needs. ${chosen.note}`.trim(),
+      )
+    }
+    const shown = new Set([...(existing.passedOver ?? []), ...existing.listingIds])
+    for (const p of chosen.picks) shown.delete(p.listing.id)
+    selection = {
+      ...scored,
+      picks: chosen.picks,
+      enough: true,
+      hasLocal: chosen.picks.some((p) => isLocal(p.listing)),
+      passedOver: [...shown],
+    }
+    selectionNote = chosen.note
+    log(`picked ${chosen.picks.length} roles from feedback: ${feedback}`)
+  } else {
+    selection =
+      existing && existing.theme === theme
+        ? selectRedraft(listings, opts, existing.listingIds, existing.passedOver ?? [])
+        : { ...selectForWeek(listings, opts), passedOver: [] }
+  }
   log(
     `picked ${selection.picks.length} of ${listings.length} live roles for "${THEMES[selection.theme].label}"` +
       (selection.fallbackFrom ? ` (${THEMES[selection.fallbackFrom].label} had too few)` : '') +
@@ -112,6 +153,9 @@ export async function draftPost(options: {
     listingIds: selection.picks.map((p) => p.listing.id),
     theme: selection.theme,
     fallbackFrom: selection.fallbackFrom,
+    passedOver: selection.passedOver,
+    feedback: feedbackLog,
+    selectionNote,
     approvedAt: null,
     generatedAt: new Date().toISOString(),
   }
