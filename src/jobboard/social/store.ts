@@ -79,6 +79,12 @@ export type SocialPost = {
   theme: ThemeKey | null
   /** The rotation's theme when it couldn't fill a post and this fell back to mixed. */
   fallbackFrom: ThemeKey | null
+  /** Roles earlier drafts of this week showed, which a redraft of the same theme leaves out (select.ts, selectRedraft). */
+  passedOver?: string[]
+  /** James's feedback this week, oldest first; the roles were picked with all of it (feedback.ts). */
+  feedback?: string[]
+  /** The model's note on what the last feedback round changed. */
+  selectionNote?: string | null
   parts: Record<Channel, CaptionParts> | null
   captions: Record<Channel, string> | null
   generatedAt: string | null

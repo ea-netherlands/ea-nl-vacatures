@@ -13,13 +13,15 @@ import { nextPostTime, SELECTION } from '@jobboard/social/select'
 import { amsterdamDate, CHANNEL_LIMIT, CHANNELS, getPost, patchPost, type Channel } from '@jobboard/social/store'
 import { isThemeKey } from '@jobboard/social/themes'
 import { lockedForEditing } from '@jobboard/social/once'
-import { draftPost, recompose } from '@jobboard/social/weekly'
+import { draftPost, FeedbackError, recompose } from '@jobboard/social/weekly'
+import { FEEDBACK_MAX } from '@jobboard/social/feedback'
 import { instagramAccount, tokenKind } from '@jobboard/social/instagram'
 import { deleteToken, saveToken } from '@jobboard/social/tokens'
 
 export const dynamic = 'force-dynamic'
-// Drafting calls the model once for all three captions.
-export const maxDuration = 120
+// Drafting calls the model once for all three captions; a feedback round
+// calls it once more first, to pick the roles.
+export const maxDuration = 300
 
 function sameOrigin(request: Request): boolean {
   const origin = request.headers.get('origin')
@@ -69,6 +71,22 @@ export async function POST(request: Request) {
       if (body.channel !== 'instagram' && body.channel !== 'linkedinPersonal') return fail('Unknown account.')
       await deleteToken(body.channel)
       return NextResponse.json({ ok: true })
+    }
+
+    if (body.action === 'feedback') {
+      const feedback = typeof body.feedback === 'string' ? body.feedback.trim() : ''
+      if (!feedback) return fail('Say what should change first.')
+      if (feedback.length > FEEDBACK_MAX) return fail(`Keep it under ${FEEDBACK_MAX} characters.`)
+      const current = await getPost(postDate)
+      if (!current) return fail('There is no draft for this week yet. Draft it first.', 404)
+      if (current.status !== 'draft') return fail('Reopen the post to change it.', 409)
+      try {
+        const { post } = await draftPost({ force: true, feedback })
+        return NextResponse.json({ ok: true, post })
+      } catch (err) {
+        if (err instanceof FeedbackError) return fail(err.message, 422)
+        throw err
+      }
     }
 
     if (body.action === 'draft') {

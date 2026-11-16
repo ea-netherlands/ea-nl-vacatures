@@ -20,7 +20,13 @@ export type EditorPost = {
   captions: Record<Channel, string> | null
   error: string | null
   roles: { id: string; title: string; employer: string }[]
+  /** What James has said about this week's roles so far, oldest first. */
+  feedback: string[]
+  /** The model's note on what the last feedback round changed. */
+  selectionNote: string | null
 }
+
+const FEEDBACK_MAX = 1000
 
 const CHANNELS: { key: Channel; label: string; limit: number }[] = [
   { key: 'instagram', label: 'EA Netherlands on Instagram', limit: 2200 },
@@ -53,6 +59,7 @@ export function SocialEditor({
   const [busy, setBusy] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [theme, setTheme] = useState(post?.theme ?? 'mixed')
+  const [feedback, setFeedback] = useState('')
   const editable = post?.status === 'draft'
   const dirty = Boolean(post?.captions && captions && CHANNELS.some((c) => captions[c.key] !== post.captions![c.key]))
 
@@ -102,6 +109,7 @@ export function SocialEditor({
                 : 'Posted'}
         </p>
         {post.error ? <p className={s.error}>{post.error}</p> : null}
+        {post.selectionNote ? <p className={x.selectionNote}>{post.selectionNote}</p> : null}
         {tooFew ? (
           <p className={s.hint}>
             {post.roles.length} roles, fewer than the {minRoles} a post needs, so it can’t be approved. Skip this week,
@@ -128,8 +136,10 @@ export function SocialEditor({
                 onClick={() =>
                   act(
                     'draft',
-                    { theme: post.theme },
-                    'Pick the roles again and rewrite all three captions? Your edits will be lost.',
+                    { theme },
+                    theme === post.theme
+                      ? 'Pick different roles and rewrite all three captions? Your edits will be lost.'
+                      : 'Switch the theme? This picks new roles and rewrites the captions.',
                   )
                 }
               >
@@ -142,6 +152,51 @@ export function SocialEditor({
             </button>
           ) : null}
         </div>
+        {editable ? (
+          <div className={x.themeSwitch}>
+            <label className={s.noteLabel} htmlFor="social-feedback">
+              <span>What should change about these roles?</span>
+              <span className={feedback.length > FEEDBACK_MAX ? s.countBad : s.count}>
+                {feedback.length}/{FEEDBACK_MAX}
+              </span>
+            </label>
+            {post.feedback.length ? (
+              <ul className={x.feedbackLog}>
+                {post.feedback.map((f, i) => (
+                  <li key={i}>{f}</li>
+                ))}
+              </ul>
+            ) : null}
+            <textarea
+              id="social-feedback"
+              className={u.suggestTextarea}
+              rows={3}
+              value={feedback}
+              disabled={busy !== null}
+              placeholder="For example: fewer research roles, more for people starting out. Keep the AIM one."
+              onChange={(e) => setFeedback(e.target.value)}
+            />
+            <div className={s.actions}>
+              <button
+                className={`${u.btn} ${u.btnSubtle}`}
+                disabled={busy !== null || !feedback.trim() || feedback.length > FEEDBACK_MAX}
+                onClick={() =>
+                  act(
+                    'feedback',
+                    { feedback },
+                    'Pick the roles again with your feedback and rewrite all three captions? Your caption edits will be lost.',
+                  )
+                }
+              >
+                {busy === 'feedback' ? 'Picking again…' : 'Pick again with this'}
+              </button>
+              {busy === 'feedback' ? <span className={s.hint}>This takes a minute or two.</span> : null}
+            </div>
+            {post.feedback.length ? (
+              <p className={s.hint}>Your earlier feedback this week still counts. Redraft or switch the theme to start afresh.</p>
+            ) : null}
+          </div>
+        ) : null}
         {editable && themes.length ? (
           <div className={x.themeSwitch}>
             <label className={s.noteLabel} htmlFor="social-theme">
