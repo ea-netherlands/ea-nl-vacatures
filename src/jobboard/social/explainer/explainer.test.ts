@@ -257,14 +257,14 @@ test('a pasted Forum link gives the post id, and anything else gives null', () =
 const forumHttp = (post: Record<string, unknown> | null) =>
   (async () => new Response(JSON.stringify({ data: { post: { result: post } } }), { status: 200 })) as typeof fetch
 
-test('a pasted linkpost comes back marked, and is credited with permission rather than CC BY', async () => {
+test('a pasted linkpost comes back marked, and is credited as a summary rather than CC BY', async () => {
   const link = 'https://forum.effectivealtruism.org/posts/2AbHgnCsHhFuTvvSw/x'
   const post = forumPost({ _id: '2AbHgnCsHhFuTvvSw', url: 'https://example.substack.com/p/x', user: { displayName: 'Coefficient Giving' } })
   const found = await forumPostFromLink(link, forumHttp(post))
   assert.equal(found.via, 'link')
   assert.equal(found.linkpost, true)
   assert.equal(isCcBy(found), false)
-  assert.match(credit(found), /^Adapted with permission from “T” by Coefficient Giving on the EA Forum\.$/)
+  assert.equal(credit(found), 'Summarised from “T” by Coefficient Giving, crossposted to the EA Forum.')
 
   const own = await forumPostFromLink(link, forumHttp(forumPost({ _id: '2AbHgnCsHhFuTvvSw' })))
   assert.equal(own.linkpost, undefined)

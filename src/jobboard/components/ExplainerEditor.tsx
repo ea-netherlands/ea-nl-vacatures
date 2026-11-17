@@ -110,21 +110,21 @@ const ACCOUNT_LABEL: Record<Channel, string> = { linkedinPersonal: 'your LinkedI
 /**
  * Drafts one account's explainer from a Forum post James pastes, curated or
  * not. A linkpost's text belongs to the site it links to, so the server
- * refuses it unless the permission box is ticked.
+ * refuses it unless James ticks that it is to be summarised with credit.
  */
 export function ExplainerFromLink({ channel: fixed, replacing }: { channel?: Channel; replacing?: boolean }) {
   const { busy, error, act } = useAct()
   const [channel, setChannel] = useState<Channel>(fixed ?? 'linkedinPersonal')
   const [url, setUrl] = useState('')
   const [author, setAuthor] = useState('')
-  const [permission, setPermission] = useState(false)
+  const [summarise, setSummarise] = useState(false)
   return (
     <details className={x.more}>
       <summary>Draft from a Forum link</summary>
       <p className={s.hint}>
         Paste any EA Forum post, curated or not. Posts written on the Forum are CC BY, so they can be adapted with
-        credit. A linkpost (crossposted from a blog or Substack) belongs to its author: tick the box only once they’ve
-        said yes, and it’s credited “Adapted with permission”.
+        credit. A linkpost (crossposted from a blog or Substack) isn’t covered by that: tick the box and it’s
+        summarised in our own words, credited “Summarised from …” with a link.
       </p>
       {fixed ? null : (
         <label className={s.noteField}>
@@ -155,8 +155,8 @@ export function ExplainerFromLink({ channel: fixed, replacing }: { channel?: Cha
         />
       </label>
       <label className={s.hint}>
-        <input type="checkbox" checked={permission} onChange={(e) => setPermission(e.target.checked)} /> I have the
-        author’s permission to adapt it (needed for a linkpost)
+        <input type="checkbox" checked={summarise} onChange={(e) => setSummarise(e.target.checked)} /> If it’s a
+        linkpost, summarise it in our own words with a credit and link
       </label>
       <div className={s.actions}>
         <button
@@ -165,7 +165,7 @@ export function ExplainerFromLink({ channel: fixed, replacing }: { channel?: Cha
           onClick={() =>
             act(
               'link',
-              { action: 'draft', channel, link: { url, permission, author } },
+              { action: 'draft', channel, link: { url, summarise, author } },
               replacing
                 ? 'Draft this account’s explainer from this post instead? The current slides and caption, and your edits, will be replaced.'
                 : undefined,

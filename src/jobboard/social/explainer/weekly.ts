@@ -146,8 +146,9 @@ const asSuggestion = (item: ExplainerItem | null | undefined): Suggestion[] =>
  * - `source` drafts from that suggestion instead ("Use this one");
  * - `pass` also rules out its current source for good ("Not this one");
  * - `link` drafts from a Forum post James pasted ("Draft from a Forum link"),
- *   curated or not. A linkpost only with `permission`: its text isn't the
- *   Forum's to license, so James needs the author's yes (17 Nov 2026).
+ *   curated or not. A linkpost only with `summarise`: its text isn't the
+ *   Forum's to license, so it is summarised in our own words and credited,
+ *   not adapted (James, 17 Nov 2026).
  * An account's draft never takes the other account's source.
  */
 export async function draftExplainer(options: {
@@ -155,7 +156,7 @@ export async function draftExplainer(options: {
   force?: boolean
   source?: string
   pass?: boolean
-  link?: { url: string; permission?: boolean; author?: string }
+  link?: { url: string; summarise?: boolean; author?: string }
   now?: Date
   onLog?: (line: string) => void
 }): Promise<{ post: ExplainerPost; changed: boolean }> {
@@ -198,9 +199,9 @@ export async function draftExplainer(options: {
   if (options.link && options.channel) {
     const channel = options.channel
     const found = await forumPostFromLink(options.link.url)
-    if (found.linkpost && !options.link.permission) {
+    if (found.linkpost && !options.link.summarise) {
       throw new Error(
-        'That post is a linkpost: its text belongs to the site it links to, so the Forum’s CC BY licence doesn’t cover it. Tick the permission box once the author has said yes.',
+        'That post is a linkpost: its text belongs to the site it links to, so the Forum’s CC BY licence doesn’t cover it. Tick the box to summarise it in our own words, with a credit and link.',
       )
     }
     if (used.has(sourceKey(found))) throw new Error('That post has been used already, or is the other account’s source this week.')

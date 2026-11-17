@@ -51,13 +51,13 @@ function readSlides(input: unknown): SlideText | string {
   return tidySlides(text)
 }
 
-/** "Draft from a Forum link": the link, the permission box and an optional credit. */
-function readLink(input: unknown): { url: string; permission: boolean; author?: string } | undefined {
+/** "Draft from a Forum link": the link, the linkpost box and an optional credit. */
+function readLink(input: unknown): { url: string; summarise: boolean; author?: string } | undefined {
   const raw = input as Record<string, unknown> | null
   const url = str(raw?.url).trim()
   if (!url) return undefined
   const author = str(raw?.author).trim().slice(0, 120)
-  return { url, permission: raw?.permission === true, ...(author ? { author } : {}) }
+  return { url, summarise: raw?.summarise === true, ...(author ? { author } : {}) }
 }
 
 export async function POST(request: Request) {

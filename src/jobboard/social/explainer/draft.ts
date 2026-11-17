@@ -328,6 +328,7 @@ export function credit(source: SourceRef): string {
     return 'Adapted from a post by the Centre for Effective Altruism (@effectivealtruismofficial).'
   }
   const where = source.via === 'handbook' ? 'in the EA Forum’s Introduction to Effective Altruism Handbook' : 'on the EA Forum'
+  if (source.linkpost) return `Summarised from “${source.title}” by ${source.author}, crossposted to the EA Forum.`
   return isCcBy(source)
     ? `Adapted from “${source.title}” by ${source.author} ${where} (CC BY 4.0).`
     : `Adapted with permission from “${source.title}” by ${source.author} ${where}.`
@@ -389,7 +390,11 @@ export function composeCaption(
 /** How the drafting prompt describes a Forum source. */
 function forumSourceKind(source: SourceRef): string {
   if (source.via === 'handbook') return 'a post in the EA Forum’s Introduction to Effective Altruism Handbook'
-  if (source.via === 'link') return source.linkpost ? 'an EA Forum post crossposted from the author’s own site' : 'an EA Forum post'
+  if (source.via === 'link') {
+    return source.linkpost
+      ? 'an EA Forum post crossposted from the author’s own site, which we summarise but don’t license: put everything in your own words and quote no more than a short phrase'
+      : 'an EA Forum post'
+  }
   return 'a curated EA Forum post'
 }
 

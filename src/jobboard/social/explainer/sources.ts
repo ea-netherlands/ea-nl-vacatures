@@ -41,8 +41,10 @@ export type SourceRef = {
   via?: 'handbook' | 'link'
   /**
    * A Forum linkpost: its text belongs to the site it links to, so the Forum's
-   * CC BY licence doesn't cover it. Only ever chosen by link, with the
-   * author's permission, and credited that way.
+   * CC BY licence doesn't cover it. Only ever chosen by link, when James asks
+   * for it to be summarised in our own words with a credit and link (17 Nov
+   * 2026: no permission asked), and credited "Summarised from", never
+   * "adapted" or "with permission".
    */
   linkpost?: boolean
   id: string
@@ -87,7 +89,7 @@ export function isClassic(s: Pick<SourceRef, 'kind' | 'publishedAt'>, now = new 
 export const NEWSLETTER_PITCH =
   'EA Netherlands sends a free monthly email: one EA Forum essay worth your time, new jobs and programmes, and events across the Netherlands.'
 
-/** CC BY 4.0, or (older posts) adapted with the permission James has. */
+/** CC BY 4.0. Otherwise: older posts adapted with the permission James has, or a linkpost summarised with credit. */
 export const isCcBy = (s: Pick<SourceRef, 'kind' | 'publishedAt' | 'linkpost'>) =>
   s.kind === 'forum' && !s.linkpost && s.publishedAt >= FORUM_LICENCE_FROM
 
@@ -192,8 +194,8 @@ export function forumIdFromLink(link: string): string | null {
 
 /**
  * The post at a Forum link James pasted, curated or not (17 Nov 2026). A
- * linkpost comes back marked, for the caller to refuse unless James has the
- * author's permission.
+ * linkpost comes back marked, for the caller to refuse unless James chose to
+ * summarise it with credit.
  */
 export async function forumPostFromLink(link: string, http: Http = fetch): Promise<Candidate> {
   const id = forumIdFromLink(link)
