@@ -30,7 +30,7 @@ import { sendMusicReminder, trackFor } from '../music'
 import { approvers } from '../weekly'
 import { draftFrom, gatherCandidates, rankCandidates, ref, shortlist, type Gathered } from './draft'
 import { explainerSlidePaths } from './slides'
-import { sourceKey } from './sources'
+import { forumPostFromLink, sourceKey } from './sources'
 import {
   claimItem,
   EXPLAINER_CHANNELS,
@@ -144,7 +144,11 @@ const asSuggestion = (item: ExplainerItem | null | undefined): Suggestion[] =>
  * and the page's first "Draft". With a `channel`, just that one:
  * - `force` redrafts its draft (Redraft);
  * - `source` drafts from that suggestion instead ("Use this one");
- * - `pass` also rules out its current source for good ("Not this one").
+ * - `pass` also rules out its current source for good ("Not this one");
+ * - `link` drafts from a Forum post James pasted ("Draft from a Forum link"),
+ *   curated or not. A linkpost only with `summarise`: its text isn't the
+ *   Forum's to license, so it is summarised in our own words and credited,
+ *   not adapted (James, 17 Nov 2026).
  * An account's draft never takes the other account's source.
  */
 export async function draftExplainer(options: {
@@ -152,6 +156,7 @@ export async function draftExplainer(options: {
   force?: boolean
   source?: string
   pass?: boolean
+  link?: { url: string; summarise?: boolean; author?: string }
   now?: Date
   onLog?: (line: string) => void
 }): Promise<{ post: ExplainerPost; changed: boolean }> {
@@ -165,6 +170,8 @@ export async function draftExplainer(options: {
     const item = existing?.[c]
     return !item || (item.status === 'draft' && options.force)
   })
+  if (options.link && !options.channel) throw new Error('Which account is the link for?')
+  if (options.link && !targets.length) throw new Error('This account’s explainer is decided. Reopen it first.')
   if (existing && !targets.length) {
     log(`explainers for ${postDate} already exist; left alone`)
     return { post: existing, changed: false }
@@ -182,11 +189,32 @@ export async function draftExplainer(options: {
     if (!targets.includes(c) && source) used.add(sourceKey(source))
   }
 
-  const gathered = await gatherCandidates({ instagramToken: token?.accessToken })
+  // A pasted link needs nothing else gathered.
+  const gathered: Gathered = options.link
+    ? { candidates: [], instagram: [], problems: [] }
+    : await gatherCandidates({ instagramToken: token?.accessToken })
   for (const p of gathered.problems) log(p)
 
   const items: Partial<Record<ExplainerChannel, ExplainerItem>> = {}
-  if (options.source && options.channel) {
+  if (options.link && options.channel) {
+    const channel = options.channel
+    const found = await forumPostFromLink(options.link.url)
+    if (found.linkpost && !options.link.summarise) {
+      throw new Error(
+        'That post is a linkpost: its text belongs to the site it links to, so the Forum’s CC BY licence doesn’t cover it. Tick the box to summarise it in our own words, with a credit and link.',
+      )
+    }
+    if (used.has(sourceKey(found))) throw new Error('That post has been used already, or is the other account’s source this week.')
+    const author = options.link.author?.trim()
+    const chosen: Suggestion = {
+      ...ref({ ...found, ...(author ? { author } : {}) }),
+      reason: 'You chose this one.',
+      topic: found.topics[0] ?? '',
+    }
+    const pool = [...(existing?.[channel]?.suggestions ?? []), ...asSuggestion(existing?.[channel])]
+    const rest = pool.filter((s) => sourceKey(s) !== sourceKey(chosen) && !used.has(sourceKey(s)) && s.reason)
+    items[channel] = await draftItem(channel, chosen, rest, postDate, gathered, log)
+  } else if (options.source && options.channel) {
     const channel = options.channel
     const pool = [...(existing?.[channel]?.suggestions ?? []), ...asSuggestion(existing?.[channel])]
     const chosen = pool.find((s) => sourceKey(s) === options.source)

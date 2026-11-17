@@ -219,7 +219,8 @@ export default async function ExplainerPage() {
       <p className={s.lead}>
         Two explainers in English, each from its own source so nobody who follows both accounts sees the same one twice:
         one for your LinkedIn, one for EA Netherlands’ Instagram. Sources are curated EA Forum posts and the EA Handbook
-        {ceaSourcesEnabled() ? ', plus the Centre for Effective Altruism’s Instagram' : ''}. Approve or skip each one
+        {ceaSourcesEnabled() ? ', plus the Centre for Effective Altruism’s Instagram' : ''}, or any Forum post you paste a
+        link to. Approve or skip each one
         on its own.
       </p>
       {!postingEnabled() ? (

@@ -218,6 +218,8 @@ export async function rankCandidates(list: Candidate[], recentTopics: string[]):
 
 export const ref = (c: SourceRef): SourceRef => ({
   kind: c.kind,
+  ...(c.via ? { via: c.via } : {}),
+  ...(c.linkpost ? { linkpost: true } : {}),
   id: c.id,
   url: c.url,
   title: c.title,
@@ -326,6 +328,7 @@ export function credit(source: SourceRef): string {
     return 'Adapted from a post by the Centre for Effective Altruism (@effectivealtruismofficial).'
   }
   const where = source.via === 'handbook' ? 'in the EA Forum’s Introduction to Effective Altruism Handbook' : 'on the EA Forum'
+  if (source.linkpost) return `Summarised from “${source.title}” by ${source.author}, crossposted to the EA Forum.`
   return isCcBy(source)
     ? `Adapted from “${source.title}” by ${source.author} ${where} (CC BY 4.0).`
     : `Adapted with permission from “${source.title}” by ${source.author} ${where}.`
@@ -384,6 +387,17 @@ export function composeCaption(
   return parts.filter(Boolean).join('\n\n')
 }
 
+/** How the drafting prompt describes a Forum source. */
+function forumSourceKind(source: SourceRef): string {
+  if (source.via === 'handbook') return 'a post in the EA Forum’s Introduction to Effective Altruism Handbook'
+  if (source.via === 'link') {
+    return source.linkpost
+      ? 'an EA Forum post crossposted from the author’s own site, which we summarise but don’t license: put everything in your own words and quote no more than a short phrase'
+      : 'an EA Forum post'
+  }
+  return 'a curated EA Forum post'
+}
+
 /** Writes one account's slides and caption from one source. */
 export async function draftFrom(
   source: SourceRef,
@@ -394,7 +408,7 @@ export async function draftFrom(
   if (source.kind === 'forum') {
     const text = await forumPostText(source.id)
     user = [
-      `Source: ${source.via === 'handbook' ? 'a post in the EA Forum’s Introduction to Effective Altruism Handbook' : 'a curated EA Forum post'}, “${source.title}” by ${source.author}, published ${source.publishedAt.slice(0, 10)}.`,
+      `Source: ${forumSourceKind(source)}, “${source.title}” by ${source.author}, published ${source.publishedAt.slice(0, 10)}.`,
       'The full text:',
       text,
     ].join('\n\n')

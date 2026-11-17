@@ -43,7 +43,14 @@ const COPY = {
     s.kind === 'forum'
       ? `The full essay: “${s.title}” by ${s.author}, on the EA Forum.`
       : 'Adapted from a post by the Centre for Effective Altruism. Follow @effectivealtruismofficial for more.',
-  licence: (s: SourceRef) => (s.kind !== 'forum' ? '' : isCcBy(s) ? 'Adapted under CC BY 4.0.' : 'Adapted with permission.'),
+  licence: (s: SourceRef) =>
+    s.kind !== 'forum'
+      ? ''
+      : s.linkpost
+        ? 'Summarised in our own words.'
+        : isCcBy(s)
+          ? 'Adapted under CC BY 4.0.'
+          : 'Adapted with permission.',
 } as const
 
 export type ExplainerSlideContent =
