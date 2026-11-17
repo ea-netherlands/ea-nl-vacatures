@@ -34,8 +34,17 @@ export type SourceKind = 'forum' | 'instagram'
 /** What a post is adapted from, as stored on it. */
 export type SourceRef = {
   kind: SourceKind
-  /** Forum posts read from the Introduction to EA Handbook. */
-  via?: 'handbook'
+  /**
+   * `handbook`: read from the Introduction to EA Handbook. `link`: a Forum post
+   * James chose by pasting its link on the review page (17 Nov 2026).
+   */
+  via?: 'handbook' | 'link'
+  /**
+   * A Forum linkpost: its text belongs to the site it links to, so the Forum's
+   * CC BY licence doesn't cover it. Only ever chosen by link, with the
+   * author's permission, and credited that way.
+   */
+  linkpost?: boolean
   id: string
   url: string
   title: string
@@ -79,8 +88,8 @@ export const NEWSLETTER_PITCH =
   'EA Netherlands sends a free monthly email: one EA Forum essay worth your time, new jobs and programmes, and events across the Netherlands.'
 
 /** CC BY 4.0, or (older posts) adapted with the permission James has. */
-export const isCcBy = (s: Pick<SourceRef, 'kind' | 'publishedAt'>) =>
-  s.kind === 'forum' && s.publishedAt >= FORUM_LICENCE_FROM
+export const isCcBy = (s: Pick<SourceRef, 'kind' | 'publishedAt' | 'linkpost'>) =>
+  s.kind === 'forum' && !s.linkpost && s.publishedAt >= FORUM_LICENCE_FROM
 
 /** CEA has agreed to EA Nederland adapting its Instagram posts. */
 export function ceaSourcesEnabled(): boolean {
@@ -137,17 +146,12 @@ export function adaptableForumPosts(posts: RawForumPost[]): RawForumPost[] {
 /** Forum usernames as names: "Toby_Ord" → "Toby Ord". */
 const displayName = (n: string) => noEmoji(n).replace(/_/g, ' ')
 
-/** Every curated post, newest first: 215 in Nov 2026, back to 2014. */
-export async function forumCandidates(http: Http = fetch, limit = 400): Promise<Candidate[]> {
-  const data = await forum<{ posts: { results: RawForumPost[] } }>(
-    http,
-    `{ posts(input: { terms: { view: "curated", limit: ${limit} } }) { results {
-      _id title pageUrl url postedAt baseScore wordCount
+const FORUM_FIELDS = `_id title pageUrl url postedAt baseScore wordCount
       user { displayName } coauthors { displayName } tags { name }
-      contents { plaintextDescription }
-    } } }`,
-  )
-  return adaptableForumPosts(data.posts.results).map((p) => ({
+      contents { plaintextDescription }`
+
+function forumCandidate(p: RawForumPost): Candidate {
+  return {
     kind: 'forum' as const,
     id: p._id,
     url: p.pageUrl,
@@ -160,7 +164,50 @@ export async function forumCandidates(http: Http = fetch, limit = 400): Promise<
     score: p.baseScore,
     summary: (p.contents?.plaintextDescription ?? '').slice(0, 700),
     topics: (p.tags ?? []).map((t) => t.name).slice(0, 5),
-  }))
+  }
+}
+
+/** Every curated post, newest first: 215 in Nov 2026, back to 2014. */
+export async function forumCandidates(http: Http = fetch, limit = 400): Promise<Candidate[]> {
+  const data = await forum<{ posts: { results: RawForumPost[] } }>(
+    http,
+    `{ posts(input: { terms: { view: "curated", limit: ${limit} } }) { results {
+      ${FORUM_FIELDS}
+    } } }`,
+  )
+  return adaptableForumPosts(data.posts.results).map(forumCandidate)
+}
+
+/** A Forum post's id from its link (forum.effectivealtruism.org/posts/<id>/<slug>), or null. */
+export function forumIdFromLink(link: string): string | null {
+  let url: URL
+  try {
+    url = new URL(link.trim())
+  } catch {
+    return null
+  }
+  if (!/^(www\.)?forum\.effectivealtruism\.org$/.test(url.hostname)) return null
+  return url.pathname.match(/^\/posts\/([A-Za-z0-9]{17})(\/|$)/)?.[1] ?? null
+}
+
+/**
+ * The post at a Forum link James pasted, curated or not (17 Nov 2026). A
+ * linkpost comes back marked, for the caller to refuse unless James has the
+ * author's permission.
+ */
+export async function forumPostFromLink(link: string, http: Http = fetch): Promise<Candidate> {
+  const id = forumIdFromLink(link)
+  if (!id) throw new SourceError('That isn’t a link to an EA Forum post. It should start forum.effectivealtruism.org/posts/.')
+  const data = await forum<{ post: { result: RawForumPost | null } | null }>(
+    http,
+    `{ post(input: { selector: { _id: ${JSON.stringify(id)} } }) { result {
+      ${FORUM_FIELDS}
+    } } }`,
+  )
+  const post = data.post?.result
+  if (!post) throw new SourceError('The Forum has no post at that link.')
+  if ((post.wordCount ?? 0) < 300) throw new SourceError('That post is too short to make an explainer from.')
+  return { ...forumCandidate(post), via: 'link', ...(post.url ? { linkpost: true } : {}) }
 }
 
 export function htmlToText(html: string): string {

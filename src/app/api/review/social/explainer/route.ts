@@ -51,6 +51,15 @@ function readSlides(input: unknown): SlideText | string {
   return tidySlides(text)
 }
 
+/** "Draft from a Forum link": the link, the permission box and an optional credit. */
+function readLink(input: unknown): { url: string; permission: boolean; author?: string } | undefined {
+  const raw = input as Record<string, unknown> | null
+  const url = str(raw?.url).trim()
+  if (!url) return undefined
+  const author = str(raw?.author).trim().slice(0, 120)
+  return { url, permission: raw?.permission === true, ...(author ? { author } : {}) }
+}
+
 export async function POST(request: Request) {
   const jar = await cookies()
   if (!socialSignedIn(jar.get(SOCIAL_SESSION_COOKIE)?.value)) {
@@ -75,6 +84,7 @@ export async function POST(request: Request) {
         force: Boolean(channel),
         source: typeof body.source === 'string' ? body.source : undefined,
         pass: body.pass === true,
+        link: readLink(body.link),
       })
       return NextResponse.json({ ok: true, post })
     }

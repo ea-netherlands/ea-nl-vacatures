@@ -3,7 +3,16 @@ import test from 'node:test'
 
 import { composeCaption, credit, dealOut, framing, shortlist, splitPicks, tidySlides } from './draft'
 import { explainerSlidePaths, explainerSlides } from './slides'
-import { adaptableForumPosts, handbookAdaptable, instagramSources, mediaToSource, type Candidate } from './sources'
+import {
+  adaptableForumPosts,
+  forumIdFromLink,
+  forumPostFromLink,
+  handbookAdaptable,
+  instagramSources,
+  isCcBy,
+  mediaToSource,
+  type Candidate,
+} from './sources'
 import { explainerPostAt, nextExplainerTime } from './weekly'
 
 const forumPost = (over: Record<string, unknown> = {}) =>
@@ -234,4 +243,34 @@ test('Instagram: a token without the reading permissions says which ones to add'
       status: 403,
     })) as unknown as typeof fetch
   await assert.rejects(instagramSources('EAAB-token', http), /instagram_manage_insights and pages_read_engagement/)
+})
+
+test('a pasted Forum link gives the post id, and anything else gives null', () => {
+  const id = '2AbHgnCsHhFuTvvSw'
+  assert.equal(forumIdFromLink(`https://forum.effectivealtruism.org/posts/${id}/there-are-tons`), id)
+  assert.equal(forumIdFromLink(` https://forum.effectivealtruism.org/posts/${id}?utm_source=x `), id)
+  assert.equal(forumIdFromLink(`https://www.lesswrong.com/posts/${id}/x`), null)
+  assert.equal(forumIdFromLink('https://forum.effectivealtruism.org/topics/ai-safety'), null)
+  assert.equal(forumIdFromLink('not a link'), null)
+})
+
+const forumHttp = (post: Record<string, unknown> | null) =>
+  (async () => new Response(JSON.stringify({ data: { post: { result: post } } }), { status: 200 })) as typeof fetch
+
+test('a pasted linkpost comes back marked, and is credited with permission rather than CC BY', async () => {
+  const link = 'https://forum.effectivealtruism.org/posts/2AbHgnCsHhFuTvvSw/x'
+  const post = forumPost({ _id: '2AbHgnCsHhFuTvvSw', url: 'https://example.substack.com/p/x', user: { displayName: 'Coefficient Giving' } })
+  const found = await forumPostFromLink(link, forumHttp(post))
+  assert.equal(found.via, 'link')
+  assert.equal(found.linkpost, true)
+  assert.equal(isCcBy(found), false)
+  assert.match(credit(found), /^Adapted with permission from “T” by Coefficient Giving on the EA Forum\.$/)
+
+  const own = await forumPostFromLink(link, forumHttp(forumPost({ _id: '2AbHgnCsHhFuTvvSw' })))
+  assert.equal(own.linkpost, undefined)
+  assert.equal(isCcBy(own), true)
+
+  await assert.rejects(forumPostFromLink(link, forumHttp(forumPost({ wordCount: 100 }))), /too short/)
+  await assert.rejects(forumPostFromLink(link, forumHttp(null)), /no post/)
+  await assert.rejects(forumPostFromLink('https://example.com/posts/x', forumHttp(null)), /isn’t a link/)
 })

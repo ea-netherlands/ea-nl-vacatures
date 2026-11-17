@@ -105,6 +105,81 @@ function Field({
   )
 }
 
+const ACCOUNT_LABEL: Record<Channel, string> = { linkedinPersonal: 'your LinkedIn', instagram: 'EA Netherlands’ Instagram' }
+
+/**
+ * Drafts one account's explainer from a Forum post James pastes, curated or
+ * not. A linkpost's text belongs to the site it links to, so the server
+ * refuses it unless the permission box is ticked.
+ */
+export function ExplainerFromLink({ channel: fixed, replacing }: { channel?: Channel; replacing?: boolean }) {
+  const { busy, error, act } = useAct()
+  const [channel, setChannel] = useState<Channel>(fixed ?? 'linkedinPersonal')
+  const [url, setUrl] = useState('')
+  const [author, setAuthor] = useState('')
+  const [permission, setPermission] = useState(false)
+  return (
+    <details className={x.more}>
+      <summary>Draft from a Forum link</summary>
+      <p className={s.hint}>
+        Paste any EA Forum post, curated or not. Posts written on the Forum are CC BY, so they can be adapted with
+        credit. A linkpost (crossposted from a blog or Substack) belongs to its author: tick the box only once they’ve
+        said yes, and it’s credited “Adapted with permission”.
+      </p>
+      {fixed ? null : (
+        <label className={s.noteField}>
+          <span className={s.noteLabel}>Account</span>
+          <select className={u.suggestTextarea} value={channel} onChange={(e) => setChannel(e.target.value as Channel)}>
+            <option value="linkedinPersonal">Your LinkedIn</option>
+            <option value="instagram">EA Netherlands’ Instagram</option>
+          </select>
+        </label>
+      )}
+      <label className={s.noteField}>
+        <span className={s.noteLabel}>Forum link</span>
+        <input
+          className={u.suggestTextarea}
+          type="url"
+          placeholder="https://forum.effectivealtruism.org/posts/…"
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+        />
+      </label>
+      <label className={s.noteField}>
+        <span className={s.noteLabel}>Credit as (optional)</span>
+        <input
+          className={u.suggestTextarea}
+          placeholder="Leave empty to use the Forum author’s name"
+          value={author}
+          onChange={(e) => setAuthor(e.target.value)}
+        />
+      </label>
+      <label className={s.hint}>
+        <input type="checkbox" checked={permission} onChange={(e) => setPermission(e.target.checked)} /> I have the
+        author’s permission to adapt it (needed for a linkpost)
+      </label>
+      <div className={s.actions}>
+        <button
+          className={`${u.btn} ${u.btnSolid}`}
+          disabled={busy !== null || !url.trim()}
+          onClick={() =>
+            act(
+              'link',
+              { action: 'draft', channel, link: { url, permission, author } },
+              replacing
+                ? 'Draft this account’s explainer from this post instead? The current slides and caption, and your edits, will be replaced.'
+                : undefined,
+            )
+          }
+        >
+          {busy === 'link' ? 'Drafting…' : `Draft for ${ACCOUNT_LABEL[channel]}`}
+        </button>
+      </div>
+      {error ? <p className={s.error}>{error}</p> : null}
+    </details>
+  )
+}
+
 /** Before anything is drafted for the week. */
 export function ExplainerFirstDraft({ day }: { day: string }) {
   const { busy, error, act } = useAct()
@@ -120,6 +195,7 @@ export function ExplainerFirstDraft({ day }: { day: string }) {
         </button>
       </div>
       {error ? <p className={s.error}>{error}</p> : null}
+      <ExplainerFromLink />
     </div>
   )
 }
@@ -152,6 +228,7 @@ export function ExplainerEditor({
           </button>
         </div>
         {error ? <p className={s.error}>{error}</p> : null}
+        <ExplainerFromLink channel={channel} />
       </div>
     )
   }
@@ -265,6 +342,8 @@ export function ExplainerEditor({
           </ul>
         </details>
       ) : null}
+
+      {editable ? <ExplainerFromLink channel={channel} replacing /> : null}
 
       {slides ? (
         <details className={x.more} open={editable}>
