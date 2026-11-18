@@ -201,7 +201,7 @@ export const SKILL_DEFINITIONS: Record<Skill, string> = {
   legal: 'Law, regulatory compliance, contracts, litigation and legal research.',
   management: 'Leading teams, running organisations, executive and programme leadership.',
   operations: 'Operations, HR, recruiting, finance administration, office and event management, executive assistance.',
-  policy: 'Policy analysis, advising, advocacy, government affairs, diplomacy and regulation.',
+  policy: 'Policy analysis, advising, advocacy, government affairs, diplomacy, and drafting or shaping regulation. Shaping the rules, not working at the body that enforces them: a data analyst, inspector or IT specialist at a regulator or ministry is `data`, `legal` or `software-engineering`, not `policy`.',
   research: 'Academic and applied research, including AI safety research, economics, and policy research.',
   'software-engineering': 'Software engineering, machine learning engineering, infrastructure and product engineering.',
 }
