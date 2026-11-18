@@ -240,8 +240,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ job:
       /*
         Friday: picks one of Doneer Effectief's top charities for each account
         and drafts next week's deep dives from the evaluator's report, and
-        mails James. Mondays and Thursdays, hourly: posts the approved ones,
-        LinkedIn on Monday, Instagram on Thursday (social/charity).
+        mails James. Mondays, hourly: posts the approved ones, LinkedIn in the
+        morning, Instagram in the evening (social/charity).
       */
       case 'charity': {
         const channel = url.searchParams.get('channel')

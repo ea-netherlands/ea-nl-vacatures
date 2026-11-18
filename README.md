@@ -351,8 +351,9 @@ the first two exist:
 5. **Done: the charity deep dives** (`social/charity/`). A third weekly
    carousel, on the explainer's machinery (`explainer/series.ts`): each week
    two deep dives, one per account, each on a different one of Doneer
-   Effectief's individual top charities, on James's LinkedIn on Monday at
-   09:00 and EA Nederland's Instagram on Thursday at 18:00. The Friday
+   Effectief's individual top charities, both on Monday: James's LinkedIn at
+   09:00 and EA Nederland's Instagram at 18:00, one of the evenings its
+   followers are online most. The Friday
    `charity` cron reads the list from doneereffectief.nl/toporganisaties
    (`catalogue.ts`; funds are left out), takes the next charity in each
    account's rotation, reads the evaluator's report the charity's page links
@@ -363,7 +364,7 @@ the first two exist:
    giving pledge (always EA Nederland's partner page), get the monthly email.
    GiveWell's site turns automated readers away, so for its charities the
    cron moves on and James pastes the report's text on
-   `/review/social/charity`. The hourly Monday and Thursday `charity-publish`
+   `/review/social/charity`. The hourly Monday `charity-publish`
    cron posts approved ones. Stored as `charityPost.YYYY-MM-DD` in Sanity.
 
    The three posts share the graph paper and are told apart by the mark on

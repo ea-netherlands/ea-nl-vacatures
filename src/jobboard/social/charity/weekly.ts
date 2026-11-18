@@ -3,8 +3,8 @@
  *
  * Friday 11:30: pick a charity for each account and draft next week's two
  * deep dives, then mail James a link to /review/social/charity. Then post
- * what he approved: on his LinkedIn on Monday at 09:00, on EA Nederland's
- * Instagram on Thursday at 18:00 (../explainer/series.ts has the whole week).
+ * what he approved, both on Monday: on his LinkedIn at 09:00, on EA
+ * Nederland's Instagram at 18:00 (../explainer/series.ts has the whole week).
  * Posting itself is the explainer's (runExplainerPublish with this series).
  *
  * Picking is a rotation, not a judgement: each account works through Doneer

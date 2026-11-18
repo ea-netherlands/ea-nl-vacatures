@@ -71,7 +71,7 @@
     },
     {
       "path": "/api/cron/charity-publish",
-      "schedule": "15 * * * 1,4"
+      "schedule": "15 * * * 1"
     }
   ],
   "functions": {

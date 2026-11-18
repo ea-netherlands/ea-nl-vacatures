@@ -69,9 +69,11 @@ export function explainerPostAt(postDate: string, channel: ExplainerChannel, ser
   return channelPostAt(addDays(postDate, series.offsets[channel]), channel)
 }
 
-/** The account that posts last in a week. */
-const last = (series: Series) =>
-  EXPLAINER_CHANNELS.reduce((a, b) => (series.offsets[b] > series.offsets[a] ? b : a))
+/** The account that posts last in a week: by the hour too, since both may post on the same day. */
+const last = (postDate: string, series: Series) =>
+  EXPLAINER_CHANNELS.reduce((a, b) =>
+    explainerPostAt(postDate, b, series) > explainerPostAt(postDate, a, series) ? b : a,
+  )
 
 /**
  * The week being drafted or posted, as its Thursday at 09:00 Amsterdam: this
@@ -81,7 +83,7 @@ export function nextExplainerTime(now = new Date(), series: Series = EXPLAINER):
   const today = amsterdamDate(now)
   const weekday = new Date(`${today}T12:00:00Z`).getUTCDay()
   const thisWeek = addDays(today, -((weekday - series.anchorDay + 7) % 7))
-  const anchor = now < explainerPostAt(thisWeek, last(series), series) ? thisWeek : addDays(thisWeek, 7)
+  const anchor = now < explainerPostAt(thisWeek, last(thisWeek, series), series) ? thisWeek : addDays(thisWeek, 7)
   return channelPostAt(anchor, 'linkedinPersonal')
 }
 

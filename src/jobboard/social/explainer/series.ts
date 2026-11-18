@@ -5,14 +5,18 @@
  * Effectief's top charities.
  *
  * Each series has its own Sanity document per week, named after the week's
- * first posting day, and its own days, so the three weekly posts are spread
- * out on both accounts (Amsterdam time):
+ * first posting day, and its own days (Amsterdam time). Instagram's are the
+ * evenings its followers are online most, Sunday to Tuesday (insights of 13
+ * Nov 2026; James, 18 Nov 2026):
  *
  *            James's LinkedIn (09:00)   EA Nederland's Instagram (18:00)
- * Monday     charity deep dive
+ * Monday     charity deep dive          charity deep dive
  * Tuesday    jobs                       jobs
- * Thursday   essay                      charity deep dive
+ * Thursday   essay
  * Sunday                                essay
+ *
+ * The two accounts never feature the same charity in a week, so Monday's two
+ * deep dives are different ones.
  */
 
 import type { PostKind } from '../music'
@@ -55,7 +59,7 @@ export const CHARITY: Series = {
   key: 'charity',
   docType: 'charityPost',
   anchorDay: 1,
-  offsets: { linkedinPersonal: 0, instagram: 3 },
+  offsets: { linkedinPersonal: 0, instagram: 0 },
   noun: 'charity deep dive',
   plural: 'charity deep dives',
   reviewPath: '/review/social/charity',

@@ -115,14 +115,14 @@ test('captions: framing, credit, and the give, pledge and email calls; links onl
   assert.match(ig, /#effectivegiving #goededoelen$/)
 })
 
-test('the week: named after its Monday; LinkedIn that morning, Instagram on Thursday evening', () => {
+test('the week: named after its Monday; LinkedIn that morning, Instagram that evening', () => {
   assert.equal(explainerPostAt('2026-11-23', 'linkedinPersonal', CHARITY).toISOString(), '2026-11-23T08:00:00.000Z')
-  assert.equal(explainerPostAt('2026-11-23', 'instagram', CHARITY).toISOString(), '2026-11-26T17:00:00.000Z')
+  assert.equal(explainerPostAt('2026-11-23', 'instagram', CHARITY).toISOString(), '2026-11-23T17:00:00.000Z')
   const week = (at: string) => nextExplainerTime(new Date(at), CHARITY).toISOString().slice(0, 10)
-  // Friday's cron drafts next Monday's; the page stays on a week until its Thursday post is out.
+  // Friday's cron drafts next Monday's; the page stays on a week until its evening post is out.
   assert.equal(week('2026-11-20T10:30:00Z'), '2026-11-23')
-  assert.equal(week('2026-11-26T12:00:00Z'), '2026-11-23')
-  assert.equal(week('2026-11-26T17:30:00Z'), '2026-11-30')
+  assert.equal(week('2026-11-23T12:00:00Z'), '2026-11-23')
+  assert.equal(week('2026-11-23T17:30:00Z'), '2026-11-30')
   // The explainer's week is untouched.
   assert.equal(nextExplainerTime(new Date('2026-11-20T10:30:00Z')).toISOString().slice(0, 10), '2026-11-19')
 })
