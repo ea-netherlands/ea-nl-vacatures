@@ -239,7 +239,7 @@ export function ExplainerFirstDraft({ day, series = 'explainer' }: { day: string
     <div className={x.decision}>
       <p className={s.hint}>
         {charity
-          ? `Nothing drafted for ${day} yet. The Friday cron does this at 11:30; you can also do it now. It takes the next charity in each account’s rotation, reads the evaluator’s report and writes both deep dives, which takes a few minutes.`
+          ? `Nothing drafted for ${day} yet. The Thursday cron does this at 11:30; you can also do it now. It takes the next charity in each account’s rotation, reads the evaluator’s report and writes both deep dives, which takes a few minutes.`
           : `Nothing drafted for ${day} yet. The Wednesday cron does this at 11:30; you can also do it now. It picks a source for each account and writes both explainers, which takes a minute or two.`}
       </p>
       <div className={s.actions}>

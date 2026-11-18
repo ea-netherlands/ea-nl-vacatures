@@ -119,8 +119,8 @@ test('the week: named after its Monday; LinkedIn that morning, Instagram that ev
   assert.equal(explainerPostAt('2026-11-23', 'linkedinPersonal', CHARITY).toISOString(), '2026-11-23T08:00:00.000Z')
   assert.equal(explainerPostAt('2026-11-23', 'instagram', CHARITY).toISOString(), '2026-11-23T17:00:00.000Z')
   const week = (at: string) => nextExplainerTime(new Date(at), CHARITY).toISOString().slice(0, 10)
-  // Friday's cron drafts next Monday's; the page stays on a week until its evening post is out.
-  assert.equal(week('2026-11-20T10:30:00Z'), '2026-11-23')
+  // Thursday's cron drafts next Monday's; the page stays on a week until its evening post is out.
+  assert.equal(week('2026-11-19T10:30:00Z'), '2026-11-23')
   assert.equal(week('2026-11-23T12:00:00Z'), '2026-11-23')
   assert.equal(week('2026-11-23T17:30:00Z'), '2026-11-30')
   // The explainer's week is untouched.
