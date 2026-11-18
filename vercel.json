@@ -67,7 +67,7 @@
     },
     {
       "path": "/api/cron/charity",
-      "schedule": "30 10 * * 5"
+      "schedule": "30 10 * * 4"
     },
     {
       "path": "/api/cron/charity-publish",

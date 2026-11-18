@@ -238,7 +238,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ job:
         return NextResponse.json({ job, report, logs })
       }
       /*
-        Friday: picks one of Doneer Effectief's top charities for each account
+        Thursday (James doesn't work Fridays): picks one of Doneer Effectief's top charities for each account
         and drafts next week's deep dives from the evaluator's report, and
         mails James. Mondays, hourly: posts the approved ones, LinkedIn in the
         morning, Instagram in the evening (social/charity).

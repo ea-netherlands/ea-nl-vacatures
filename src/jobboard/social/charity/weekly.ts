@@ -1,7 +1,7 @@
 /**
  * The charity deep dive's week.
  *
- * Friday 11:30: pick a charity for each account and draft next week's two
+ * Thursday 11:30 (James doesn't work Fridays): pick a charity for each account and draft next week's two
  * deep dives, then mail James a link to /review/social/charity. Then post
  * what he approved, both on Monday: on his LinkedIn at 09:00, on EA
  * Nederland's Instagram at 18:00 (../explainer/series.ts has the whole week).
@@ -242,7 +242,7 @@ export async function draftCharityWeek(options: {
   return { post, changed: true }
 }
 
-/** The Friday cron. */
+/** The Thursday cron. */
 export async function runWeeklyCharity(
   options: { dryRun?: boolean; force?: boolean; channel?: ExplainerChannel; source?: string; onLog?: (line: string) => void } = {},
 ): Promise<ExplainerReport> {

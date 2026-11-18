@@ -353,7 +353,7 @@ the first two exist:
    two deep dives, one per account, each on a different one of Doneer
    Effectief's individual top charities, both on Monday: James's LinkedIn at
    09:00 and EA Nederland's Instagram at 18:00, one of the evenings its
-   followers are online most. The Friday
+   followers are online most. The Thursday
    `charity` cron reads the list from doneereffectief.nl/toporganisaties
    (`catalogue.ts`; funds are left out), takes the next charity in each
    account's rotation, reads the evaluator's report the charity's page links
