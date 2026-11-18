@@ -82,8 +82,10 @@ export function explainerSlides(post: Slidable, channel: ExplainerChannel): Expl
  * Bump whenever the slides' layout or order changes. The CDN keeps a slide for
  * an hour and may serve a stale one while it refreshes; without this, a URL
  * whose text hasn't changed could still hand Instagram the old layout.
+ * Also bumped (4) when the URLs had to change: browsers had cached the admin
+ * host's permanent redirect of these URLs to the main site.
  */
-const LAYOUT_VERSION = 3
+const LAYOUT_VERSION = 4
 
 export function slideHash(text: SlideText | undefined, source: SourceRef | null): string {
   return createHash('sha256')

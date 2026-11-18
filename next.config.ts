@@ -51,11 +51,20 @@ const config: NextConfig = {
     optimizePackageImports: ['sanity'],
   },
   async redirects() {
+    // Everything under /vacatures/social/ stays on the board's host: the review
+    // pages show draft explainer slides from there, which only answer with the
+    // review cookie, and that cookie never reaches the main site.
     const toMainSite = PUBLIC_ORIGIN
-      ? ['/', '/vacatures', '/vacatures/:path*', '/en/jobs', '/en/jobs/:path*'].map((source) => ({
+      ? [
+          ['/', '/vacatures'],
+          ['/vacatures', '/vacatures'],
+          ['/vacatures/:path((?!social(?:/|$)).*)', '/vacatures/:path'],
+          ['/en/jobs', '/en/jobs'],
+          ['/en/jobs/:path*', '/en/jobs/:path*'],
+        ].map(([source, path]) => ({
           source,
           has: [{ type: 'host' as const, value: BOARD_HOST }],
-          destination: `${PUBLIC_ORIGIN}${source === '/' ? '/vacatures' : source}`,
+          destination: `${PUBLIC_ORIGIN}${path}`,
           permanent: true,
         }))
       : []
