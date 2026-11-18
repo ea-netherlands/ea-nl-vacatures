@@ -97,6 +97,7 @@ function itemView(item: ExplainerItem | null): ExplainerItemView | null {
     slides: item.slides,
     caption: item.caption,
     flags: item.flags ?? [],
+    guidance: item.guidance ?? null,
     error: item.error,
   }
 }

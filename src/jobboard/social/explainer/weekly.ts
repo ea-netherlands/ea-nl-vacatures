@@ -94,10 +94,12 @@ async function draftItem(
   postDate: string,
   gathered: Gathered,
   log: (line: string) => void,
+  guidance?: string,
 ): Promise<ExplainerItem> {
   const base = {
     status: 'draft' as const,
     suggestions,
+    guidance: guidance || null,
     approvedAt: null,
     generatedAt: new Date().toISOString(),
     result: null,
@@ -111,7 +113,7 @@ async function draftItem(
   try {
     const instagram =
       chosen.kind === 'instagram' ? (gathered.instagram.find((s) => s.candidate.id === chosen.id) ?? null) : null
-    const draft = await draftFrom(chosen, { channel, postDate, instagram })
+    const draft = await draftFrom(chosen, { channel, postDate, instagram, guidance })
     return {
       ...base,
       source: ref(chosen),
@@ -144,6 +146,8 @@ const asSuggestion = (item: ExplainerItem | null | undefined): Suggestion[] =>
  * and the page's first "Draft". With a `channel`, just that one:
  * - `force` redrafts its draft (Redraft);
  * - `source` drafts from that suggestion instead ("Use this one");
+ * - `guidance` is James's note for the model on this draft ("Redraft with
+ *   guidance", 18 Nov 2026), kept on the item so he can see what he asked;
  * - `pass` also rules out its current source for good ("Not this one");
  * - `link` drafts from a Forum post James pasted ("Draft from a Forum link"),
  *   curated or not. A linkpost only with `summarise`: its text isn't the
@@ -157,6 +161,7 @@ export async function draftExplainer(options: {
   source?: string
   pass?: boolean
   link?: { url: string; summarise?: boolean; author?: string }
+  guidance?: string
   now?: Date
   onLog?: (line: string) => void
 }): Promise<{ post: ExplainerPost; changed: boolean }> {
@@ -213,14 +218,14 @@ export async function draftExplainer(options: {
     }
     const pool = [...(existing?.[channel]?.suggestions ?? []), ...asSuggestion(existing?.[channel])]
     const rest = pool.filter((s) => sourceKey(s) !== sourceKey(chosen) && !used.has(sourceKey(s)) && s.reason)
-    items[channel] = await draftItem(channel, chosen, rest, postDate, gathered, log)
+    items[channel] = await draftItem(channel, chosen, rest, postDate, gathered, log, options.guidance)
   } else if (options.source && options.channel) {
     const channel = options.channel
     const pool = [...(existing?.[channel]?.suggestions ?? []), ...asSuggestion(existing?.[channel])]
     const chosen = pool.find((s) => sourceKey(s) === options.source)
     if (!chosen) throw new Error('That suggestion isn’t available any more.')
     const rest = pool.filter((s) => sourceKey(s) !== options.source && !used.has(sourceKey(s)) && s.reason)
-    items[channel] = await draftItem(channel, chosen, rest, postDate, gathered, log)
+    items[channel] = await draftItem(channel, chosen, rest, postDate, gathered, log, options.guidance)
   } else {
     const ranked = await rankCandidates(shortlist(gathered.candidates, used), recentTopics)
     // Drafting both at once: the model already keeps their first picks apart.
