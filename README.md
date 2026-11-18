@@ -348,6 +348,35 @@ the first two exist:
    `SOCIAL_POSTING` switch. `explainer?force=1&channel=…[&source=…]` redrafts
    one account. Stored as `explainerPost-YYYY-MM-DD` in Sanity.
 
+5. **Done: the charity deep dives** (`social/charity/`). A third weekly
+   carousel, on the explainer's machinery (`explainer/series.ts`): each week
+   two deep dives, one per account, each on a different one of Doneer
+   Effectief's individual top charities, both on Monday: James's LinkedIn at
+   09:00 and EA Nederland's Instagram at 18:00, one of the evenings its
+   followers are online most. The Friday
+   `charity` cron reads the list from doneereffectief.nl/toporganisaties
+   (`catalogue.ts`; funds are left out), takes the next charity in each
+   account's rotation, reads the evaluator's report the charity's page links
+   to, and drafts a summary in our own words: problem, what the charity does,
+   evidence, what a donation buys, the doubts, the takeaway. The code writes
+   the cover's card, the "what is Doneer Effectief" slide, the credit and the
+   closing slide and caption lines: give through Doneer Effectief, take a
+   giving pledge (always EA Nederland's partner page), get the monthly email.
+   GiveWell's site turns automated readers away, so for its charities the
+   cron moves on and James pastes the report's text on
+   `/review/social/charity`. The hourly Monday `charity-publish`
+   cron posts approved ones. Stored as `charityPost.YYYY-MM-DD` in Sanity.
+
+   The three posts share the graph paper and are told apart by the mark on
+   the cover's key phrase and the pill icon (`slides.tsx`, `Mark`): the yellow
+   marker and a briefcase for jobs, the teal pencil underline and a book for
+   essays, a pale teal highlight and a handshake for charities. A charity
+   cover opens with the charity's own logo in one colour on the paper (the shape
+   of the white version on its page at Doneer Effectief, drawn in the text
+   colour, `charity/logo.ts`; just its name if there is none), and its hook is built on a figure from the report
+   (or the evaluator's main doubt), so it doesn't read like an essay's. Every
+   slide's footer carries effectiefaltruisme.nl.
+
    **Setup, once:**
    1. Meta: the app "EA Netherlands job posts" (developers.facebook.com, use
       case "Manage messaging & content on Instagram", business portfolio

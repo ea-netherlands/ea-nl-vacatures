@@ -225,6 +225,10 @@ export const ref = (c: SourceRef): SourceRef => ({
   title: c.title,
   author: c.author,
   publishedAt: c.publishedAt,
+  ...(c.cause ? { cause: c.cause } : {}),
+  ...(c.pageUrl ? { pageUrl: c.pageUrl } : {}),
+  ...(c.donateUrl ? { donateUrl: c.donateUrl } : {}),
+  ...(c.logoUrl ? { logoUrl: c.logoUrl } : {}),
 })
 
 // ── Drafting ────────────────────────────────────────────────────────────────
@@ -349,12 +353,12 @@ export function framing(channel: ExplainerChannel, source: SourceRef, now = new 
 }
 
 /** The monthly email, explained: who sends it, what's in it, how to get it. */
-export function newsletterCall(channel: ExplainerChannel, postDate: string): string {
+export function newsletterCall(channel: ExplainerChannel, postDate: string, campaign = 'explainer'): string {
   if (channel === 'instagram') return `Want more like this? ${NEWSLETTER_PITCH} Sign up through the link in our bio.`
   const url = new URL(NEWSLETTER_URL)
   url.searchParams.set('utm_source', 'linkedin')
   url.searchParams.set('utm_medium', 'social')
-  url.searchParams.set('utm_campaign', `explainer-${postDate}`)
+  url.searchParams.set('utm_campaign', `${campaign}-${postDate}`)
   url.searchParams.set('utm_content', 'james')
   return `Want more like this? ${NEWSLETTER_PITCH.replace('EA Netherlands sends', 'At EA Netherlands we send')} You can sign up here: ${url}`
 }

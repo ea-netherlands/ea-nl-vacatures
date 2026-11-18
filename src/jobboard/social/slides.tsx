@@ -71,7 +71,7 @@ const FUNDING = {
   note: 'A grant or funding round for work on this problem, not a job.',
 }
 
-export function Glyph({ name, size, color }: { name: Fact['icon'] | 'arrow-right' | 'mail' | 'book' | 'bulb'; size: number; color: string }) {
+export function Glyph({ name, size, color }: { name: Fact['icon'] | 'arrow-right' | 'mail' | 'book' | 'bulb' | 'briefcase' | 'heart-handshake' | 'microscope' | 'shield-check' | 'scale'; size: number; color: string }) {
   return (
     <svg
       width={size}
@@ -88,11 +88,15 @@ export function Glyph({ name, size, color }: { name: Fact['icon'] | 'arrow-right
   )
 }
 
-export function Pill({ children }: { children: string }) {
+type GlyphName = Parameters<typeof Glyph>[0]['name']
+
+export function Pill({ children, icon }: { children: string; icon?: GlyphName }) {
   return (
     <div
       style={{
         display: 'flex',
+        alignItems: 'center',
+        gap: 14,
         padding: '12px 28px',
         borderRadius: 999,
         backgroundColor: TOKENS.white,
@@ -102,7 +106,8 @@ export function Pill({ children }: { children: string }) {
         fontWeight: 600,
       }}
     >
-      {children}
+      {icon ? <Glyph name={icon} size={34} color={TOKENS.primaryFg} /> : null}
+      <div style={{ display: 'flex' }}>{children}</div>
     </div>
   )
 }
@@ -110,11 +115,14 @@ export function Pill({ children }: { children: string }) {
 export function Frame({
   logo,
   pill,
+  pillIcon,
   footer,
   children,
 }: {
   logo: string
   pill?: string
+  /** The series' icon, on its pill: a briefcase for jobs, a book for essays, a handshake for charities. */
+  pillIcon?: GlyphName
   footer: { left: React.ReactNode; right?: React.ReactNode }
   children: React.ReactNode
 }) {
@@ -137,7 +145,7 @@ export function Frame({
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         {/* eslint-disable-next-line @next/next/no-img-element -- Satori renders <img>, not next/image */}
         <img src={logo} height={88} width={211} alt="" />
-        {pill ? <Pill>{pill}</Pill> : null}
+        {pill ? <Pill icon={pillIcon}>{pill}</Pill> : null}
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', flexGrow: 1 }}>{children}</div>
       <div
@@ -180,13 +188,96 @@ export const Swipe = ({ label = 'Swipe' }: { label?: string }) => (
 )
 
 /**
- * A headline whose last words carry the marker. Satori lays out each span as a
- * box, so a marked phrase that wraps would get one solid block; marking word
- * by word, with the space inside the mark, follows the lines like a highlighter.
+ * The three weekly posts share the paper, the frame and the colours, and are
+ * told apart by the mark on the cover's key phrase and the icon on the pill
+ * (James, 18 Nov 2026): the jobs post keeps the yellow marker, the essay
+ * explainer gets the website's teal pencil underline, the charity deep dive a
+ * pale teal highlight. No colour is added to the design system.
  */
-export function Marked({ plain, marked, size }: { plain: string; marked: string; size: number }) {
+export type Mark = 'marker' | 'pencil' | 'teal'
+
+/**
+ * The website's pencil underline (the design system's pen-underline snippet):
+ * one filled, variable-width stroke that rises a little and wobbles, generated
+ * from the same fixed seed. Without its graphite grain: Satori has no SVG
+ * filters. The viewBox is 240 x 50, where 50 units are half an em.
+ */
+function pencilStroke(): string {
+  const W = 240
+  const H = 50
+  let seed = 48
+  const r = () => {
+    seed = (seed + 0x6d2b79f5) | 0
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed)
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+  }
+  const clamp = (x: number, a: number, b: number) => Math.max(a, Math.min(b, x))
+  const bez = (p: number[], t: number) => {
+    const u = 1 - t
+    return u * u * u * p[0] + 3 * u * u * t * p[1] + 3 * u * t * t * p[2] + t * t * t * p[3]
+  }
+  const f = (n: number) => n.toFixed(1)
+  const x0 = W * 0.03 + (r() - 0.5) * 7
+  const x1 = W * 0.97 + (r() - 0.5) * 7
+  const yb = H * 0.55
+  const cy = [1.8, -0.4, -0.2, -1.6].map((v) => yb + v * 5 + (r() - 0.5) * 2)
+  const f1 = 1.5 + r() * 1.5
+  const f2 = 4 + r() * 4
+  const p1 = r() * 6.28
+  const p2 = r() * 6.28
+  const pts: [number, number][] = []
+  const N = 120
+  for (let i = 0; i <= N; i++) {
+    const t = i / N
+    const y = bez(cy, t) + 0.7 * (Math.sin(6.283 * f1 * t + p1) * 0.65 + Math.sin(6.283 * f2 * t + p2) * 0.35)
+    pts.push([x0 + (x1 - x0) * t, y])
+  }
+  const left: string[] = []
+  const right: string[] = []
+  const widths: number[] = []
+  for (let k = 0; k <= N; k++) {
+    const a = pts[Math.max(0, k - 1)]
+    const b = pts[Math.min(N, k + 1)]
+    const len = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1
+    const nx = -(b[1] - a[1]) / len
+    const ny = (b[0] - a[0]) / len
+    const t = k / N
+    const w = Math.max(0.6, 7.5 * clamp(t * 20, 0.4, 1) * clamp((1 - t) * 10, 0.3, 1))
+    widths.push(w)
+    left.push(`${f(pts[k][0] + (nx * w) / 2)} ${f(pts[k][1] + (ny * w) / 2)}`)
+    right.push(`${f(pts[k][0] - (nx * w) / 2)} ${f(pts[k][1] - (ny * w) / 2)}`)
+  }
+  const caps = [0, N].map((k) => `<circle cx="${f(pts[k][0])}" cy="${f(pts[k][1])}" r="${f(widths[k] / 2)}"/>`).join('')
+  const svg =
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">` +
+    `<g fill="${TOKENS.primarySolid}"><path d="M${left.join('L')}L${right.reverse().join('L')}Z"/>${caps}</g></svg>`
+  return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`
+}
+
+const PENCIL = pencilStroke()
+
+/**
+ * A headline whose last words carry the series' mark. Satori lays out each
+ * span as a box, so a highlighted phrase that wraps would get one solid block;
+ * marking word by word, with the space inside the mark, follows the lines like
+ * a highlighter. The pencil underline is one stroke, so its phrase is kept on
+ * one line and drawn under as a whole; a phrase too long for a line is
+ * underlined word by word instead.
+ */
+export function Marked({ plain, marked, size, mark = 'marker' }: { plain: string; marked: string; size: number; mark?: Mark }) {
   const gap = Math.round(size * 0.24)
-  const words = marked.split(' ')
+  const words = marked ? marked.split(' ') : []
+  const fill = mark === 'teal' ? TOKENS.primaryEmphasized : TOKENS.marker
+  const stroke = (key: string, text: string, pad: number) => (
+    <div key={key} style={{ display: 'flex', flexDirection: 'column', paddingRight: pad }}>
+      <div style={{ display: 'flex', whiteSpace: 'nowrap' }}>{text}</div>
+      {/* eslint-disable-next-line @next/next/no-img-element -- Satori renders <img>, not next/image */}
+      <img src={PENCIL} alt="" style={{ width: '100%', height: Math.round(size * 0.5), marginTop: -Math.round(size * 0.36), marginBottom: -Math.round(size * 0.14) }} />
+    </div>
+  )
+  // Sentient runs at about half an em a character; the text column is 904px.
+  const oneLine = marked.length * size * 0.54 <= WIDTH - 2 * PAD
   return (
     <div style={{ display: 'flex', flexWrap: 'wrap', fontFamily: 'Sentient', fontWeight: 500, fontSize: size, lineHeight: 1.1 }}>
       {plain.split(' ').map((word, i) => (
@@ -194,19 +285,23 @@ export function Marked({ plain, marked, size }: { plain: string; marked: string;
           {word}
         </span>
       ))}
-      {words.map((word, i) => (
-        <span
-          key={`m${i}`}
-          style={{
-            backgroundColor: TOKENS.marker,
-            paddingLeft: i === 0 ? 10 : 0,
-            paddingRight: i === words.length - 1 ? 10 : gap,
-            marginLeft: i === 0 ? -10 : 0,
-          }}
-        >
-          {word}
-        </span>
-      ))}
+      {mark === 'pencil'
+        ? oneLine && words.length
+          ? stroke('m', marked, 0)
+          : words.map((word, i) => stroke(`m${i}`, word, i === words.length - 1 ? 0 : gap))
+        : words.map((word, i) => (
+            <span
+              key={`m${i}`}
+              style={{
+                backgroundColor: fill,
+                paddingLeft: i === 0 ? 10 : 0,
+                paddingRight: i === words.length - 1 ? 10 : gap,
+                marginLeft: i === 0 ? -10 : 0,
+              }}
+            >
+              {word}
+            </span>
+          ))}
     </div>
   )
 }
@@ -224,6 +319,7 @@ export function Slide({ content, logo }: { content: SlideContent; logo: string }
       <Frame
         logo={logo}
         pill={content.funding ? 'Opportunities this week' : 'Jobs this week'}
+        pillIcon="briefcase"
         footer={{ left: SITE, right: <Swipe /> }}
       >
         <Marked plain={content.plain} marked={content.marked} size={coverSize(content.plain + content.marked)} />

@@ -8,7 +8,8 @@
  *
  * `d` (the week's Thursday), `c` (li or ig, the account) and `i` (slide number) pick the slide;
  * the text comes from the stored post. `v` is the slide text's hash, only there
- * so an edit gets a fresh URL past the CDN cache.
+ * so an edit gets a fresh URL past the CDN cache. `s=c` reads the charity deep
+ * dive's week instead of the explainer's (its `d` is the week's Monday).
  */
 
 import { cookies } from 'next/headers'
@@ -19,6 +20,8 @@ import { SLIDE_SIZE } from '@jobboard/social/content'
 import { ExplainerSlide, explainerSlides } from '@jobboard/social/explainer/slides'
 import { CHANNEL_CODE, EXPLAINER_CHANNELS, getExplainer } from '@jobboard/social/explainer/store'
 import { SOCIAL_SESSION_COOKIE, socialSignedIn } from '@jobboard/review/auth'
+import { CHARITY, EXPLAINER, SERIES_CODE } from '@jobboard/social/explainer/series'
+import { charityLogo } from '@jobboard/social/charity/logo'
 
 export const runtime = 'nodejs'
 
@@ -33,7 +36,8 @@ export async function GET(request: Request) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !channel || !Number.isInteger(index)) {
     return new Response('Not found', { status: 404 })
   }
-  const [post, { fonts, logo }] = await Promise.all([getExplainer(date).catch(() => null), loadAssets()])
+  const series = params.get('s') === SERIES_CODE.charity ? CHARITY : EXPLAINER
+  const [post, { fonts, logo }] = await Promise.all([getExplainer(date, series).catch(() => null), loadAssets()])
   const content = post ? explainerSlides(post, channel)[index] : undefined
   if (!content) return new Response('Not found', { status: 404 })
 
@@ -45,7 +49,9 @@ export async function GET(request: Request) {
   }
   const cache = isPublic ? CACHE : NO_CACHE
 
-  const png = new ImageResponse(<ExplainerSlide content={content} logo={logo} />, { ...SLIDE_SIZE, fonts })
+  // A deep dive's cover carries the charity's own logo, read from Doneer Effectief's site.
+  const theirs = content.kind === 'cover' && content.source.kind === 'charity' ? await charityLogo(content.source.logoUrl) : null
+  const png = new ImageResponse(<ExplainerSlide content={content} logo={logo} charityLogo={theirs} />, { ...SLIDE_SIZE, fonts })
   if (params.get('format') !== 'jpg') {
     return new Response(png.body, { headers: { 'content-type': 'image/png', 'cache-control': cache } })
   }

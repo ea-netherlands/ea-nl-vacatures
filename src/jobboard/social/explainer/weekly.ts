@@ -45,14 +45,14 @@ import {
   type Suggestion,
 } from './store'
 import { nextStep, unclearMessage, watchedHttp } from '../once'
+import { EXPLAINER, type Series } from './series'
 
 export { EXPLAINER_CHANNELS }
 
-const THURSDAY = 4
 const MAX_ATTEMPTS = 3
 
 /** Days after the week's Thursday each account posts: LinkedIn that Thursday, Instagram the Sunday after. */
-export const EXPLAINER_DAY_OFFSET: Record<ExplainerChannel, number> = { linkedinPersonal: 0, instagram: 3 }
+export const EXPLAINER_DAY_OFFSET: Record<ExplainerChannel, number> = EXPLAINER.offsets
 
 /** YYYY-MM-DD plus `days`. */
 export function addDays(date: string, days: number): string {
@@ -60,24 +60,31 @@ export function addDays(date: string, days: number): string {
   return new Date(Date.UTC(y, m - 1, d + days)).toISOString().slice(0, 10)
 }
 
-/** When one account's explainer for the week of `postDate` (its Thursday) goes out. */
-export function explainerPostAt(postDate: string, channel: ExplainerChannel): Date {
-  return channelPostAt(addDays(postDate, EXPLAINER_DAY_OFFSET[channel]), channel)
+/**
+ * When one account's post for the week of `postDate` goes out. The week is
+ * named after the series' first posting day: the explainer's Thursday, the
+ * charity deep dive's Monday (./series.ts).
+ */
+export function explainerPostAt(postDate: string, channel: ExplainerChannel, series: Series = EXPLAINER): Date {
+  return channelPostAt(addDays(postDate, series.offsets[channel]), channel)
 }
 
-/** The account that posts last in a week. */
-const LAST = EXPLAINER_CHANNELS.reduce((a, b) => (EXPLAINER_DAY_OFFSET[b] > EXPLAINER_DAY_OFFSET[a] ? b : a))
+/** The account that posts last in a week: by the hour too, since both may post on the same day. */
+const last = (postDate: string, series: Series) =>
+  EXPLAINER_CHANNELS.reduce((a, b) =>
+    explainerPostAt(postDate, b, series) > explainerPostAt(postDate, a, series) ? b : a,
+  )
 
 /**
  * The week being drafted or posted, as its Thursday at 09:00 Amsterdam: this
  * week's until its last post (Sunday's) has gone out, then the next.
  */
-export function nextExplainerTime(now = new Date()): Date {
+export function nextExplainerTime(now = new Date(), series: Series = EXPLAINER): Date {
   const today = amsterdamDate(now)
   const weekday = new Date(`${today}T12:00:00Z`).getUTCDay()
-  const thisWeek = addDays(today, -((weekday - THURSDAY + 7) % 7))
-  const thursday = now < explainerPostAt(thisWeek, LAST) ? thisWeek : addDays(thisWeek, 7)
-  return channelPostAt(thursday, 'linkedinPersonal')
+  const thisWeek = addDays(today, -((weekday - series.anchorDay + 7) % 7))
+  const anchor = now < explainerPostAt(thisWeek, last(thisWeek, series), series) ? thisWeek : addDays(thisWeek, 7)
+  return channelPostAt(anchor, 'linkedinPersonal')
 }
 
 const hhmm = (at: Date) =>
@@ -247,12 +254,15 @@ export async function draftExplainer(options: {
   return { post, changed: true }
 }
 
-function reviewLink(): string {
+export function reviewLink(series: Series = EXPLAINER): string {
   const url = new URL('/api/review/session', ADMIN_ORIGIN)
   url.searchParams.set('t', issueToken('social-link', SOCIAL_LINK_TTL_MS))
-  url.searchParams.set('next', 'explainer')
+  url.searchParams.set('next', series.next)
   return url.toString()
 }
+
+export const clock = (at: Date) => hhmm(at)
+export const dayName = (at: Date) => longDay(at)
 
 export type ExplainerReport = { postDate: string; status: string; source: string | null; mailed: string[]; note: string | null }
 
@@ -349,10 +359,22 @@ type Http = typeof fetch
  * Thursdays and Sundays, hourly: posts each account's approved explainer once
  * its time has passed. On a Sunday that is the Instagram one of the week that
  * began on Thursday; `postDate` in the report is today.
+ *
+ * With `series`, the same for another series on its own days (the charity
+ * deep dive: Mondays and Thursdays).
  */
 export async function runExplainerPublish(
-  options: { now?: Date; dryRun?: boolean; http?: Http; sleep?: (ms: number) => Promise<void>; onLog?: (line: string) => void } = {},
+  options: {
+    now?: Date
+    dryRun?: boolean
+    http?: Http
+    sleep?: (ms: number) => Promise<void>
+    onLog?: (line: string) => void
+    series?: Series
+  } = {},
 ): Promise<{ postDate: string; enabled: boolean; actions: string[] }> {
+  const series = options.series ?? EXPLAINER
+  const noun = series.noun
   const now = options.now ?? new Date()
   const log = (line: string) => options.onLog?.(line)
   const today = amsterdamDate(now)
@@ -365,8 +387,8 @@ export async function runExplainerPublish(
   // Each account's week: the Thursday its explainer belongs to, if it posts today.
   const weeks = new Map<string, Promise<ExplainerPost | null>>()
   const weekOf = (channel: ExplainerChannel) => {
-    const date = addDays(today, -EXPLAINER_DAY_OFFSET[channel])
-    if (!weeks.has(date)) weeks.set(date, getExplainer(date))
+    const date = addDays(today, -series.offsets[channel])
+    if (!weeks.has(date)) weeks.set(date, getExplainer(date, series))
     return { date, post: weeks.get(date)! }
   }
 
@@ -377,7 +399,7 @@ export async function runExplainerPublish(
     const postDate = week.date
     const post = await week.post
     if (!post) {
-      log(`${label}: no explainer for the week of ${postDate}`)
+      log(`${label}: no ${noun} for the week of ${postDate}`)
       continue
     }
     const item = post[channel]
@@ -392,12 +414,12 @@ export async function runExplainerPublish(
     if (!explainerApprovalHolds(postDate, channel, item)) {
       act(`${label}: not posting: ${CHANGED_SINCE_APPROVAL}`)
       if (!options.dryRun && report.enabled && !item.error) {
-        await patchItem(postDate, channel, { error: `Not posted: ${CHANGED_SINCE_APPROVAL}` })
+        await patchItem(postDate, channel, { error: `Not posted: ${CHANGED_SINCE_APPROVAL}` }, series)
         failures.push(`${label}: held back, because ${CHANGED_SINCE_APPROVAL}`)
       }
       continue
     }
-    if (now < explainerPostAt(postDate, channel)) continue
+    if (now < explainerPostAt(postDate, channel, series)) continue
     const done = item.result
     const step = nextStep(done, now, MAX_ATTEMPTS)
     if (step.kind === 'in-progress') {
@@ -407,21 +429,24 @@ export async function runExplainerPublish(
     if (step.kind === 'abandoned') {
       // A run claimed it and never finished: it may or may not have gone out.
       if (options.dryRun || !report.enabled) continue
-      await patchItem(postDate, channel, {
-        result: { ...done!, at: now.toISOString(), claimedAt: null, unclear: true, error: unclearMessage(label) },
-      })
+      await patchItem(
+        postDate,
+        channel,
+        { result: { ...done!, at: now.toISOString(), claimedAt: null, unclear: true, error: unclearMessage(label) } },
+        series,
+      )
       act(`${label}: an earlier run stopped mid-post; marked unclear`)
       failures.push(`${label}: ${unclearMessage(label)}`)
       continue
     }
     if (step.kind !== 'go') continue
     if (options.dryRun || !report.enabled) {
-      act(`${options.dryRun ? 'dry run' : 'SOCIAL_POSTING is off'}: would post the explainer to ${label}`)
+      act(`${options.dryRun ? 'dry run' : 'SOCIAL_POSTING is off'}: would post the ${noun} to ${label}`)
       continue
     }
     const attempts = step.attempts
     const claim: ChannelResult = { ...(done ?? {}), at: now.toISOString(), claimedAt: now.toISOString(), attempts }
-    if (!(await claimItem(postDate, channel, claim, now))) {
+    if (!(await claimItem(postDate, channel, claim, now, series))) {
       log(`${label}: claimed by another run, or no longer approved; left alone`)
       continue
     }
@@ -430,7 +455,7 @@ export async function runExplainerPublish(
     try {
       const token = await getToken(channel)
       if (!token) throw new Error(`${label} is not connected`)
-      const urls = explainerSlidePaths(post, channel, 'jpg').map((p) => `${PUBLIC_ORIGIN}${p}`)
+      const urls = explainerSlidePaths(post, channel, 'jpg', series).map((p) => `${PUBLIC_ORIGIN}${p}`)
       const posted =
         channel === 'instagram'
           ? await publishInstagramCarousel({
@@ -451,8 +476,8 @@ export async function runExplainerPublish(
               sleep: options.sleep,
             })
       result = { at: now.toISOString(), id: posted.id, url: posted.url }
-      act(`posted the explainer to ${label}: ${posted.url ?? posted.id}`)
-      if (channel === 'instagram' && (await sendMusicReminder(approvers(), "Today's explainer", posted.url, trackFor('content')))) {
+      act(`posted the ${noun} to ${label}: ${posted.url ?? posted.id}`)
+      if (channel === 'instagram' && (await sendMusicReminder(approvers(), `Today's ${noun}`, posted.url, trackFor(series.track)))) {
         act('mailed the music reminder')
       }
     } catch (err) {
@@ -467,7 +492,7 @@ export async function runExplainerPublish(
         if (attempts === 1) failures.push(`${label}: ${message}`)
       }
     }
-    await patchItem(postDate, channel, { result, ...(result.id ? { status: 'posted' as const } : {}) })
+    await patchItem(postDate, channel, { result, ...(result.id ? { status: 'posted' as const } : {}) }, series)
   }
 
   if (options.dryRun || !report.enabled) return report
@@ -475,13 +500,13 @@ export async function runExplainerPublish(
   if (failures.length && to.length && isMailConfigured()) {
     await sendMail({
       to,
-      subject: `Today's explainer failed on ${failures.map((f) => f.split(':')[0]).join(' and ')}`,
+      subject: `Today's ${noun} failed on ${failures.map((f) => f.split(':')[0]).join(' and ')}`,
       text: [
-        "Today's explainer didn't go out everywhere:",
+        `Today's ${noun} didn't go out everywhere:`,
         '',
         ...failures.map((f) => `- ${f}`),
         '',
-        `It retries on the next hourly run, up to ${MAX_ATTEMPTS} times. Details: ${ADMIN_ORIGIN}/review/social/explainer`,
+        `It retries on the next hourly run, up to ${MAX_ATTEMPTS} times. Details: ${ADMIN_ORIGIN}${series.reviewPath}`,
       ].join('\n'),
     })
   }

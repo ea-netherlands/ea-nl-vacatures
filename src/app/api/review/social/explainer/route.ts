@@ -3,6 +3,9 @@
  * as the jobs post's: the review session cookie and a same-origin request.
  * Acts only on the week's explainers (nextExplainerTime); everything but the first
  * draft names the account (`channel`) it is about.
+ *
+ * The charity deep dives (/review/social/charity) use it too, with
+ * `series: "charity"`: same actions, their own week and their own documents.
  */
 
 import { sealExplainer } from '@jobboard/social/approval'
@@ -18,6 +21,8 @@ import {
   type SlideText,
 } from '@jobboard/social/explainer/store'
 import { draftExplainer, nextExplainerTime } from '@jobboard/social/explainer/weekly'
+import { draftCharityWeek } from '@jobboard/social/charity/weekly'
+import { isSeriesKey, SERIES } from '@jobboard/social/explainer/series'
 import { amsterdamDate } from '@jobboard/social/store'
 import { lockedForEditing } from '@jobboard/social/once'
 
@@ -75,9 +80,23 @@ export async function POST(request: Request) {
     return fail('expected a JSON body')
   }
 
-  const postDate = amsterdamDate(nextExplainerTime())
+  const series = SERIES[isSeriesKey(body.series) ? body.series : 'explainer']
+  const postDate = amsterdamDate(nextExplainerTime(undefined, series))
   const channel = isExplainerChannel(body.channel) ? body.channel : undefined
   try {
+    if (body.action === 'draft' && series.key === 'charity') {
+      const pasted = str(body.pasted).trim()
+      if (pasted && pasted.length < 1500) return fail('That is too little text to be the report. Paste the whole page.')
+      const { post } = await draftCharityWeek({
+        channel,
+        force: Boolean(channel),
+        source: typeof body.source === 'string' ? body.source : undefined,
+        pass: body.pass === true,
+        pasted: pasted || undefined,
+        guidance: str(body.guidance).trim().slice(0, 1500) || undefined,
+      })
+      return NextResponse.json({ ok: true, post })
+    }
     if (body.action === 'draft') {
       const { post } = await draftExplainer({
         channel,
@@ -91,7 +110,7 @@ export async function POST(request: Request) {
     }
 
     if (!channel) return fail('Which account?')
-    const post = await getExplainer(postDate)
+    const post = await getExplainer(postDate, series)
     const item = post?.[channel]
     if (!item) return fail('There is no draft for this account yet. Draft it first.', 404)
     if (item.status === 'posted') return fail('This explainer has gone out already.', 409)
@@ -104,18 +123,23 @@ export async function POST(request: Request) {
         const caption = str(body.caption)
         if (!caption.trim()) return fail('The caption needs some text.')
         if (caption.length > EXPLAINER_LIMIT[channel]) return fail(`The caption is over ${EXPLAINER_LIMIT[channel]} characters.`)
-        return NextResponse.json({ ok: true, post: await patchItem(postDate, channel, { slides, caption }) })
+        return NextResponse.json({ ok: true, post: await patchItem(postDate, channel, { slides, caption }, series) })
       }
       case 'approve':
         if (!item.slides || !item.caption || !item.source) return fail('Draft the explainer first.')
         return NextResponse.json({
           ok: true,
-          post: await patchItem(postDate, channel, {
-            status: 'approved',
-            approvedAt: new Date().toISOString(),
-            seal: sealExplainer(postDate, channel, item),
-            error: null,
-          }),
+          post: await patchItem(
+            postDate,
+            channel,
+            {
+              status: 'approved',
+              approvedAt: new Date().toISOString(),
+              seal: sealExplainer(postDate, channel, item),
+              error: null,
+            },
+            series,
+          ),
         })
       case 'skip':
       case 'reopen':
@@ -125,11 +149,12 @@ export async function POST(request: Request) {
         }
         return NextResponse.json({
           ok: true,
-          post: await patchItem(postDate, channel, {
-            status: body.action === 'skip' ? 'skipped' : 'draft',
-            approvedAt: null,
-            seal: null,
-          }),
+          post: await patchItem(
+            postDate,
+            channel,
+            { status: body.action === 'skip' ? 'skipped' : 'draft', approvedAt: null, seal: null },
+            series,
+          ),
         })
       default:
         return fail('Unknown action.')

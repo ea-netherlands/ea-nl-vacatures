@@ -9,6 +9,7 @@
  * like the posts.
  */
 
+import { SocialTabs } from '@jobboard/review/SeriesPage'
 import type { Metadata } from 'next'
 import { cookies } from 'next/headers'
 import l from '@jobboard/components/layout.module.css'
@@ -44,14 +45,7 @@ function Frame({ children }: { children: React.ReactNode }) {
     <div className="jb-root" lang="en">
       <main className={`${l.container} ${s.page}`}>
         <span className={l.eyebrow}>Weekly social posts</span>
-        <nav className={x.tabs} aria-label="Weekly posts">
-          <a className={`${u.btn} ${u.btnSubtle} ${u.btnSmall}`} href="/review/social" aria-current="page">
-            Jobs, Tuesdays
-          </a>
-          <a className={`${u.btn} ${u.btnGhost} ${u.btnSmall}`} href="/review/social/explainer">
-            Explainers, Thu and Sun
-          </a>
-        </nav>
+        <SocialTabs current="jobs" />
         {children}
       </main>
     </div>

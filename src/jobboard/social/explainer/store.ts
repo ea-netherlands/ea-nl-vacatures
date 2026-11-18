@@ -17,6 +17,7 @@ import { BY_DATE_QUERY, byDateParams, legacySocialId, privateSocialId } from '..
 import type { ChannelResult, PostStatus } from '../store'
 import { sourceKey, type SourceRef } from './sources'
 import { claimable } from '../once'
+import { EXPLAINER, type Series } from './series'
 
 /** The accounts an explainer goes to. */
 export type ExplainerChannel = 'linkedinPersonal' | 'instagram'
@@ -64,7 +65,7 @@ export type ExplainerItem = {
 
 export type ExplainerPost = {
   _id: string
-  _type: 'explainerPost'
+  _type: 'explainerPost' | 'charityPost'
   _rev?: string
   /** The week's Thursday in Amsterdam, YYYY-MM-DD (Instagram posts the Sunday after). Also the id suffix. */
   postDate: string
@@ -76,10 +77,11 @@ export type ExplainerPost = {
 }
 
 /** Private (dotted) id; see ../private-ids.ts. */
-export const explainerId = (postDate: string) => privateSocialId('explainerPost', postDate)
+export const explainerId = (postDate: string, series: Series = EXPLAINER) => privateSocialId(series.docType, postDate)
 
-export async function getExplainer(postDate: string): Promise<ExplainerPost | null> {
-  return writeClient().fetch<ExplainerPost | null>(BY_DATE_QUERY, byDateParams('explainerPost', postDate))
+/** A week's post in a series: the essay explainer unless told otherwise. */
+export async function getExplainer(postDate: string, series: Series = EXPLAINER): Promise<ExplainerPost | null> {
+  return writeClient().fetch<ExplainerPost | null>(BY_DATE_QUERY, byDateParams(series.docType, postDate))
 }
 
 /**
@@ -88,9 +90,7 @@ export async function getExplainer(postDate: string): Promise<ExplainerPost | nu
  * the weeks rotate.
  */
 export async function usedSources(): Promise<{ used: Set<string>; recentTopics: string[] }> {
-  const rows = await writeClient().fetch<
-    Pick<ExplainerPost, 'linkedinPersonal' | 'instagram' | 'passed'>[]
-  >(`*[_type == "explainerPost"] | order(postDate desc){ linkedinPersonal, instagram, passed }`)
+  const rows = await seriesHistory(EXPLAINER)
   const used = new Set<string>()
   const recentTopics: string[] = []
   for (const r of rows) {
@@ -105,15 +105,25 @@ export async function usedSources(): Promise<{ used: Set<string>; recentTopics: 
   return { used, recentTopics: recentTopics.slice(0, 6) }
 }
 
+/** Every week of a series, newest first. */
+export async function seriesHistory(
+  series: Series,
+): Promise<Pick<ExplainerPost, 'postDate' | 'linkedinPersonal' | 'instagram' | 'passed'>[]> {
+  return writeClient().fetch(
+    `*[_type == $type] | order(postDate desc){ postDate, linkedinPersonal, instagram, passed }`,
+    { type: series.docType },
+  )
+}
+
 /** Saves a week's explainer on its private id, removing any public copy from before the move. */
-export async function saveExplainer(post: Omit<ExplainerPost, '_type'>): Promise<ExplainerPost> {
-  const doc = { ...post, _id: explainerId(post.postDate), _type: 'explainerPost' as const }
+export async function saveExplainer(post: Omit<ExplainerPost, '_type'>, series: Series = EXPLAINER): Promise<ExplainerPost> {
+  const doc = { ...post, _id: explainerId(post.postDate, series), _type: series.docType }
   await writeClient()
     .transaction()
     .createOrReplace(doc)
-    .delete(legacySocialId('explainerPost', post.postDate))
+    .delete(legacySocialId(series.docType, post.postDate))
     .commit()
-  return (await getExplainer(post.postDate)) ?? (doc as ExplainerPost)
+  return (await getExplainer(post.postDate, series)) ?? (doc as ExplainerPost)
 }
 
 /** Sets fields on one account's explainer. */
@@ -121,9 +131,10 @@ export async function patchItem(
   postDate: string,
   channel: ExplainerChannel,
   set: Partial<ExplainerItem>,
+  series: Series = EXPLAINER,
 ): Promise<ExplainerPost> {
   // The whole item, not `channel.field` paths: Sanity can't set into a null.
-  const post = await getExplainer(postDate)
+  const post = await getExplainer(postDate, series)
   const current = post?.[channel]
   if (!post || !current) throw new Error('There is no explainer for that account this week.')
   return writeClient()
@@ -155,8 +166,9 @@ export async function claimItem(
   channel: ExplainerChannel,
   claim: ChannelResult,
   now: Date,
+  series: Series = EXPLAINER,
 ): Promise<boolean> {
-  const post = await getExplainer(postDate)
+  const post = await getExplainer(postDate, series)
   const item = post?.[channel]
   if (!post || !item || item.status !== 'approved' || !claimable(item.result, now)) return false
   try {
