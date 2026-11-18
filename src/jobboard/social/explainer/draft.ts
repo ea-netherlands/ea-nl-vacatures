@@ -228,6 +228,7 @@ export const ref = (c: SourceRef): SourceRef => ({
   ...(c.cause ? { cause: c.cause } : {}),
   ...(c.pageUrl ? { pageUrl: c.pageUrl } : {}),
   ...(c.donateUrl ? { donateUrl: c.donateUrl } : {}),
+  ...(c.logoUrl ? { logoUrl: c.logoUrl } : {}),
 })
 
 // ── Drafting ────────────────────────────────────────────────────────────────

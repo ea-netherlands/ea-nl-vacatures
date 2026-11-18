@@ -4,7 +4,7 @@ import { CHARITY } from '../explainer/series'
 import { explainerSlidePaths, explainerSlides } from '../explainer/slides'
 import type { ExplainerItem } from '../explainer/store'
 import { explainerPostAt, nextExplainerTime } from '../explainer/weekly'
-import { asCandidate, causeLinks, charityLinks, parseCharity, reportFrom, type Charity } from './catalogue'
+import { asCandidate, causeLinks, charityLinks, isLogoUrl, parseCharity, reportFrom, type Charity } from './catalogue'
 import { composeCaption } from './draft'
 import { rotation } from './weekly'
 
@@ -74,6 +74,7 @@ const charity = (slug: string, cause: string): Charity => ({
   recommendedBy: 'GiveWell',
   reports: [{ url: `https://www.givewell.org/charities/${slug}`, evaluator: 'GiveWell' }],
   pageText: '',
+  logoUrl: null,
 })
 const LIST = [charity('a', 'Health'), charity('b', 'Health'), charity('c', 'Climate'), charity('d', 'Animals')]
 const featured = (slug: string, status: ExplainerItem['status']) =>
@@ -142,4 +143,13 @@ test('slides: hook, about the series, the points, the closing; their own address
   )
   const paths = explainerSlidePaths(post, 'linkedinPersonal', 'jpg', CHARITY)
   assert.match(paths[0], /^\/vacatures\/social\/explainer\?d=2026-11-23&c=li&i=0&v=[0-9a-f]{10}&s=c&format=jpg$/)
+})
+
+test('a charity’s logo: only an upload on Doneer Effectief’s own site', () => {
+  const html = (src: string) => page(`<img width="10" src="${src}" class="logo" alt=""><h1>GiveDirectly</h1>`)
+  const url = 'https://doneereffectief.nl/wp-content/uploads/2025/11/GiveDirectly_logo_wit-1.png'
+  assert.equal(parseCharity(html(url), 'https://doneereffectief.nl/toporganisatie/givedirectly/')!.logoUrl, url)
+  assert.equal(parseCharity(html('https://elsewhere.example/logo.png'), 'https://doneereffectief.nl/toporganisatie/x/')!.logoUrl, null)
+  assert.equal(parseCharity(page('<h1>Bandhan</h1>'), 'https://doneereffectief.nl/toporganisatie/bandhan/')!.logoUrl, null)
+  assert.equal(isLogoUrl('https://doneereffectief.nl/wp-content/uploads/../../secret.png'), false)
 })

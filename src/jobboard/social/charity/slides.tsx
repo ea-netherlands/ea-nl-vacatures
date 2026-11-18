@@ -4,9 +4,10 @@
  * highlight as the cover's mark, so it reads as a third series beside the
  * jobs post and the essay explainer.
  *
- * The cover names the charity and its cause above the hook, so nobody takes
- * it for an essay (James, 18 Nov 2026), and under it a card says who
- * evaluated it and who recommends it. The second slide says what the series
+ * The cover opens with the charity's own logo, large and white on a solid
+ * teal panel, with its name and cause: nobody takes it for an essay, and the
+ * series builds recognition of the charities (James, 18 Nov 2026). Then the
+ * hook, and who evaluated it. The second slide says what the series
  * is. Then one slide per point, and a closing slide with three things to do:
  * give through Doneer Effectief, take a pledge, get the monthly email. All of
  * that is written by the code; the model only writes the hook and the points.
@@ -15,9 +16,12 @@
 import { TOKENS } from '../../og/card'
 import type { ExplainerSlideContent } from '../explainer/slides'
 import { Frame, Glyph, Marked, Swipe } from '../slides'
+import type { CharityLogo } from './logo'
 import { DE_ABOUT, DE_SITE, DONEER_EFFECTIEF, PLEDGE_SHOWN, possessive } from './copy'
 
 const PILL = 'Charity deep dive'
+/** The footer is ours on every slide (James, 18 Nov 2026); Doneer Effectief's address is on the closing slide, where giving is the point. */
+const SITE = 'effectiefaltruisme.nl'
 const NEWSLETTER = 'effectiefaltruisme.nl/en/newsletter'
 
 type GlyphName = Parameters<typeof Glyph>[0]['name']
@@ -33,9 +37,16 @@ function bodySize(text: string): number {
   return 38
 }
 function coverSize(text: string): number {
-  if (text.length <= 40) return 92
-  if (text.length <= 60) return 78
-  return 66
+  if (text.length <= 40) return 84
+  if (text.length <= 60) return 72
+  return 62
+}
+
+/** The logo as large as the panel allows: a wide wordmark fills the width, a square mark the height. */
+const LOGO_BOX = { width: 760, height: 210 }
+function logoSize(logo: CharityLogo): { width: number; height: number } {
+  const scale = Math.min(LOGO_BOX.width / logo.width, LOGO_BOX.height / logo.height)
+  return { width: Math.round(logo.width * scale), height: Math.round(logo.height * scale) }
 }
 
 const Counter = ({ index, count }: { index: number; count: number }) => (
@@ -93,24 +104,53 @@ function Card({ children, marginTop = 0 }: { children: React.ReactNode; marginTo
   )
 }
 
-export function CharitySlide({ content, logo }: { content: ExplainerSlideContent; logo: string }) {
+export function CharitySlide({
+  content,
+  logo,
+  charityLogo,
+}: {
+  content: ExplainerSlideContent
+  logo: string
+  charityLogo?: CharityLogo | null
+}) {
   if (content.kind === 'cover') {
     const { headline, marked, sub } = content.text
     const ends = headline.endsWith(marked)
     const plain = ends ? headline.slice(0, headline.length - marked.length).trim() : headline
     const s = content.source
     return (
-      <Frame logo={logo} pill={PILL} pillIcon="heart-handshake" footer={{ left: DE_SITE, right: <Swipe /> }}>
-        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', marginBottom: 20, fontSize: 40, fontWeight: 600, color: TOKENS.primaryFg }}>
-          <div style={{ display: 'flex' }}>{s.title}</div>
-          {s.cause ? <div style={{ display: 'flex', color: TOKENS.fgMuted, fontWeight: 400 }}>{`\u00a0·\u00a0${s.cause}`}</div> : null}
+      <Frame logo={logo} pill={PILL} pillIcon="heart-handshake" footer={{ left: SITE, right: <Swipe /> }}>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-start',
+            gap: 22,
+            padding: '40px 44px 34px',
+            marginBottom: 36,
+            borderRadius: 32,
+            backgroundColor: TOKENS.primarySolid,
+            color: TOKENS.white,
+          }}
+        >
+          {charityLogo ? (
+            // eslint-disable-next-line @next/next/no-img-element -- Satori renders <img>, not next/image
+            <img src={charityLogo.src} alt="" {...logoSize(charityLogo)} />
+          ) : (
+            <div style={{ display: 'flex', fontFamily: 'Sentient', fontWeight: 500, fontSize: s.title.length > 24 ? 76 : 96, lineHeight: 1.05 }}>
+              {s.title}
+            </div>
+          )}
+          <div style={{ display: 'flex', fontSize: 32, fontWeight: 600 }}>
+            {charityLogo ? [s.title, s.cause].filter(Boolean).join(' · ') : (s.cause ?? '')}
+          </div>
         </div>
         <Marked plain={plain} marked={ends ? marked : ''} size={coverSize(headline)} mark="teal" />
-        <div style={{ display: 'flex', marginTop: 32, fontSize: 38, lineHeight: 1.35, backgroundColor: TOKENS.white }}>{sub}</div>
-        <Card marginTop={44}>
-          <Row icon="microscope" label="Evaluated by" text={s.author} size={36} />
-          <Row icon="shield-check" label="Recommended by" text={DONEER_EFFECTIEF} size={36} />
-        </Card>
+        <div style={{ display: 'flex', marginTop: 28, fontSize: 36, lineHeight: 1.35, backgroundColor: TOKENS.white }}>{sub}</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 32, fontSize: 32, color: TOKENS.fgMuted, backgroundColor: TOKENS.white }}>
+          <Glyph name="microscope" size={38} color={TOKENS.primaryFg} />
+          <div style={{ display: 'flex' }}>{`Evaluated by ${s.author}`}</div>
+        </div>
       </Frame>
     )
   }
@@ -123,7 +163,7 @@ export function CharitySlide({ content, logo }: { content: ExplainerSlideContent
         pill={PILL}
         pillIcon="heart-handshake"
        
-        footer={{ left: DE_SITE, right: <Counter index={content.index} count={content.count} /> }}
+        footer={{ left: SITE, right: <Counter index={content.index} count={content.count} /> }}
       >
         <div style={{ display: 'flex', fontFamily: 'Sentient', fontWeight: 500, fontSize: 80, lineHeight: 1.1 }}>
           {`One of ${DONEER_EFFECTIEF}’s top charities`}
@@ -160,7 +200,7 @@ export function CharitySlide({ content, logo }: { content: ExplainerSlideContent
         pill={PILL}
         pillIcon="heart-handshake"
        
-        footer={{ left: DE_SITE, right: <Counter index={content.index} count={content.count} /> }}
+        footer={{ left: SITE, right: <Counter index={content.index} count={content.count} /> }}
       >
         <div style={{ display: 'flex', fontFamily: 'Sentient', fontWeight: 500, fontSize: headingSize(content.point.heading), lineHeight: 1.1 }}>
           {content.point.heading}
@@ -175,7 +215,7 @@ export function CharitySlide({ content, logo }: { content: ExplainerSlideContent
   const s = content.source
   const bio = content.channel === 'instagram'
   return (
-    <Frame logo={logo} footer={{ left: DE_SITE }}>
+    <Frame logo={logo} footer={{ left: SITE }}>
       <div style={{ display: 'flex', fontFamily: 'Sentient', fontWeight: 500, fontSize: s.title.length > 28 ? 72 : 84, lineHeight: 1.1 }}>
         {`Want to support ${s.title}?`}
       </div>

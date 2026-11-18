@@ -60,6 +60,8 @@ export type SourceRef = {
   cause?: string
   pageUrl?: string
   donateUrl?: string
+  /** The charity's (white) logo on Doneer Effectief's site, for the cover. */
+  logoUrl?: string
 }
 
 export type Candidate = SourceRef & {

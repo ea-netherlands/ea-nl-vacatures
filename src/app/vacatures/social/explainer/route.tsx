@@ -21,6 +21,7 @@ import { ExplainerSlide, explainerSlides } from '@jobboard/social/explainer/slid
 import { CHANNEL_CODE, EXPLAINER_CHANNELS, getExplainer } from '@jobboard/social/explainer/store'
 import { SOCIAL_SESSION_COOKIE, socialSignedIn } from '@jobboard/review/auth'
 import { CHARITY, EXPLAINER, SERIES_CODE } from '@jobboard/social/explainer/series'
+import { charityLogo } from '@jobboard/social/charity/logo'
 
 export const runtime = 'nodejs'
 
@@ -48,7 +49,9 @@ export async function GET(request: Request) {
   }
   const cache = isPublic ? CACHE : NO_CACHE
 
-  const png = new ImageResponse(<ExplainerSlide content={content} logo={logo} />, { ...SLIDE_SIZE, fonts })
+  // A deep dive's cover carries the charity's own logo, read from Doneer Effectief's site.
+  const theirs = content.kind === 'cover' && content.source.kind === 'charity' ? await charityLogo(content.source.logoUrl) : null
+  const png = new ImageResponse(<ExplainerSlide content={content} logo={logo} charityLogo={theirs} />, { ...SLIDE_SIZE, fonts })
   if (params.get('format') !== 'jpg') {
     return new Response(png.body, { headers: { 'content-type': 'image/png', 'cache-control': cache } })
   }

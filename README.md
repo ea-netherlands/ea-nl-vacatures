@@ -370,9 +370,11 @@ the first two exist:
    the cover's key phrase and the pill icon (`slides.tsx`, `Mark`): the yellow
    marker and a briefcase for jobs, the teal pencil underline and a book for
    essays, a pale teal highlight and a handshake for charities. A charity
-   cover also names the charity above its hook, and the hook is built on a
-   figure from the report (or the evaluator's main doubt), so it doesn't read
-   like an essay's.
+   cover opens with the charity's own logo, large on a teal panel (the white
+   version from its page at Doneer Effectief, `charity/logo.ts`; its name in
+   type if there is none), and its hook is built on a figure from the report
+   (or the evaluator's main doubt), so it doesn't read like an essay's. Every
+   slide's footer carries effectiefaltruisme.nl.
 
    **Setup, once:**
    1. Meta: the app "EA Netherlands job posts" (developers.facebook.com, use

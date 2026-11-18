@@ -17,6 +17,7 @@
 import { createHash } from 'node:crypto'
 import { TOKENS } from '../../og/card'
 import { NEWSLETTER } from '../content'
+import type { CharityLogo } from '../charity/logo'
 import { CharitySlide } from '../charity/slides'
 import { Frame, Glyph, Marked, Swipe } from '../slides'
 import { FORUM_ABOUT, isCcBy, isClassic, NEWSLETTER_PITCH, type SourceRef } from './sources'
@@ -95,11 +96,11 @@ export function explainerSlides(post: Slidable, channel: ExplainerChannel): Expl
  * Also bumped (4) when the URLs had to change: browsers had cached the admin
  * host's permanent redirect of these URLs to the main site.
  */
-const LAYOUT_VERSION = 5
+const LAYOUT_VERSION = 6
 
 export function slideHash(text: SlideText | undefined, source: SourceRef | null): string {
   return createHash('sha256')
-    .update(JSON.stringify([LAYOUT_VERSION, text ?? null, source?.title ?? null, source?.author ?? null]))
+    .update(JSON.stringify([LAYOUT_VERSION, text ?? null, source?.title ?? null, source?.author ?? null, source?.logoUrl ?? null]))
     .digest('hex')
     .slice(0, 10)
 }
@@ -138,9 +139,20 @@ function coverSize(text: string): number {
   return 80
 }
 
-export function ExplainerSlide({ content, logo }: { content: ExplainerSlideContent; logo: string }) {
+export function ExplainerSlide({
+  content,
+  logo,
+  charityLogo,
+}: {
+  content: ExplainerSlideContent
+  logo: string
+  /** A charity deep dive's cover: the charity's own logo (../charity/logo.ts), if it could be read. */
+  charityLogo?: CharityLogo | null
+}) {
   const copy = COPY
-  if ('source' in content && content.source.kind === 'charity') return <CharitySlide content={content} logo={logo} />
+  if ('source' in content && content.source.kind === 'charity') {
+    return <CharitySlide content={content} logo={logo} charityLogo={charityLogo} />
+  }
   if (content.kind === 'point' && content.charity) return <CharitySlide content={content} logo={logo} />
 
   if (content.kind === 'cover') {

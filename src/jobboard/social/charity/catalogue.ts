@@ -58,6 +58,12 @@ export type Charity = {
   reports: Report[]
   /** What Doneer Effectief's own page says, in Dutch, for the drafter. */
   pageText: string
+  /**
+   * The charity's logo as Doneer Effectief's page shows it: the white version,
+   * made for its coloured header, so the cover puts it on a teal panel
+   * (./logo.ts). Null where the page has none.
+   */
+  logoUrl: string | null
 }
 
 const decode = (s: string) =>
@@ -140,6 +146,10 @@ export function reportFrom(href: string): Report | null {
   return { url: url.toString(), evaluator }
 }
 
+/** Only an upload on Doneer Effectief's own site is ever fetched as a logo. */
+export const isLogoUrl = (url: unknown): url is string =>
+  typeof url === 'string' && !url.includes('..') && /^https:\/\/doneereffectief\.nl\/wp-content\/uploads\/[\w\-./]+\.(png|svg)$/i.test(url)
+
 /** One charity's page, read. Null if it isn't a charity's page at all (some old addresses answer with an empty page). */
 export function parseCharity(html: string, pageUrl: string): Charity | null {
   const main = body(html)
@@ -153,6 +163,7 @@ export function parseCharity(html: string, pageUrl: string): Charity | null {
     report: reportFrom(m[1].replace(/&amp;/g, '&')),
     text: decode(m[2]),
   }))
+  const logo = main.match(/<img\b[^>]*\bclass="logo"[^>]*>/)?.[0].match(/\bsrc="([^"]+)"/)?.[1] ?? ''
   const seen = new Set<string>()
   const reports = [
     // The button Doneer Effectief labels as the research report goes first.
@@ -170,6 +181,7 @@ export function parseCharity(html: string, pageUrl: string): Charity | null {
     recommendedBy,
     reports,
     pageText: htmlToText(main).replace(/[ \t]+/g, ' ').replace(/\n\s*\n+/g, '\n\n').slice(0, 12_000),
+    logoUrl: isLogoUrl(logo) ? logo : null,
   }
 }
 
@@ -216,6 +228,7 @@ export function asCandidate(c: Charity, report: Report = c.reports[0], now = new
     cause: c.cause,
     pageUrl: c.pageUrl,
     donateUrl: c.pageUrl,
+    ...(c.logoUrl ? { logoUrl: c.logoUrl } : {}),
     score: 0,
     summary: '',
     topics: [c.cause],
