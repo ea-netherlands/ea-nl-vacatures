@@ -279,6 +279,7 @@ Faithfulness:
 - For a post more than a couple of years old, say when it was written where a figure depends on it ("in 2014, ..."), and flag any figure or claim that has probably changed since.
 - For a Centre for Effective Altruism post, the source is its slide images and caption: keep close to their wording and order, tightened to fit.
 - For a Forum post: pick the core of the argument a newcomer can follow, not a summary of every section.
+- James may add guidance for a draft. Follow it. If it brings in context the source doesn't have (a current event, why this matters this week), you may use it, but as framing in James's or EA Netherlands' voice, never as something the authors said, and add a flag naming what you used.
 
 "flags": short notes for James, in English, about anything to check before approving: figures you couldn't verify from the slides, US-specific numbers, claims that may have changed since publication, anything you simplified a lot. Empty if there is nothing.
 
@@ -401,7 +402,7 @@ function forumSourceKind(source: SourceRef): string {
 /** Writes one account's slides and caption from one source. */
 export async function draftFrom(
   source: SourceRef,
-  options: { channel: ExplainerChannel; postDate: string; instagram?: InstagramSource | null },
+  options: { channel: ExplainerChannel; postDate: string; instagram?: InstagramSource | null; guidance?: string },
 ): Promise<Draft> {
   let user: string
   let images: Awaited<ReturnType<typeof fetchImages>> | undefined
@@ -420,6 +421,11 @@ export async function draftFrom(
       'Its caption:',
       options.instagram.caption,
     ].join('\n\n')
+  }
+
+  const guidance = options.guidance?.trim()
+  if (guidance) {
+    user += `\n\nJames's guidance for this draft (he is reviewing it; the post goes out on ${options.postDate}):\n${guidance}`
   }
 
   const { value } = await structuredCall<ModelDraft>({

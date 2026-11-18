@@ -85,6 +85,7 @@ export async function POST(request: Request) {
         source: typeof body.source === 'string' ? body.source : undefined,
         pass: body.pass === true,
         link: readLink(body.link),
+        guidance: str(body.guidance).trim().slice(0, 1500) || undefined,
       })
       return NextResponse.json({ ok: true, post })
     }

@@ -50,6 +50,8 @@ export type ExplainerItem = {
   suggestions: Suggestion[]
   slides: SlideText | null
   caption: string | null
+  /** James's note for the model on the latest draft, if he redrafted with guidance. */
+  guidance?: string | null
   /** Things to check before approving: US-only figures, dates, claims the model wasn't sure of. */
   flags: string[]
   generatedAt: string | null

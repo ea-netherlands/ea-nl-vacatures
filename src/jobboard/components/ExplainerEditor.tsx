@@ -28,6 +28,7 @@ export type ExplainerItemView = {
   slides: SlideText | null
   caption: string | null
   flags: string[]
+  guidance: string | null
   error: string | null
 }
 
@@ -212,6 +213,7 @@ export function ExplainerEditor({
   const { busy, error, act } = useAct()
   const [slides, setSlides] = useState(item?.slides ?? null)
   const [caption, setCaption] = useState(item?.caption ?? null)
+  const [guidance, setGuidance] = useState('')
   const editable = item?.status === 'draft'
   const dirty =
     JSON.stringify(slides) !== JSON.stringify(item?.slides ?? null) || caption !== (item?.caption ?? null)
@@ -314,6 +316,37 @@ export function ExplainerEditor({
           ) : null}
         </div>
         {error ? <p className={s.error}>{error}</p> : null}
+        {editable && item.source ? (
+          <div>
+            <label className={s.noteField}>
+              <span className={s.noteLabel}>Redraft with guidance</span>
+              <textarea
+                className={u.suggestTextarea}
+                rows={3}
+                maxLength={1500}
+                placeholder="For example: the Anthropic IPO is the day this goes live, so reference it to make the relevance clear."
+                value={guidance}
+                onChange={(e) => setGuidance(e.target.value)}
+              />
+            </label>
+            {item.guidance ? <p className={s.hint}>This draft followed: “{item.guidance}”</p> : null}
+            <div className={s.actions}>
+              <button
+                className={`${u.btn} ${u.btnSubtle}`}
+                disabled={busy !== null || !guidance.trim()}
+                onClick={() =>
+                  send(
+                    'draft',
+                    { source: item.source?.key, guidance },
+                    'Rewrite the slides and caption from the same source, following your guidance? Your edits will be lost.',
+                  )
+                }
+              >
+                {busy === 'draft' ? 'Working…' : 'Redraft with this guidance'}
+              </button>
+            </div>
+          </div>
+        ) : null}
       </div>
 
       {editable && item.suggestions.length ? (
