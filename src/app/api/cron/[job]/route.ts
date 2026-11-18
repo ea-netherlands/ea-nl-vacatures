@@ -25,6 +25,8 @@ import { runSiteSync } from '@jobboard/lib/site-sync'
 import { runWeeklySocial } from '@jobboard/social/weekly'
 import { runSocialPublish } from '@jobboard/social/publish'
 import { runExplainerPublish, runWeeklyExplainer } from '@jobboard/social/explainer/weekly'
+import { CHARITY } from '@jobboard/social/explainer/series'
+import { runWeeklyCharity } from '@jobboard/social/charity/weekly'
 
 export const dynamic = 'force-dynamic'
 /** Vercel's cron maximum on Pro. Adapters budget against this, minus a margin. */
@@ -44,6 +46,8 @@ const JOBS = [
   'social-publish',
   'explainer',
   'explainer-publish',
+  'charity',
+  'charity-publish',
 ] as const
 type Job = (typeof JOBS)[number]
 
@@ -231,6 +235,31 @@ export async function GET(request: Request, { params }: { params: Promise<{ job:
       }
       case 'explainer-publish': {
         const report = await runExplainerPublish({ dryRun: url.searchParams.get('dryRun') === '1', onLog })
+        return NextResponse.json({ job, report, logs })
+      }
+      /*
+        Friday: picks one of Doneer Effectief's top charities for each account
+        and drafts next week's deep dives from the evaluator's report, and
+        mails James. Mondays and Thursdays, hourly: posts the approved ones,
+        LinkedIn on Monday, Instagram on Thursday (social/charity).
+      */
+      case 'charity': {
+        const channel = url.searchParams.get('channel')
+        const report = await runWeeklyCharity({
+          dryRun: url.searchParams.get('dryRun') === '1',
+          force: url.searchParams.get('force') === '1',
+          channel: channel === 'instagram' || channel === 'linkedinPersonal' ? channel : undefined,
+          source: url.searchParams.get('source') ?? undefined,
+          onLog,
+        })
+        return NextResponse.json({ job, report, logs })
+      }
+      case 'charity-publish': {
+        const report = await runExplainerPublish({
+          dryRun: url.searchParams.get('dryRun') === '1',
+          onLog,
+          series: CHARITY,
+        })
         return NextResponse.json({ job, report, logs })
       }
       case 'translate': {

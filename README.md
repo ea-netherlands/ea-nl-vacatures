@@ -348,6 +348,28 @@ the first two exist:
    `SOCIAL_POSTING` switch. `explainer?force=1&channel=…[&source=…]` redrafts
    one account. Stored as `explainerPost-YYYY-MM-DD` in Sanity.
 
+5. **Done: the charity deep dives** (`social/charity/`). A third weekly
+   carousel, on the explainer's machinery (`explainer/series.ts`): each week
+   two deep dives, one per account, each on a different one of Doneer
+   Effectief's individual top charities, on James's LinkedIn on Monday at
+   09:00 and EA Nederland's Instagram on Thursday at 18:00. The Friday
+   `charity` cron reads the list from doneereffectief.nl/toporganisaties
+   (`catalogue.ts`; funds are left out), takes the next charity in each
+   account's rotation, reads the evaluator's report the charity's page links
+   to, and drafts a summary in our own words: problem, what the charity does,
+   evidence, what a donation buys, the doubts, the takeaway. The code writes
+   the cover's card, the "what is Doneer Effectief" slide, the credit and the
+   closing slide and caption lines: give through Doneer Effectief, take a
+   giving pledge (always EA Nederland's partner page), get the monthly email.
+   GiveWell's site turns automated readers away, so for its charities the
+   cron moves on and James pastes the report's text on
+   `/review/social/charity`. The hourly Monday and Thursday `charity-publish`
+   cron posts approved ones. Stored as `charityPost.YYYY-MM-DD` in Sanity.
+
+   The three posts are told apart by their paper and pill icon
+   (`slides.tsx`, `Look`): graph paper and a briefcase for jobs, ruled paper
+   and a book for essays, a dot grid and a handshake for charities.
+
    **Setup, once:**
    1. Meta: the app "EA Netherlands job posts" (developers.facebook.com, use
       case "Manage messaging & content on Instagram", business portfolio

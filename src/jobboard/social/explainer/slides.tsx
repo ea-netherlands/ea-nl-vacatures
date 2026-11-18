@@ -16,8 +16,10 @@
 import { createHash } from 'node:crypto'
 import { TOKENS } from '../../og/card'
 import { NEWSLETTER } from '../content'
+import { CharitySlide } from '../charity/slides'
 import { Frame, Glyph, Marked, Swipe } from '../slides'
 import { FORUM_ABOUT, isCcBy, isClassic, NEWSLETTER_PITCH, type SourceRef } from './sources'
+import { EXPLAINER, SERIES_CODE, type Series } from './series'
 import { CHANNEL_CODE, type ExplainerChannel, type ExplainerPost, type SlideText } from './store'
 
 export const EXPLAINER_ROUTE = '/vacatures/social/explainer'
@@ -56,7 +58,7 @@ const COPY = {
 export type ExplainerSlideContent =
   | { kind: 'cover'; text: SlideText['cover']; source: SourceRef; count: number }
   | { kind: 'about'; source: SourceRef; index: number; count: number }
-  | { kind: 'point'; point: SlideText['points'][number]; index: number; count: number }
+  | { kind: 'point'; point: SlideText['points'][number]; index: number; count: number; charity?: boolean }
   | { kind: 'close'; channel: ExplainerChannel; source: SourceRef }
 
 type Slidable = Pick<ExplainerPost, 'linkedinPersonal' | 'instagram'>
@@ -67,13 +69,20 @@ export function explainerSlides(post: Slidable, channel: ExplainerChannel): Expl
   const text = item?.slides
   const source = item?.source
   if (!text || !source) return []
-  const about = source.kind === 'forum'
+  // An essay or a charity gets a second slide saying what the series is; a reworked CEA post goes straight on.
+  const about = source.kind !== 'instagram'
   const first = about ? 3 : 2
   const count = text.points.length + first
   return [
     { kind: 'cover', text: text.cover, source, count },
     ...(about ? [{ kind: 'about' as const, source, index: 2, count }] : []),
-    ...text.points.map((point, i) => ({ kind: 'point' as const, point, index: i + first, count })),
+    ...text.points.map((point, i) => ({
+      kind: 'point' as const,
+      point,
+      index: i + first,
+      count,
+      ...(source.kind === 'charity' ? { charity: true } : {}),
+    })),
     { kind: 'close', channel, source },
   ]
 }
@@ -98,11 +107,14 @@ export function explainerSlidePaths(
   post: Slidable & Pick<ExplainerPost, 'postDate'>,
   channel: ExplainerChannel,
   format: 'png' | 'jpg' = 'png',
+  series: Series = EXPLAINER,
 ): string[] {
   const item = post[channel]
   const v = slideHash(item?.slides ?? undefined, item?.source ?? null)
   return explainerSlides(post, channel).map((_, i) => {
     const q = new URLSearchParams({ d: post.postDate, c: CHANNEL_CODE[channel], i: String(i), v })
+    const code = SERIES_CODE[series.key]
+    if (code) q.set('s', code)
     if (format === 'jpg') q.set('format', 'jpg')
     return `${EXPLAINER_ROUTE}?${q}`
   })
@@ -127,12 +139,14 @@ function coverSize(text: string): number {
 
 export function ExplainerSlide({ content, logo }: { content: ExplainerSlideContent; logo: string }) {
   const copy = COPY
+  if ('source' in content && content.source.kind === 'charity') return <CharitySlide content={content} logo={logo} />
+  if (content.kind === 'point' && content.charity) return <CharitySlide content={content} logo={logo} />
 
   if (content.kind === 'cover') {
     const { headline, marked, sub } = content.text
     const plain = headline.endsWith(marked) ? headline.slice(0, headline.length - marked.length).trim() : headline
     return (
-      <Frame logo={logo} pill={copy.pill} footer={{ left: SITE, right: <Swipe /> }}>
+      <Frame logo={logo} pill={copy.pill} pillIcon="book" look="ruled" footer={{ left: SITE, right: <Swipe /> }}>
         <Marked plain={plain} marked={headline.endsWith(marked) ? marked : ''} size={coverSize(headline)} />
         <div style={{ display: 'flex', marginTop: 48, fontSize: 44, lineHeight: 1.35 }}>{sub}</div>
         {content.source.kind === 'instagram' ? (
@@ -148,6 +162,8 @@ export function ExplainerSlide({ content, logo }: { content: ExplainerSlideConte
       <Frame
         logo={logo}
         pill={copy.pill}
+        pillIcon="book"
+        look="ruled"
         footer={{
           left: SITE,
           right: (
@@ -196,6 +212,8 @@ export function ExplainerSlide({ content, logo }: { content: ExplainerSlideConte
       <Frame
         logo={logo}
         pill={copy.pill}
+        pillIcon="book"
+        look="ruled"
         footer={{
           left: SITE,
           right: (
@@ -236,6 +254,7 @@ export function ExplainerSlide({ content, logo }: { content: ExplainerSlideConte
   return (
     <Frame
       logo={logo}
+      look="ruled"
       footer={{
         left: (
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>

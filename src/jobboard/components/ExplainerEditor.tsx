@@ -5,6 +5,10 @@
  * (with other suggestions to swap to), the slide text, the caption and the
  * decision. Writes through /api/review/social/explainer and refreshes the
  * server page after each change.
+ *
+ * /review/social/charity uses the same editor with `series="charity"`: the
+ * source is one of Doneer Effectief's top charities, and instead of a Forum
+ * link James can paste the evaluator's report when its site can't be read.
  */
 
 import { useRouter } from 'next/navigation'
@@ -18,7 +22,8 @@ type SlideText = {
   cover: { headline: string; marked: string; sub: string }
   points: { heading: string; body: string }[]
 }
-type SourceView = { key: string; kind: 'forum' | 'instagram'; title: string; author: string; url: string }
+type SeriesKey = 'explainer' | 'charity'
+type SourceView = { key: string; kind: 'forum' | 'instagram' | 'charity'; title: string; author: string; url: string }
 
 export type ExplainerItemView = {
   status: 'draft' | 'approved' | 'skipped' | 'posted'
@@ -66,7 +71,13 @@ function useAct() {
 }
 
 const sourceLine = (src: SourceView) =>
-  src.kind === 'forum' ? `EA Forum, by ${src.author}` : 'Centre for Effective Altruism on Instagram'
+  src.kind === 'charity'
+    ? `${src.author}’s evaluation`
+    : src.kind === 'forum'
+      ? `EA Forum, by ${src.author}`
+      : 'Centre for Effective Altruism on Instagram'
+
+const NOUN: Record<SeriesKey, string> = { explainer: 'explainer', charity: 'deep dive' }
 
 function Field({
   label,
@@ -181,22 +192,67 @@ export function ExplainerFromLink({ channel: fixed, replacing }: { channel?: Cha
   )
 }
 
-/** Before anything is drafted for the week. */
-export function ExplainerFirstDraft({ day }: { day: string }) {
+/**
+ * Drafts a charity's deep dive from report text James pastes. Some
+ * evaluators' sites (GiveWell's) turn automated readers away, so the server
+ * can't fetch the report; James can open it and paste it here.
+ */
+export function CharityFromPaste({ channel, charity }: { channel: Channel; charity: string }) {
   const { busy, error, act } = useAct()
+  const [text, setText] = useState('')
   return (
-    <div className={x.decision}>
+    <details className={x.more}>
+      <summary>Draft from pasted report text</summary>
       <p className={s.hint}>
-        Nothing drafted for {day} yet. The Wednesday cron does this at 11:30; you can also do it now. It picks a source
-        for each account and writes both explainers, which takes a minute or two.
+        If the evaluator’s site can’t be read automatically, open the report on {charity}, select all, copy, and paste
+        it here. The deep dive is written from what you paste, summarised in our own words and credited as usual.
       </p>
+      <label className={s.noteField}>
+        <span className={s.noteLabel}>The report’s text</span>
+        <textarea className={u.suggestTextarea} rows={8} value={text} onChange={(e) => setText(e.target.value)} />
+      </label>
       <div className={s.actions}>
-        <button className={`${u.btn} ${u.btnSolid}`} disabled={busy !== null} onClick={() => act('draft', { action: 'draft' })}>
-          {busy === 'draft' ? 'Drafting…' : 'Draft this week’s explainers'}
+        <button
+          className={`${u.btn} ${u.btnSolid}`}
+          disabled={busy !== null || text.trim().length < 1500}
+          onClick={() =>
+            act(
+              'paste',
+              { action: 'draft', series: 'charity', channel, pasted: text },
+              'Draft this account’s deep dive from the pasted text? Any current slides and caption, and your edits, will be replaced.',
+            )
+          }
+        >
+          {busy === 'paste' ? 'Drafting…' : `Draft for ${ACCOUNT_LABEL[channel]}`}
         </button>
       </div>
       {error ? <p className={s.error}>{error}</p> : null}
-      <ExplainerFromLink />
+    </details>
+  )
+}
+
+/** Before anything is drafted for the week. */
+export function ExplainerFirstDraft({ day, series = 'explainer' }: { day: string; series?: SeriesKey }) {
+  const { busy, error, act } = useAct()
+  const charity = series === 'charity'
+  return (
+    <div className={x.decision}>
+      <p className={s.hint}>
+        {charity
+          ? `Nothing drafted for ${day} yet. The Friday cron does this at 11:30; you can also do it now. It takes the next charity in each account’s rotation, reads the evaluator’s report and writes both deep dives, which takes a few minutes.`
+          : `Nothing drafted for ${day} yet. The Wednesday cron does this at 11:30; you can also do it now. It picks a source for each account and writes both explainers, which takes a minute or two.`}
+      </p>
+      <div className={s.actions}>
+        <button
+          className={`${u.btn} ${u.btnSolid}`}
+          disabled={busy !== null}
+          onClick={() => act('draft', { action: 'draft', series })}
+        >
+          {busy === 'draft' ? 'Drafting…' : charity ? 'Draft this week’s deep dives' : 'Draft this week’s explainers'}
+        </button>
+      </div>
+      {error ? <p className={s.error}>{error}</p> : null}
+      {charity ? null : <ExplainerFromLink />}
     </div>
   )
 }
@@ -205,7 +261,9 @@ export function ExplainerEditor({
   channel,
   item,
   postingTime,
+  series = 'explainer',
 }: {
+  series?: SeriesKey
   channel: Channel
   item: ExplainerItemView | null
   postingTime: string
@@ -218,7 +276,9 @@ export function ExplainerEditor({
   const dirty =
     JSON.stringify(slides) !== JSON.stringify(item?.slides ?? null) || caption !== (item?.caption ?? null)
   const send = (action: string, extra: Record<string, unknown> = {}, confirmText?: string) =>
-    act(action, { action, channel, ...extra }, confirmText)
+    act(action, { action, series, channel, ...extra }, confirmText)
+  const charity = series === 'charity'
+  const noun = NOUN[series]
 
   if (!item) {
     return (
@@ -230,7 +290,7 @@ export function ExplainerEditor({
           </button>
         </div>
         {error ? <p className={s.error}>{error}</p> : null}
-        <ExplainerFromLink channel={channel} />
+        {charity ? null : <ExplainerFromLink channel={channel} />}
       </div>
     )
   }
@@ -239,7 +299,7 @@ export function ExplainerEditor({
     slides && setSlides({ ...slides, cover: { ...slides.cover, [field]: value } })
   const setPoint = (i: number, field: 'heading' | 'body', value: string) =>
     slides && setSlides({ ...slides, points: slides.points.map((p, j) => (j === i ? { ...p, [field]: value } : p)) })
-  const swapWarning = 'Draft this account’s explainer from this source instead? The current slides and caption, and your edits, will be replaced.'
+  const swapWarning = `Draft this account’s ${noun} from this ${charity ? 'charity' : 'source'} instead? The current slides and caption, and your edits, will be replaced.`
 
   return (
     <>
@@ -303,7 +363,13 @@ export function ExplainerEditor({
                 className={`${u.btn} ${u.btnGhost}`}
                 disabled={busy !== null}
                 onClick={() =>
-                  send('draft', { pass: true }, 'Drop this source for good and pick a new one? This takes a minute or two.')
+                  send(
+                    'draft',
+                    { pass: true },
+                    charity
+                      ? 'Leave this charity for a later week and take the next one in the rotation? This takes a few minutes.'
+                      : 'Drop this source for good and pick a new one? This takes a minute or two.',
+                  )
                 }
               >
                 Not this one
@@ -351,7 +417,7 @@ export function ExplainerEditor({
 
       {editable && item.suggestions.length ? (
         <details className={x.more}>
-          <summary>Other suggestions for this account</summary>
+          <summary>{charity ? 'Other charities, in rotation order' : 'Other suggestions for this account'}</summary>
           <ul className={x.picks}>
             {item.suggestions.map((sug) => (
               <li key={sug.key} className={x.account}>
@@ -376,14 +442,16 @@ export function ExplainerEditor({
         </details>
       ) : null}
 
-      {editable ? <ExplainerFromLink channel={channel} replacing /> : null}
+      {editable && charity && item.source ? <CharityFromPaste channel={channel} charity={item.source.title} /> : null}
+      {editable && !charity ? <ExplainerFromLink channel={channel} replacing /> : null}
 
       {slides ? (
         <details className={x.more} open={editable}>
           <summary>Slide text</summary>
           <p className={s.hint}>
-            For an essay from the Forum, the slide after the hook (what the Forum is, which essay, by whom) and the last
-            slide (credit and the monthly email) are added for you.
+            {charity
+              ? 'The card on the first slide (charity, cause, evaluator), the slide after it (what Doneer Effectief is, which charity) and the last slide (give, pledge, monthly email, credit) are added for you.'
+              : 'For an essay from the Forum, the slide after the hook (what the Forum is, which essay, by whom) and the last slide (credit and the monthly email) are added for you.'}
           </p>
           <div className={x.lang}>
             <span className={x.pairHead}>Hook (first slide)</span>
@@ -400,7 +468,7 @@ export function ExplainerEditor({
           {slides.points.map((point, i) => (
             <div key={i} className={x.lang}>
               <span className={x.pairHead}>
-                Slide {i + (item.source?.kind === 'forum' ? 3 : 2)}
+                Slide {i + (item.source?.kind === 'instagram' ? 2 : 3)}
                 {editable && slides.points.length > 3 ? (
                   <button
                     className={`${u.btn} ${u.btnGhost} ${u.btnSmall}`}

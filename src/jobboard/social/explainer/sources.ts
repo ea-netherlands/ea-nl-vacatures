@@ -29,7 +29,7 @@ import { graphBase, INSTAGRAM_ACCOUNT_ID } from '../instagram'
 
 type Http = typeof fetch
 
-export type SourceKind = 'forum' | 'instagram'
+export type SourceKind = 'forum' | 'instagram' | 'charity'
 
 /** What a post is adapted from, as stored on it. */
 export type SourceRef = {
@@ -52,6 +52,14 @@ export type SourceRef = {
   title: string
   author: string
   publishedAt: string
+  /**
+   * Only on a charity deep dive (../charity): `title` is the charity, `author`
+   * the evaluator whose report at `url` it summarises, and these say where
+   * Doneer Effectief files it and where to give.
+   */
+  cause?: string
+  pageUrl?: string
+  donateUrl?: string
 }
 
 export type Candidate = SourceRef & {

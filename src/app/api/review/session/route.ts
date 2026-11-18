@@ -25,7 +25,7 @@ export async function GET(request: Request) {
   // The weekly social post's mail lands on its own page. A fixed value, not a
   // path, so this can't become an open redirect either.
   const next = url.searchParams.get('next')
-  const page = next === 'social' ? '/review/social' : next === 'explainer' ? '/review/social/explainer' : '/review'
+  const page = next === 'social' ? '/review/social' : next === 'explainer' ? '/review/social/explainer' : next === 'charity' ? '/review/social/charity' : '/review'
 
   // The social pages take their own kind of link (see review/auth.ts), so the
   // daily review link cannot be turned into a social session by adding `next`.

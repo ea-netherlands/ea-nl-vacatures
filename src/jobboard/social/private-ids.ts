@@ -15,7 +15,7 @@
  * that week by itself.
  */
 
-export type SocialDocType = 'socialPost' | 'explainerPost'
+export type SocialDocType = 'socialPost' | 'explainerPost' | 'charityPost'
 
 /** The private id for a week's post. */
 export const privateSocialId = (type: SocialDocType, postDate: string) => `${type}.${postDate}`

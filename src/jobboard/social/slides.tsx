@@ -48,7 +48,42 @@ function graphPaper(): string {
   return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`
 }
 
-const PAPER = graphPaper()
+/**
+ * Each weekly post has its own paper, so the three are told apart in a feed
+ * before a word is read, without a second colour (James, 18 Nov 2026): the
+ * jobs post keeps the website's graph paper, the essay explainer is on ruled
+ * paper with a margin line, the charity deep dive on a dot grid. Same line
+ * colours, weights and 54px rhythm as the graph paper; only the pattern
+ * changes. The pill's icon and the cover's layout differ too.
+ */
+export type Look = 'graph' | 'ruled' | 'dots'
+
+function ruledPaper(): string {
+  const rules: string[] = []
+  for (let y = MINOR * 3; y <= HEIGHT; y += MINOR) rules.push(`<line x1="0" y1="${y}" x2="${WIDTH}" y2="${y}"/>`)
+  const margin = PAD - 34
+  const svg =
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${WIDTH}" height="${HEIGHT}">` +
+    `<g stroke="${TOKENS.border}" stroke-opacity="0.55" stroke-width="2">${rules.join('')}</g>` +
+    `<g stroke="${TOKENS.primaryEmphasized}" stroke-width="3"><line x1="${margin}" y1="0" x2="${margin}" y2="${HEIGHT}"/></g>` +
+    `</svg>`
+  return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`
+}
+
+function dotPaper(): string {
+  const dots: string[] = []
+  const x0 = (WIDTH / 2) % MINOR
+  for (let y = MINOR / 2; y <= HEIGHT; y += MINOR) {
+    for (let x = x0; x <= WIDTH; x += MINOR) dots.push(`<circle cx="${x}" cy="${y}" r="3.5"/>`)
+  }
+  const svg =
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${WIDTH}" height="${HEIGHT}">` +
+    `<g fill="${TOKENS.primaryEmphasized}" fill-opacity="0.6">${dots.join('')}</g>` +
+    `</svg>`
+  return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`
+}
+
+const PAPERS: Record<Look, string> = { graph: graphPaper(), ruled: ruledPaper(), dots: dotPaper() }
 
 /** One role, so singular where the board's section headings are plural. */
 const BAND = {
@@ -71,7 +106,7 @@ const FUNDING = {
   note: 'A grant or funding round for work on this problem, not a job.',
 }
 
-export function Glyph({ name, size, color }: { name: Fact['icon'] | 'arrow-right' | 'mail' | 'book' | 'bulb'; size: number; color: string }) {
+export function Glyph({ name, size, color }: { name: Fact['icon'] | 'arrow-right' | 'mail' | 'book' | 'bulb' | 'briefcase' | 'heart-handshake' | 'microscope' | 'shield-check' | 'scale'; size: number; color: string }) {
   return (
     <svg
       width={size}
@@ -88,11 +123,15 @@ export function Glyph({ name, size, color }: { name: Fact['icon'] | 'arrow-right
   )
 }
 
-export function Pill({ children }: { children: string }) {
+type GlyphName = Parameters<typeof Glyph>[0]['name']
+
+export function Pill({ children, icon }: { children: string; icon?: GlyphName }) {
   return (
     <div
       style={{
         display: 'flex',
+        alignItems: 'center',
+        gap: 14,
         padding: '12px 28px',
         borderRadius: 999,
         backgroundColor: TOKENS.white,
@@ -102,7 +141,8 @@ export function Pill({ children }: { children: string }) {
         fontWeight: 600,
       }}
     >
-      {children}
+      {icon ? <Glyph name={icon} size={34} color={TOKENS.primaryFg} /> : null}
+      <div style={{ display: 'flex' }}>{children}</div>
     </div>
   )
 }
@@ -110,11 +150,16 @@ export function Pill({ children }: { children: string }) {
 export function Frame({
   logo,
   pill,
+  pillIcon,
+  look = 'graph',
   footer,
   children,
 }: {
   logo: string
   pill?: string
+  /** The series' icon, on its pill: a briefcase for jobs, a book for essays, a handshake for charities. */
+  pillIcon?: GlyphName
+  look?: Look
   footer: { left: React.ReactNode; right?: React.ReactNode }
   children: React.ReactNode
 }) {
@@ -133,11 +178,11 @@ export function Frame({
       }}
     >
       {/* eslint-disable-next-line @next/next/no-img-element -- Satori renders <img>, not next/image */}
-      <img src={PAPER} width={WIDTH} height={HEIGHT} alt="" style={{ position: 'absolute', top: 0, left: 0 }} />
+      <img src={PAPERS[look]} width={WIDTH} height={HEIGHT} alt="" style={{ position: 'absolute', top: 0, left: 0 }} />
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         {/* eslint-disable-next-line @next/next/no-img-element -- Satori renders <img>, not next/image */}
         <img src={logo} height={88} width={211} alt="" />
-        {pill ? <Pill>{pill}</Pill> : null}
+        {pill ? <Pill icon={pillIcon}>{pill}</Pill> : null}
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', flexGrow: 1 }}>{children}</div>
       <div
@@ -224,6 +269,7 @@ export function Slide({ content, logo }: { content: SlideContent; logo: string }
       <Frame
         logo={logo}
         pill={content.funding ? 'Opportunities this week' : 'Jobs this week'}
+        pillIcon="briefcase"
         footer={{ left: SITE, right: <Swipe /> }}
       >
         <Marked plain={content.plain} marked={content.marked} size={coverSize(content.plain + content.marked)} />
