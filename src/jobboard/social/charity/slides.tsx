@@ -4,10 +4,10 @@
  * highlight as the cover's mark, so it reads as a third series beside the
  * jobs post and the essay explainer.
  *
- * The cover opens with the charity's own logo, large and white on a solid
- * teal panel, with its name and cause: nobody takes it for an essay, and the
- * series builds recognition of the charities (James, 18 Nov 2026). Then the
- * hook, and who evaluated it. The second slide says what the series
+ * The cover opens with the charity's own logo, in one colour on the paper,
+ * above its name and cause: nobody takes it for an essay, and the series
+ * builds recognition of the charities (James, 18 Nov 2026). Then the hook,
+ * and who evaluated it. The second slide says what the series
  * is. Then one slide per point, and a closing slide with three things to do:
  * give through Doneer Effectief, take a pledge, get the monthly email. All of
  * that is written by the code; the model only writes the hook and the points.
@@ -37,13 +37,19 @@ function bodySize(text: string): number {
   return 38
 }
 function coverSize(text: string): number {
-  if (text.length <= 40) return 84
-  if (text.length <= 60) return 72
-  return 62
+  if (text.length <= 40) return 92
+  if (text.length <= 60) return 78
+  return 66
 }
 
-/** The logo as large as the panel allows: a wide wordmark fills the width, a square mark the height. */
-const LOGO_BOX = { width: 760, height: 210 }
+/** Clearly a logo, but well under the headline: a wide wordmark is held by the width, a square mark by the height. */
+const LOGO_BOX = { width: 420, height: 120 }
+/**
+ * A wide logo is a wordmark and already says the name, so the line under it gives only the cause;
+ * a squarer one may be a bare mark ("OG", "gfi"), so the name is printed too.
+ */
+const spellsName = (logo?: CharityLogo | null) => !!logo && logo.width / logo.height >= 2.5
+
 function logoSize(logo: CharityLogo): { width: number; height: number } {
   const scale = Math.min(LOGO_BOX.width / logo.width, LOGO_BOX.height / logo.height)
   return { width: Math.round(logo.width * scale), height: Math.round(logo.height * scale) }
@@ -120,33 +126,17 @@ export function CharitySlide({
     const s = content.source
     return (
       <Frame logo={logo} pill={PILL} pillIcon="heart-handshake" footer={{ left: SITE, right: <Swipe /> }}>
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'flex-start',
-            gap: 22,
-            padding: '40px 44px 34px',
-            marginBottom: 36,
-            borderRadius: 32,
-            backgroundColor: TOKENS.primarySolid,
-            color: TOKENS.white,
-          }}
-        >
-          {charityLogo ? (
-            // eslint-disable-next-line @next/next/no-img-element -- Satori renders <img>, not next/image
+        {charityLogo ? (
+          <div style={{ display: 'flex', marginBottom: 24 }}>
+            {/* eslint-disable-next-line @next/next/no-img-element -- Satori renders <img>, not next/image */}
             <img src={charityLogo.src} alt="" {...logoSize(charityLogo)} />
-          ) : (
-            <div style={{ display: 'flex', fontFamily: 'Sentient', fontWeight: 500, fontSize: s.title.length > 24 ? 76 : 96, lineHeight: 1.05 }}>
-              {s.title}
-            </div>
-          )}
-          <div style={{ display: 'flex', fontSize: 32, fontWeight: 600 }}>
-            {charityLogo ? [s.title, s.cause].filter(Boolean).join(' · ') : (s.cause ?? '')}
           </div>
+        ) : null}
+        <div style={{ display: 'flex', flexWrap: 'wrap', marginBottom: 20, fontSize: 36, fontWeight: 600, color: TOKENS.primaryFg }}>
+          {[spellsName(charityLogo) ? null : s.title, s.cause].filter(Boolean).join(' · ')}
         </div>
         <Marked plain={plain} marked={ends ? marked : ''} size={coverSize(headline)} mark="teal" />
-        <div style={{ display: 'flex', marginTop: 28, fontSize: 36, lineHeight: 1.35, backgroundColor: TOKENS.white }}>{sub}</div>
+        <div style={{ display: 'flex', marginTop: 32, fontSize: 38, lineHeight: 1.35, backgroundColor: TOKENS.white }}>{sub}</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 32, fontSize: 32, color: TOKENS.fgMuted, backgroundColor: TOKENS.white }}>
           <Glyph name="microscope" size={38} color={TOKENS.primaryFg} />
           <div style={{ display: 'flex' }}>{`Evaluated by ${s.author}`}</div>
