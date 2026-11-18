@@ -1,6 +1,7 @@
 /**
  * The weekly explainer's slides: the jobs post's frame (graph paper, logo,
- * pill, dashed footer rule; ../slides.tsx). The cover is the hook. For an
+ * pill, dashed footer rule; ../slides.tsx), with a book on the pill and the
+ * pencil underline as the cover's mark. The cover is the hook. For an
  * essay from the Forum, the second slide says what the carousel is: an
  * interesting essay shared on the EA Forum, which essay and by whom (James,
  * 11 Nov 2026); a reworked CEA post goes straight on. Then one slide per
@@ -94,7 +95,7 @@ export function explainerSlides(post: Slidable, channel: ExplainerChannel): Expl
  * Also bumped (4) when the URLs had to change: browsers had cached the admin
  * host's permanent redirect of these URLs to the main site.
  */
-const LAYOUT_VERSION = 4
+const LAYOUT_VERSION = 5
 
 export function slideHash(text: SlideText | undefined, source: SourceRef | null): string {
   return createHash('sha256')
@@ -146,8 +147,8 @@ export function ExplainerSlide({ content, logo }: { content: ExplainerSlideConte
     const { headline, marked, sub } = content.text
     const plain = headline.endsWith(marked) ? headline.slice(0, headline.length - marked.length).trim() : headline
     return (
-      <Frame logo={logo} pill={copy.pill} pillIcon="book" look="ruled" footer={{ left: SITE, right: <Swipe /> }}>
-        <Marked plain={plain} marked={headline.endsWith(marked) ? marked : ''} size={coverSize(headline)} />
+      <Frame logo={logo} pill={copy.pill} pillIcon="book" footer={{ left: SITE, right: <Swipe /> }}>
+        <Marked plain={plain} marked={headline.endsWith(marked) ? marked : ''} size={coverSize(headline)} mark="pencil" />
         <div style={{ display: 'flex', marginTop: 48, fontSize: 44, lineHeight: 1.35 }}>{sub}</div>
         {content.source.kind === 'instagram' ? (
           <div style={{ display: 'flex', marginTop: 32, fontSize: 34, color: TOKENS.fgMuted }}>{copy.cea}</div>
@@ -163,7 +164,7 @@ export function ExplainerSlide({ content, logo }: { content: ExplainerSlideConte
         logo={logo}
         pill={copy.pill}
         pillIcon="book"
-        look="ruled"
+       
         footer={{
           left: SITE,
           right: (
@@ -213,7 +214,7 @@ export function ExplainerSlide({ content, logo }: { content: ExplainerSlideConte
         logo={logo}
         pill={copy.pill}
         pillIcon="book"
-        look="ruled"
+       
         footer={{
           left: SITE,
           right: (
@@ -254,7 +255,7 @@ export function ExplainerSlide({ content, logo }: { content: ExplainerSlideConte
   return (
     <Frame
       logo={logo}
-      look="ruled"
+     
       footer={{
         left: (
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>

@@ -21,6 +21,7 @@ export const TOKENS = {
   fg: '#09090b', // --fg (black)
   fgMuted: '#57534e', // --fg-muted (stone-600)
   primaryFg: '#106574', // --primary-fg (ea-teal-700)
+  primarySolid: '#16879c', // --primary-solid (ea-teal-600), the pencil underline
   primaryMuted: '#dbf5fa', // --primary-muted (ea-teal-100)
   primaryEmphasized: '#aae8f3', // --primary-emphasized (ea-teal-200)
   white: '#ffffff', // --white

@@ -366,9 +366,13 @@ the first two exist:
    `/review/social/charity`. The hourly Monday and Thursday `charity-publish`
    cron posts approved ones. Stored as `charityPost.YYYY-MM-DD` in Sanity.
 
-   The three posts are told apart by their paper and pill icon
-   (`slides.tsx`, `Look`): graph paper and a briefcase for jobs, ruled paper
-   and a book for essays, a dot grid and a handshake for charities.
+   The three posts share the graph paper and are told apart by the mark on
+   the cover's key phrase and the pill icon (`slides.tsx`, `Mark`): the yellow
+   marker and a briefcase for jobs, the teal pencil underline and a book for
+   essays, a pale teal highlight and a handshake for charities. A charity
+   cover also names the charity above its hook, and the hook is built on a
+   figure from the report (or the evaluator's main doubt), so it doesn't read
+   like an essay's.
 
    **Setup, once:**
    1. Meta: the app "EA Netherlands job posts" (developers.facebook.com, use
