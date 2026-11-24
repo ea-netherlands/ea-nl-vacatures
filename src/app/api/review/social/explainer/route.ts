@@ -8,7 +8,6 @@
  * `series: "charity"`: same actions, their own week and their own documents.
  */
 
-import { sealExplainer } from '@jobboard/social/approval'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { SOCIAL_SESSION_COOKIE, socialSignedIn } from '@jobboard/review/auth'
@@ -25,6 +24,7 @@ import { draftCharityWeek } from '@jobboard/social/charity/weekly'
 import { isSeriesKey, SERIES } from '@jobboard/social/explainer/series'
 import { amsterdamDate } from '@jobboard/social/store'
 import { lockedForEditing } from '@jobboard/social/once'
+import { approveItem, itemProblem } from '@jobboard/social/week'
 
 export const dynamic = 'force-dynamic'
 // Drafting reads a whole Forum post and writes the explainer in one call.
@@ -126,21 +126,8 @@ export async function POST(request: Request) {
         return NextResponse.json({ ok: true, post: await patchItem(postDate, channel, { slides, caption }, series) })
       }
       case 'approve':
-        if (!item.slides || !item.caption || !item.source) return fail('Draft the explainer first.')
-        return NextResponse.json({
-          ok: true,
-          post: await patchItem(
-            postDate,
-            channel,
-            {
-              status: 'approved',
-              approvedAt: new Date().toISOString(),
-              seal: sealExplainer(postDate, channel, item),
-              error: null,
-            },
-            series,
-          ),
-        })
+        if (itemProblem(item)) return fail(`Draft the ${series.noun} first.`)
+        return NextResponse.json({ ok: true, post: await approveItem(postDate, channel, item, series) })
       case 'skip':
       case 'reopen':
         // Posted or posting: redrafting would send a second, different post.

@@ -27,6 +27,7 @@ import { runSocialPublish } from '@jobboard/social/publish'
 import { runExplainerPublish, runWeeklyExplainer } from '@jobboard/social/explainer/weekly'
 import { CHARITY } from '@jobboard/social/explainer/series'
 import { runWeeklyCharity } from '@jobboard/social/charity/weekly'
+import { runWeeklyReview } from '@jobboard/social/week'
 
 export const dynamic = 'force-dynamic'
 /** Vercel's cron maximum on Pro. Adapters budget against this, minus a margin. */
@@ -42,6 +43,7 @@ const JOBS = [
   'notify',
   'review-digest',
   'site-sync',
+  'social-week',
   'social',
   'social-publish',
   'explainer',
@@ -193,7 +195,18 @@ export async function GET(request: Request, { params }: { params: Promise<{ job:
         return NextResponse.json({ job, report, logs })
       }
       /*
-        Monday: drafts Tuesday's social post (jobs, captions) and mails James a
+        Wednesday: drafts the coming week's posts in all three series (Thursday's
+        essay to Tuesday's jobs post) and mails James one link to approve them
+        all at /review/social/week (social/week.ts). Posts nothing. The three
+        jobs below still work by hand, for one series, but are no longer
+        scheduled.
+      */
+      case 'social-week': {
+        const report = await runWeeklyReview({ onLog })
+        return NextResponse.json({ job, report, logs })
+      }
+      /*
+        By hand: drafts Tuesday's social post (jobs, captions) and mails James a
         link to approve it at /review/social. Posts nothing. `force=1` redrafts
         a draft he hasn't decided on yet; an approved or skipped week is never
         touched.
@@ -216,7 +229,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ job:
         return NextResponse.json({ job, report, logs })
       }
       /*
-        Wednesday: picks a source for each account and drafts the week's
+        By hand (was Wednesday): picks a source for each account and drafts the week's
         explainers (James's LinkedIn, EA Nederland's Instagram), and mails
         James. `force=1&channel=…[&source=…]` redrafts one account.
         Thursdays and Sundays, hourly: posts the approved explainers, LinkedIn
@@ -238,7 +251,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ job:
         return NextResponse.json({ job, report, logs })
       }
       /*
-        Thursday (James doesn't work Fridays): picks one of Doneer Effectief's top charities for each account
+        By hand (was Thursday): picks one of Doneer Effectief's top charities for each account
         and drafts next week's deep dives from the evaluator's report, and
         mails James. Mondays, hourly: posts the approved ones, LinkedIn in the
         morning, Instagram in the evening (social/charity).
