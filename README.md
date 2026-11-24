@@ -569,7 +569,7 @@ and in use before the main repo arrives.
    | `classify` | 06:30 daily | After ingest, so the queue is fresh. |
    | `promote` | 07:00 daily | Shortlist into Sanity as drafts. Nothing is auto-published (spec §8.3). |
    | `review-digest` | 07:30 daily | Mails `REVIEW_DIGEST_TO` what is waiting, with a signed link to `/review`. Silent when the queue is empty. |
-   | `social` | 10:30 Monday | Drafts Tuesday's social post (roles + captions) into Sanity and mails `SOCIAL_DIGEST_TO` (or `REVIEW_DIGEST_TO`) a signed link to `/review/social`. Never touches a week already approved or skipped. |
+   | `social-week` | 10:30 Wednesday | Drafts the coming week's posts in all three series (Thursday's essay to Tuesday's jobs post) and mails `SOCIAL_DIGEST_TO` (or `REVIEW_DIGEST_TO`) one signed link to `/review/social/week`, where one button approves every ready draft. The `social`, `explainer` and `charity` jobs still draft one series by hand but are no longer scheduled. Never touches a post already approved or skipped. |
    | `expire` | 08:00 daily | Auto-unpublishes past-expiry listings, so the board can't fill with dead links. |
    | `linkcheck` | 09:00 Mondays | Weekly HEAD check on crawl sources, which can't use set-difference closure detection (spec §7.8). |
    | `ingest --discover` | 10:00 Mondays | Employer/ATS discovery from 80k and Probably Good. Poll them at most daily; weekly is plenty (spec §7.6). |
