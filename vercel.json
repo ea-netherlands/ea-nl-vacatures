@@ -50,24 +50,16 @@
       "schedule": "0 10 * * 1"
     },
     {
-      "path": "/api/cron/social",
-      "schedule": "30 10 * * 1"
+      "path": "/api/cron/social-week",
+      "schedule": "30 10 * * 3"
     },
     {
       "path": "/api/cron/social-publish",
       "schedule": "5 * * * 2"
     },
     {
-      "path": "/api/cron/explainer",
-      "schedule": "30 10 * * 3"
-    },
-    {
       "path": "/api/cron/explainer-publish",
       "schedule": "5 * * * 0,4"
-    },
-    {
-      "path": "/api/cron/charity",
-      "schedule": "30 10 * * 4"
     },
     {
       "path": "/api/cron/charity-publish",

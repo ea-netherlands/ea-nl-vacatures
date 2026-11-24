@@ -5,11 +5,11 @@
  * request's Origin must be this site. Acts only on the next Tuesday's post.
  */
 
-import { sealJobsPost } from '@jobboard/social/approval'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { SOCIAL_SESSION_COOKIE, socialSignedIn } from '@jobboard/review/auth'
-import { nextPostTime, SELECTION } from '@jobboard/social/select'
+import { nextPostTime } from '@jobboard/social/select'
+import { approveJobs, jobsProblem } from '@jobboard/social/week'
 import { amsterdamDate, CHANNEL_LIMIT, CHANNELS, getPost, patchPost, type Channel } from '@jobboard/social/store'
 import { isThemeKey } from '@jobboard/social/themes'
 import { lockedForEditing } from '@jobboard/social/once'
@@ -134,12 +134,9 @@ export async function POST(request: Request) {
         return NextResponse.json({ ok: true, post: await patchPost(postDate, { listingIds, captions }) })
       }
       case 'approve': {
-        if (post.listingIds.length < SELECTION.min) return fail(`A post needs at least ${SELECTION.min} roles.`)
-        if (!post.captions) return fail('Draft the captions first.')
-        return NextResponse.json({
-          ok: true,
-          post: await patchPost(postDate, { status: 'approved', approvedAt: new Date().toISOString(), seal: sealJobsPost(post), error: null }),
-        })
+        const problem = jobsProblem(post)
+        if (problem) return fail(problem)
+        return NextResponse.json({ ok: true, post: await approveJobs(post) })
       }
       case 'skip':
       case 'reopen': {

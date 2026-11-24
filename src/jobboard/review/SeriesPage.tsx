@@ -29,9 +29,10 @@ import { EXPLAINER, type Series } from '@jobboard/social/explainer/series'
 import { trackFor, trackLabel } from '@jobboard/social/music'
 
 const TABS = [
+  { href: '/review/social/week', label: 'This week', key: 'week' },
   { href: '/review/social', label: 'Jobs, Tuesdays', key: 'jobs' },
   { href: '/review/social/explainer', label: 'Explainers, Thu and Sun', key: 'explainer' },
-  { href: '/review/social/charity', label: 'Charity deep dives, Mon and Thu', key: 'charity' },
+  { href: '/review/social/charity', label: 'Charity deep dives, Mondays', key: 'charity' },
 ] as const
 
 /** The three weekly posts, as tabs; also on the jobs page. */
