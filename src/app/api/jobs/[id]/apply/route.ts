@@ -20,6 +20,7 @@ import { DEFAULT_LOCALE, LOCALES, type Locale } from '@jobboard/content/i18n'
 // route sees the deployment's *.vercel.app address, which readers should
 // never be sent to.
 import { SITE_URL } from '@jobboard/lib/seo'
+import { isHumanClick } from '@jobboard/lib/human-click'
 
 export const dynamic = 'force-dynamic'
 
@@ -56,7 +57,10 @@ export async function GET(
   // fire-and-forget promise: on serverless the instance can be frozen the
   // moment the response is sent, and the insert went with it — undercounting
   // the one engagement metric this board has.
-  after(async () => {
+  //
+  // Only people are counted. Crawlers walking these links woke the database
+  // all day and used up its compute allowance; see human-click.ts.
+  if (isHumanClick(request.headers)) after(async () => {
     try {
       const db = await getDb()
       const referrer = request.headers.get('referer')
