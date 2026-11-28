@@ -115,7 +115,9 @@ function ApplyButton({ listing, locale, wide }: { listing: ListingView; locale: 
     <a
       className={`${u.btn} ${u.btnSolid} ${wide ? u.btnFull : ''}`}
       href={`/api/jobs/${encodeURIComponent(listing.id)}/apply?locale=${locale}`}
-      rel="noopener"
+      // nofollow: crawlers that ignore robots.txt walked these links and
+      // kept the database awake. See human-click.ts.
+      rel="noopener nofollow"
       // Read by ApplyClickTracker for the apply_click conversion.
       data-apply-listing={listing.id}
       data-apply-slug={listing.slug}
